@@ -119,10 +119,26 @@ def concatenate_wav_segments(segments: list[bytes]) -> bytes:
 
 
 def extract_audio_bytes(response: dict) -> bytes:
-    candidates = []
+    def decode(encoded: Any) -> bytes | None:
+        if not isinstance(encoded, str) or not encoded:
+            return None
+        try:
+            data = base64.b64decode(encoded, validate=True)
+        except (ValueError, base64.binascii.Error):
+            return None
+        if len(data) >= 44 and data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+            return data
+        return None
+
+    # output_audio is the provider's canonical complete response when present.
+    # Step content is used as the ordered fallback for segmented responses.
     direct = response.get("output_audio")
     if isinstance(direct, dict):
-        candidates.append(direct.get("data"))
+        direct_wav = decode(direct.get("data"))
+        if direct_wav is not None:
+            return concatenate_wav_segments([direct_wav])
+
+    step_segments = []
     steps = response.get("steps")
     if isinstance(steps, list):
         for step in steps:
@@ -133,24 +149,13 @@ def extract_audio_bytes(response: dict) -> bytes:
                 continue
             for block in blocks:
                 if isinstance(block, dict) and block.get("type") == "audio":
-                    candidates.append(block.get("data"))
+                    decoded = decode(block.get("data"))
+                    if decoded is not None:
+                        step_segments.append(decoded)
 
-    decoded_segments = []
-    for encoded in candidates:
-        if not isinstance(encoded, str) or not encoded:
-            continue
-        try:
-            data = base64.b64decode(encoded, validate=True)
-        except (ValueError, base64.binascii.Error):
-            continue
-        if len(data) >= 44 and data[:4] == b"RIFF" and data[8:12] == b"WAVE":
-            decoded_segments.append(data)
-    if not decoded_segments:
+    if not step_segments:
         raise RuntimeError("Gemini response did not contain a complete WAV audio block")
-    # Interactions can expose the same output through both output_audio and
-    # steps, or multiple ordered audio blocks. Deduplicate identical copies,
-    # then preserve every distinct segment in its original response order.
-    return concatenate_wav_segments(decoded_segments)
+    return concatenate_wav_segments(step_segments)
 
 
 def generate_speech(api_key: str, model_id: str, voice_id: str, language: str, timeout: int = 180) -> bytes:
