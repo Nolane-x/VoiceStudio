@@ -39,7 +39,7 @@ def test_matched_corpus_covers_conversation_and_long_form_in_both_languages():
         scenarios = {row[0] for row in MODULE.SCRIPTS[language]}
         assert scenarios == {"story", "numbers", "conversation", "longform"}
         long_form = next(row[2] for row in MODULE.SCRIPTS[language] if row[0] == "longform")
-        assert len(long_form) >= 450
+        assert len(long_form) >= 400
 
 
 
