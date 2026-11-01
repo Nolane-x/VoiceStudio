@@ -4,41 +4,243 @@
   "title": "VoiceStudio original synthetic voice design profile",
   "type": "object",
   "additionalProperties": false,
-  "required": ["profile_id","record_type","generation_state","language","locale","accent_id","accent_label","intended_use_case","market_archetype_id","market_archetype_label","dimensions","voice_description","preview_text","seed","provider","model_id_default","identity_class","identity_rights","shareability","commercial_status","human_review_required"],
+  "required": [
+    "profile_id",
+    "record_type",
+    "generation_state",
+    "language",
+    "locale",
+    "accent_id",
+    "accent_label",
+    "intended_use_case",
+    "market_archetype_id",
+    "market_archetype_label",
+    "dimensions",
+    "voice_description",
+    "preview_text",
+    "seed",
+    "provider",
+    "model_id_default",
+    "identity_class",
+    "identity_rights",
+    "shareability",
+    "commercial_status",
+    "human_review_required"
+  ],
   "properties": {
-    "profile_id": {"type":"string","pattern":"^(vi|en)-[a-z0-9-]+-[0-9]{4}$"},
-    "record_type": {"const":"voice_design_profile"},
-    "generation_state": {"const":"blueprint_only_not_a_rendered_voice"},
-    "language": {"enum":["vi","en"]},
-    "locale": {"enum":["vi-VN","en-US","en-GB","en-AU","en-CA","en-IN"]},
-    "accent_id": {"type":"string","minLength":2,"maxLength":48},
-    "accent_label": {"type":"string","minLength":3,"maxLength":120},
-    "intended_use_case": {"enum":["documentary","educational","audiobook","podcast","short-form","corporate","news","wellness"]},
-    "market_archetype_id":{"type":"string","minLength":2,"maxLength":64},
-    "market_archetype_label":{"type":"string","minLength":3,"maxLength":120},
+    "profile_id": {
+      "type": "string",
+      "pattern": "^(vi|en)-[a-z0-9-]+-[0-9]{4}$"
+    },
+    "record_type": {
+      "const": "voice_design_profile"
+    },
+    "generation_state": {
+      "const": "blueprint_only_not_a_rendered_voice"
+    },
+    "language": {
+      "enum": [
+        "vi",
+        "en"
+      ]
+    },
+    "locale": {
+      "enum": [
+        "vi-VN",
+        "en-US",
+        "en-GB",
+        "en-AU",
+        "en-CA",
+        "en-IN"
+      ]
+    },
+    "accent_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 48
+    },
+    "accent_label": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
+    "intended_use_case": {
+      "enum": [
+        "documentary",
+        "educational",
+        "audiobook",
+        "podcast",
+        "short-form",
+        "corporate",
+        "news",
+        "wellness"
+      ]
+    },
+    "market_archetype_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "market_archetype_label": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
     "dimensions": {
-      "type":"object",
-      "additionalProperties":false,
-      "required":["presentation","perceived_age","timbre","use_case","pitch","pace","delivery"],
-      "properties":{
-        "presentation":{"enum":["feminine","masculine","androgynous"]},
-        "perceived_age":{"enum":["young-adult","mature-adult","older-adult"]},
-        "timbre":{"enum":["warm-rounded","bright-clear","rich-resonant","soft-airy","smooth-polished","light-agile","full-bodied","gently-textured"]},
-        "use_case":{"enum":["documentary","educational","audiobook","podcast","short-form","corporate","news","wellness"]},
-        "pitch":{"enum":["low","mid-low","mid","mid-high"]},
-        "pace":{"enum":["measured","conversational","brisk-clear","expressive"]},
-        "delivery":{"enum":["warm-assured","curious-engaging","calm-authoritative","upbeat-optimistic"]}
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presentation",
+        "perceived_age",
+        "timbre",
+        "use_case",
+        "pitch",
+        "pace",
+        "delivery"
+      ],
+      "properties": {
+        "presentation": {
+          "enum": [
+            "feminine",
+            "masculine",
+            "androgynous"
+          ]
+        },
+        "perceived_age": {
+          "enum": [
+            "young-adult",
+            "mature-adult",
+            "older-adult"
+          ]
+        },
+        "timbre": {
+          "enum": [
+            "warm-rounded",
+            "bright-clear",
+            "rich-resonant",
+            "soft-airy",
+            "smooth-polished",
+            "light-agile",
+            "full-bodied",
+            "gently-textured"
+          ]
+        },
+        "use_case": {
+          "enum": [
+            "documentary",
+            "educational",
+            "audiobook",
+            "podcast",
+            "short-form",
+            "corporate",
+            "news",
+            "wellness"
+          ]
+        },
+        "pitch": {
+          "enum": [
+            "low",
+            "mid-low",
+            "mid",
+            "mid-high"
+          ]
+        },
+        "pace": {
+          "enum": [
+            "measured",
+            "conversational",
+            "brisk-clear",
+            "expressive"
+          ]
+        },
+        "delivery": {
+          "enum": [
+            "warm-assured",
+            "curious-engaging",
+            "calm-authoritative",
+            "upbeat-optimistic"
+          ]
+        }
       }
     },
-    "voice_description":{"type":"string","minLength":20,"maxLength":1000},
-    "preview_text":{"type":"string","minLength":100,"maxLength":1000},
-    "seed":{"type":"integer","minimum":0,"maximum":2147483647},
-    "provider":{"const":"elevenlabs_voice_design"},
-    "model_id_default":{"const":"eleven_multilingual_ttv_v2"},
-    "identity_class":{"const":"original_synthetic_persona"},
-    "identity_rights":{"const":"no_real_person_reference_or_impersonation"},
-    "shareability":{"const":"not_shareable_to_public_elevenlabs_voice_library"},
-    "commercial_status":{"const":"provider_account_terms_and_plan_review_required"},
-    "human_review_required":{"const":true}
-  }
+    "voice_description": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 1000
+    },
+    "preview_text": {
+      "type": "string",
+      "minLength": 100,
+      "maxLength": 1000
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "provider": {
+      "const": "elevenlabs_voice_design"
+    },
+    "model_id_default": {
+      "enum": [
+        "eleven_ttv_v3",
+        "eleven_multilingual_ttv_v2"
+      ]
+    },
+    "identity_class": {
+      "const": "original_synthetic_persona"
+    },
+    "identity_rights": {
+      "const": "no_real_person_reference_or_impersonation"
+    },
+    "shareability": {
+      "const": "not_shareable_to_public_elevenlabs_voice_library"
+    },
+    "commercial_status": {
+      "const": "provider_account_terms_and_plan_review_required"
+    },
+    "human_review_required": {
+      "const": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "vi"
+          }
+        },
+        "required": [
+          "language"
+        ]
+      },
+      "then": {
+        "properties": {
+          "model_id_default": {
+            "const": "eleven_ttv_v3"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "en"
+          }
+        },
+        "required": [
+          "language"
+        ]
+      },
+      "then": {
+        "properties": {
+          "model_id_default": {
+            "const": "eleven_multilingual_ttv_v2"
+          }
+        }
+      }
+    }
+  ]
 }
