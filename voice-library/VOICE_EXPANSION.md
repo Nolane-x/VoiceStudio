@@ -184,3 +184,19 @@ Each run refreshes the provider voice metadata, selects up to four voices per la
 The workflow requires a private repository, `GEMINI_API_KEY`, and explicit `confirm_paid_api_usage=true`. It is manual-only, disabled on this public fork, and never triggered by normal CI. Run it once for each model with the same offset/limit to compare Flash vs Flash-Lite fairly. An ambiguous request timeout is not retried automatically.
 
 The score-merger keeps model IDs separate when ranking the same voice ID across providers or model variants. Scores are human preference for this review cohort, not standardized MOS. This workflow uses prebuilt provider voices only; it does not replicate named people or expose caller-owned prompted/replicated voices.
+
+
+### Building a large original voice-actor catalogue
+
+To scale beyond provider-owned presets, VoiceStudio now defines a privacy-first contribution contract for original voices from adult contributors (18+) who are themselves the recorded speaker. The manifest schema is `voice-library/voice-contribution.schema.json`; the validator is `scripts/validate_voice_contribution.py`; intake policy is in `voice-library/contributions/README.md`.
+
+The contract separates permissions instead of assuming a single blanket release:
+- TTS synthesis and voice replication.
+- Commercial use.
+- Public previews and public distribution.
+- Model training.
+- Derivative voice generation.
+
+The latter four remain separate opt-ins. A contribution cannot become production-ready until rights review and native-language quality review both pass. The validator also rejects personal identifiers and public audio URLs in manifests. Only pseudonymous contributor IDs, opaque private-vault references and consent hashes may live in public Git; signed records, identity checks and raw audio remain in private storage.
+
+The intake directory currently contains policy only, not real contributors or ready-to-use voice assets. The objective is to recruit original, consenting adult voice actors across Vietnamese regional accents and English locales, then build toward hundreds or thousands only at the pace that review, withdrawal and rights management can support. Never reproduce a celebrity, creator or other identifiable person's voice without authorization from that exact person.
