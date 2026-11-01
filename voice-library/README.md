@@ -189,3 +189,6 @@ Google Gemini prebuilt Vietnamese and English voice metadata can be indexed with
 
 
 The official Gemini prebuilt studio voice names are indexed in `gemini-prebuilt-studio-voices.json`. The manually dispatched Gemini 3.8 Flash/Flash-Lite audition workflow produces matched, blind VI/EN samples under explicit paid-use gates. See `VOICE_EXPANSION.md` for limits and review commands.
+
+
+To build a larger original voice-actor library, use the adult contributor intake contract at `contributions/README.md`, the manifest schema `voice-contribution.schema.json`, and validator `../scripts/validate_voice_contribution.py`. The intake directory is policy/schema only; it does not yet contain contributed voices.
