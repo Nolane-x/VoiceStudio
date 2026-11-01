@@ -44,8 +44,55 @@
     "normalization": "EBU R128 loudnorm; -18 LUFS target; -1.5 dBTP ceiling",
     "formats": {
       "piper": "WAV PCM 16-bit mono, 22050 Hz",
-      "vieneu": "WAV PCM 24-bit mono, 48000 Hz"
+      "vieneu": "WAV PCM 24-bit mono, 48000 Hz",
+      "kokoro": "WAV PCM 16-bit mono, 24000 Hz"
     },
     "usage_note": "Audio previews are generated synthetic speech, not original speaker recordings or identity claims."
+  },
+  "kokoro_english": {
+    "engine": "Kokoro-82M",
+    "engine_package": "kokoro==0.9.4",
+    "phonemizer_package": "misaki[en]==0.9.4",
+    "engine_source": "https://github.com/hexgrad/kokoro",
+    "engine_license": "Apache-2.0",
+    "model_repo": "hexgrad/Kokoro-82M",
+    "model_revision": "f3ff3571791e39611d31c381e3a41a3af07b4987",
+    "model_file": "kokoro-v1_0.pth",
+    "model_file_sha256": "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4",
+    "voices_metadata_file": "VOICES.md",
+    "voices_metadata_revision": "c3327e9bac3dbe55779397bfa82de0f8806fb3bc",
+    "sample_rate": 24000,
+    "bits_per_sample": 16,
+    "selected_voices": [
+      {
+        "id": "af_heart",
+        "display_name": "English (US) · Heart",
+        "quality_grade": "A",
+        "voice_sha256_prefix": "0ab5709b",
+        "language_code": "a"
+      },
+      {
+        "id": "af_bella",
+        "display_name": "English (US) · Bella",
+        "quality_grade": "A-",
+        "voice_sha256_prefix": "8cb64e02",
+        "language_code": "a"
+      },
+      {
+        "id": "af_nicole",
+        "display_name": "English (US) · Nicole",
+        "quality_grade": "B-",
+        "voice_sha256_prefix": "c5561808",
+        "language_code": "a"
+      },
+      {
+        "id": "bf_emma",
+        "display_name": "English (UK) · Emma",
+        "quality_grade": "B-",
+        "voice_sha256_prefix": "d0a423de",
+        "language_code": "b"
+      }
+    ],
+    "rights_note": "The upstream model card marks the model repository Apache-2.0. Upstream VOICES.md publishes subjective A/A-/B- quality grades for these selected presets and says these grades estimate the quality and quantity of associated training data. The upstream model information describes the training audio as permissive or non-copyrighted. This build preserves Apache attribution and does not imply any real-person endorsement, publicity, or identity rights."
   }
 }
