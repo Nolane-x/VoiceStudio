@@ -458,16 +458,6 @@ def run(args) -> int:
         for row in results:
             writer.writerow([row["blind_sample_id"], row["language"], row["scenario_id"], "", "", "", "", ""])
     create_blind_review_archive(output)
-    archive = output / "tts-candidate-benchmark.zip"
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4) as bundle:
-        for path in sorted(output.rglob("*")):
-            if path.is_file() and path != archive:
-                info = zipfile.ZipInfo(path.relative_to(output).as_posix())
-                info.date_time = (2020, 1, 1, 0, 0, 0)
-                info.compress_type = zipfile.ZIP_DEFLATED
-                info.external_attr = 0o100644 << 16
-                with path.open("rb") as source, bundle.open(info, "w") as target:
-                    shutil.copyfileobj(source, target, length=1024 * 1024)
     print(f"[tts-benchmark] COMPLETE {len(results)}/{expected} samples; {len(failures)} failures", flush=True)
     return 0 if results and not failures else 1
 
