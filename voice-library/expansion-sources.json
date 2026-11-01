@@ -84,7 +84,18 @@
       "public_redistribution": "not_granted_by_this_registry",
       "status": "high_priority_provider_voice_discovery_source",
       "source": "https://ai.google.dev/api/voices",
-      "note": "The discovery crawler filters type=prebuilt and Vietnamese/English language-code prefixes. Caller-owned prompted and replicated voice IDs are deliberately excluded. The API returns provider-managed identifiers and metadata, not preview audio or independent redistribution rights."
+      "note": "The discovery crawler filters type=prebuilt and Vietnamese/English language-code prefixes. Caller-owned prompted and replicated voice IDs are deliberately excluded. The API returns provider-managed identifiers and metadata, not preview audio or independent redistribution rights. VoiceStudio also publishes the provider's 30 official prebuilt studio voice names in voice-library/gemini-prebuilt-studio-voices.json and has a manually confirmed benchmark for both Gemini 3.8 TTS models. The extended list is not ranked by usage; popularity must not be inferred from catalog order.",
+      "prebuilt_studio_voice_count": 30,
+      "extended_voice_library_scale": "hundreds of additional provider-managed voices",
+      "benchmark_workflow": ".github/workflows/gemini-tts-prebuilt-benchmark.yml",
+      "supported_models": [
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts"
+      ],
+      "quality_method": "matched four-scenario Vietnamese/English blind-listening benchmark, 48 kHz/24-bit normalized and VoiceStudio-watermarked",
+      "paid_run_cap": 8,
+      "manual_confirmation_required": true,
+      "repository_must_be_private_for_paid_workflow": true
     },
     {
       "id": "google-gemini-3-8-tts",
@@ -569,6 +580,16 @@
       "id": "google-gemini-tts-38",
       "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
       "fact": "Gemini 3.8 Flash TTS provides high-fidelity expressive speech generation and Gemini 3.8 Flash-Lite TTS targets higher throughput/cost efficiency; Vietnamese and English are in supported language coverage."
+    },
+    {
+      "id": "google-gemini-prebuilt-studio-voices",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "fact": "Gemini 3.8 Flash TTS and Flash-Lite expose 30 official prebuilt studio voice options (including Zephyr, Puck, Charon, Kore, Leda, Aoede, etc.); the Extended Voice Library adds hundreds of provider-managed options."
+    },
+    {
+      "id": "google-gemini-tss-interactions",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "fact": "Gemini 3.8 TTS uses POST /v1beta/interactions with model, user_input text blocks, speech_metadata annotations, response_format audio, and generation_config.speech_config; unary audio returns WAV (24 kHz mono 16-bit default)."
     }
   ],
   "market_signal_sources": [
@@ -626,6 +647,23 @@
       "scope": "provider-hosted public shared voice adoption/discovery",
       "refresh": "weekly GitHub Actions snapshot and manual dispatch",
       "interpretation": "Provider-reported usage and cloning counts are adoption signals within the marketplace; they are not blind listener preference, external creator/channel adoption proof, or voice-quality ratings."
+    },
+    {
+      "id": "google-gemini-prebuilt-voice-library",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "signal_types": [
+        "provider-curated-prebuilt-studio-voice-options",
+        "language",
+        "region",
+        "accent",
+        "persona",
+        "context",
+        "gender",
+        "pitch"
+      ],
+      "scope": "provider-managed Gemini TTS voice discovery and metadata",
+      "refresh": "weekly GitHub Actions snapshot of GET /v1beta/voices",
+      "interpretation": "The API provides descriptive metadata, not marketplace usage counts or public adoption rank. VoiceStudio does not claim popularity for Gemini options without independent evidence."
     }
   ],
   "market_snapshots": {
