@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import html
 import importlib.util
 import json
@@ -248,20 +249,35 @@ def transcribe(path: Path, language: str, model_name: str, state: dict) -> dict:
 
 
 def make_gallery(rows: list[dict], manifest: dict) -> str:
+    # Stable but shuffled order inside each language/scenario pair. Engine and
+    # voice identity stay hidden until the listener explicitly reveals them.
+    ordered = sorted(
+        rows,
+        key=lambda row: (
+            row["language"],
+            row["scenario_id"],
+            hashlib.sha256(row["audio_file"].encode("utf-8")).hexdigest(),
+        ),
+    )
     cards = []
-    for row in rows:
-        m = row.get("asr_metrics", {})
+    for index, row in enumerate(ordered, 1):
+        metrics = row.get("asr_metrics", {})
         token_name = "WER" if row["language"] == "en" else "Vietnamese syllable error"
+        identity = f"{row['engine_label']} · {row.get('voice_label', row['voice_id'])}"
         cards.append(f"""
-<article class="sample">
-<div class="meta">{html.escape(row['language'].upper())} · {html.escape(row['engine'])}</div>
-<h2>{html.escape(row.get('voice_label', row['voice_id']))}</h2>
-<p>{html.escape(row['scenario_title'])}</p>
+<article class="sample" data-sample-file="{html.escape(row['audio_file'], quote=True)}"
+ data-language="{html.escape(row['language'], quote=True)}"
+ data-scenario="{html.escape(row['scenario_id'], quote=True)}"
+ data-identity="{html.escape(identity, quote=True)}">
+<div class="meta">{html.escape(row['language'].upper())} · BLIND SAMPLE {index:02d}</div>
+<h2>Sample {index:02d}</h2>
+<div class="identity" hidden></div>
+<p class="scenario">{html.escape(row['scenario_title'])}</p>
 <audio controls preload="none" src="{html.escape(row['audio_file'], quote=True)}"></audio>
 <p><b>Reference</b><br>{html.escape(row['reference_text'])}</p>
 <p><b>ASR</b><br>{html.escape(row.get('asr', {}).get('transcript', ''))}</p>
-<div class="metrics"><span>{token_name}: {m.get('token_error_rate', 'n/a')}</span>
-<span>CER: {m.get('character_error_rate', 'n/a')}</span><span>RTFx: {row['rtfx']:.2f}</span></div>
+<div class="metrics"><span>{token_name}: {metrics.get('token_error_rate', 'n/a')}</span>
+<span>CER: {metrics.get('character_error_rate', 'n/a')}</span><span>RTFx: {row['rtfx']:.2f}</span></div>
 <div class="ratings">
 <label>Naturalness <input type="number" min="1" max="5" data-field="naturalness"></label>
 <label>Pronunciation <input type="number" min="1" max="5" data-field="pronunciation"></label>
@@ -270,27 +286,42 @@ def make_gallery(rows: list[dict], manifest: dict) -> str:
 </div><label>Notes<textarea data-field="notes" rows="2"></textarea></label>
 </article>""")
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>VoiceStudio TTS Benchmark</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>VoiceStudio Blind TTS Listening Benchmark</title>
 <style>
 :root{{color-scheme:light dark;font:15px/1.55 system-ui,sans-serif}}body{{max-width:1160px;margin:auto;padding:28px 20px}}
 header{{border-bottom:1px solid #8886;padding-bottom:18px}}.notice{{border:1px solid #8888;border-radius:12px;padding:12px}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:20px}}
 .sample{{border:1px solid #8888;border-radius:14px;padding:16px;min-width:0}}.meta{{font-size:.75rem;opacity:.7;letter-spacing:.08em}}
+.identity{{border:1px dashed #8888;border-radius:8px;padding:6px 9px;margin:8px 0;font-size:.85rem}}
 audio{{width:100%;margin:10px 0}}.metrics{{display:flex;flex-wrap:wrap;gap:8px}}.metrics span{{border:1px solid #8888;border-radius:20px;padding:3px 9px;font-size:.8rem}}
 .ratings{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}label{{display:block;font-size:.85rem}}
 input,textarea{{box-sizing:border-box;width:100%;padding:7px;margin-top:4px;background:transparent;color:inherit;border:1px solid #8888;border-radius:7px}}
+button{{padding:8px 12px;border:1px solid #8888;border-radius:8px;background:transparent;color:inherit;cursor:pointer}}
 </style></head><body><header><div>VoiceStudio · GitHub Actions benchmark</div>
-<h1>Listen before choosing a voice</h1><p>Built {html.escape(manifest['built_at'])} · {len(rows)} samples</p>
-<div class="notice"><b>Important:</b> RTFx and ASR error are diagnostics, not measures of human naturalness. Listen for Vietnamese tones, names, pacing, emotion and sentence endings. Supertonic OpenRAIL-M and Piper samples are not automatically commercially cleared.</div>
-<p><button id="export">Export human ratings CSV</button></p></header><div class="grid">{''.join(cards)}</div>
+<h1>Blind listening review</h1><p>Built {html.escape(manifest['built_at'])} · {len(rows)} samples</p>
+<div class="notice"><b>Blind mode:</b> engine and voice identities are hidden by default and sample order is shuffled within each language/scenario. Record listening scores before revealing model identities. RTFx and ASR error are diagnostics, not measures of naturalness. Review Vietnamese tones, names, pacing, emotion and sentence endings. Supertonic OpenRAIL-M and Piper are not automatically commercially cleared.</div>
+<p><button id="reveal">Reveal model identities</button> <button id="export">Export human ratings CSV</button></p>
+<small>Exported rows include the sample file key so ratings can be joined to benchmark.json after listening.</small>
+</header><div class="grid">{''.join(cards)}</div>
 <script>
+let revealed=false;
+document.getElementById('reveal').addEventListener('click',()=>{{
+ revealed=!revealed;
+ document.querySelectorAll('.sample').forEach(card=>{{
+  const identity=card.querySelector('.identity');
+  identity.hidden=!revealed;
+  identity.textContent=revealed?card.dataset.identity:'';
+ }});
+ document.getElementById('reveal').textContent=revealed?'Hide model identities':'Reveal model identities';
+}});
 document.getElementById('export').addEventListener('click',()=>{{
- const all=[['language','engine_voice','scenario','naturalness','pronunciation','prosody','emotion','notes']];
- document.querySelectorAll('.sample').forEach(c=>all.push([
- c.querySelector('.meta').textContent,c.querySelector('h2').textContent,c.querySelector('p').textContent,
- ...['naturalness','pronunciation','prosody','emotion','notes'].map(n=>c.querySelector('[data-field="'+n+'"]').value)]));
- const csv=all.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{{type:'text/csv'}}));a.download='human-review.csv';a.click();URL.revokeObjectURL(a.href);
+ const all=[['sample_file','language','scenario','naturalness','pronunciation','prosody','emotion','notes']];
+ document.querySelectorAll('.sample').forEach(card=>all.push([
+  card.dataset.sampleFile,card.dataset.language,card.dataset.scenario,
+  ...['naturalness','pronunciation','prosody','emotion','notes'].map(n=>card.querySelector('[data-field="'+n+'"]').value)
+ ]));
+ const csv=all.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{{type:'text/csv'}}));a.download='human-review-blind.csv';a.click();URL.revokeObjectURL(a.href);
 }});
 </script></body></html>"""
 
@@ -392,9 +423,9 @@ def run(args) -> int:
     )
     with (output / "human-review.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["language", "engine", "voice_id", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
+        writer.writerow(["sample_file", "language", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
         for row in results:
-            writer.writerow([row["language"], row["engine"], row["voice_id"], row["scenario_id"], "", "", "", "", ""])
+            writer.writerow([row["audio_file"], row["language"], row["scenario_id"], "", "", "", "", ""])
     archive = output / "tts-candidate-benchmark.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4) as bundle:
         for path in sorted(output.rglob("*")):
