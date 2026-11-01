@@ -192,3 +192,6 @@ The official Gemini prebuilt studio voice names are indexed in `gemini-prebuilt-
 
 
 To build a larger original voice-actor library, use the adult contributor intake contract at `contributions/README.md`, the manifest schema `voice-contribution.schema.json`, and validator `../scripts/validate_voice_contribution.py`. The intake directory is policy/schema only; it does not yet contain contributed voices.
+
+
+VoiceStudio also indexes xAI's provider-managed Grok built-in voices for Vietnamese and English through a metadata-only workflow. It excludes custom/user-owned voices and does not infer popularity from listing order. The manual paid benchmark is separately gated; see `VOICE_EXPANSION.md`.
