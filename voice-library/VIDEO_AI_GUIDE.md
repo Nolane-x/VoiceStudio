@@ -19,7 +19,8 @@ VoiceStudio desktop/Electron build.
    LibriTTS High remains an English-only option with restricted/uncleared
    commercial evidence; do not silently treat it as commercially cleared.
 4. Prepare a JSON payload conforming to
-   [video-job.schema.json](video-job.schema.json). Use the examples as valid
+   [video-job.schema.json](video-job.schema.json), the English Kokoro
+   example (video-job.example.en-kokoro.json), and the bilingual starter jobs. Use the examples as valid
    starting points. Put each scene, paragraph or subtitle-sized passage in an
    ordered `segments` entry. Preserve punctuation and spelling; do not add
    stage directions that should not be spoken.
