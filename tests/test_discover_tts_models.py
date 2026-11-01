@@ -35,14 +35,16 @@ def test_discovery_collects_distinct_market_signals_and_merges_duplicate_models(
         query = parse_qs(urlparse(request.full_url).query)
         calls.append(query)
         search_term = query.get("search", [None])[0]
-        rows = [{
-            "id": "publisher/vietnamese-tts",
-            "downloads": 1200,
-            "likes": 80,
-            "trendingScore": 8.5,
-            "tags": ["text-to-speech", "language:vi", "license:apache-2.0"],
-            "pipeline_tag": "text-to-speech",
-        }]
+        rows = []
+        if search_term is None or search_term == "Vietnamese":
+            rows.append({
+                "id": "publisher/vietnamese-tts",
+                "downloads": 1200,
+                "likes": 80,
+                "trendingScore": 8.5,
+                "tags": ["text-to-speech", "language:vi", "license:apache-2.0"],
+                "pipeline_tag": "text-to-speech",
+            })
         if search_term is None or search_term == "English":
             rows.append({
                 "id": "publisher/english-tts",
