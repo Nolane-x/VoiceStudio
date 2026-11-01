@@ -148,3 +148,13 @@ if __name__ == "__main__":
         self.assertEqual(snapshot["source"], "https://voicearena.com/tts-leaderboard/vietnamese")
         self.assertEqual(snapshot["overall_vietnamese_top_models"][0]["model"], "Gemini 3.8 Flash-Lite TTS")
         self.assertEqual(snapshot["overall_vietnamese_top_models"][3]["model"], "Eleven v4")
+
+
+    def test_google_gemini_voice_catalog_only_indexes_prebuilt_vi_en_voice_ids(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "google-gemini-prebuilt-voice-library")
+        self.assertEqual(candidate["discovery_endpoint"], "GET /v1beta/voices")
+        self.assertEqual(candidate["filter"], "type=prebuilt")
+        self.assertEqual(candidate["language_codes"], ["vi", "en"])
+        self.assertEqual(candidate["page_size_max"], 1000)
+        self.assertIn("prompted and replicated", candidate["note"])
