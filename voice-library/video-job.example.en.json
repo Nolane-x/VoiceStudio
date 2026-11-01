@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "job_id": "video-en-demo",
+  "title": "English video narration",
+  "language": "en",
+  "engine": "vieneu",
+  "voice_id": "en-vieneu-v3turbo-adam-bua-87e364",
+  "segments": [
+    {
+      "id": "intro",
+      "text": "Welcome back. Today, we are exploring a story worth understanding.",
+      "pause_ms_after": 350
+    },
+    {
+      "id": "main",
+      "text": "Listen closely, because every detail helps reveal a bigger picture.",
+      "pause_ms_after": 500
+    },
+    {
+      "id": "outro",
+      "text": "Thanks for watching. I'll see you in the next video.",
+      "pause_ms_after": 0
+    }
+  ]
+}
