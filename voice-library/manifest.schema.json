@@ -185,7 +185,10 @@
             "type": "string"
           },
           "upstream_quality_grade": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "enum": [
               "A",
               "A-",
@@ -202,7 +205,10 @@
             ]
           },
           "quality_grade_source": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       }
