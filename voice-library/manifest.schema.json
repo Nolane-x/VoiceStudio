@@ -183,6 +183,26 @@
           },
           "source_voice_id": {
             "type": "string"
+          },
+          "upstream_quality_grade": {
+            "type": "string",
+            "enum": [
+              "A",
+              "A-",
+              "B+",
+              "B",
+              "B-",
+              "C+",
+              "C",
+              "C-",
+              "D+",
+              "D",
+              "D-",
+              "F+"
+            ]
+          },
+          "quality_grade_source": {
+            "type": "string"
           }
         }
       }
