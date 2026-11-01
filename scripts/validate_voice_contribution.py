@@ -25,8 +25,8 @@ def custom_errors(manifest: dict[str, Any]) -> list[str]:
     consent = consent_raw if isinstance(consent_raw, dict) else {}
     granted_raw = consent.get("rights_granted", [])
     denied_raw = consent.get("rights_not_granted", [])
-    granted = set(granted_raw) if isinstance(granted_raw, list) else set()
-    denied = set(denied_raw) if isinstance(denied_raw, list) else set()
+    granted = {value for value in granted_raw if isinstance(value, str)} if isinstance(granted_raw, list) else set()
+    denied = {value for value in denied_raw if isinstance(value, str)} if isinstance(denied_raw, list) else set()
     conflicts = sorted(granted & denied)
     if conflicts:
         errors.append(f"rights cannot be both granted and denied: {', '.join(conflicts)}")
