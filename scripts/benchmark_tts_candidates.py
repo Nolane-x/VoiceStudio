@@ -117,11 +117,11 @@ def make_candidates(builder, languages: list[str], failures: list[dict]) -> tupl
             for voice_id in ("M1", "F3"):
                 style = tts.get_voice_style(voice_name=voice_id)
 
-                def render(text: str, path: Path, *, _style=style, _lang=language):
+                def render(text: str, path: Path, *, _tts=tts, _style=style, _lang=language):
                     import numpy as np
                     import soundfile as sf
 
-                    waveform, _ = tts.synthesize(
+                    waveform, _ = _tts.synthesize(
                         text=text, voice_style=_style, total_steps=10,
                         speed=1.0, max_chunk_length=300, silence_duration=0.22, lang=_lang,
                     )
