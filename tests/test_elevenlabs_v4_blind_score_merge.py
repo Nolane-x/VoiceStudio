@@ -173,3 +173,44 @@ def test_review_file_must_contain_at_least_one_completed_score(tmp_path):
         assert "No completed human reviews" in str(exc)
     else:
         raise AssertionError("empty review submission was accepted")
+
+
+def test_human_rankings_separate_models_even_when_voice_ids_match(tmp_path):
+    analysis = tmp_path / "analysis.json"
+    scores = tmp_path / "scores.csv"
+    output = tmp_path / "scored-analysis.json"
+    write_analysis(analysis)
+    data = json.loads(analysis.read_text(encoding="utf-8"))
+    data["model_id"] = "eleven_v4"
+    data["samples"][0]["model_id"] = "eleven_v4"
+    data["samples"][0]["voice_id"] = "Kore"
+    data["samples"][1]["model_id"] = "eleven_v4"
+    data["samples"][1]["voice_id"] = "Other"
+    data["samples"][2]["model_id"] = "eleven_v4"
+    data["samples"][2]["voice_id"] = "English"
+    data["samples"].append({
+        "blind_sample_id": "sample-004",
+        "language": "vi",
+        "voice_id": "Kore",
+        "voice_name": "Kore",
+        "model_id": "gemini-3.8-flash-tts",
+    })
+    analysis.write_text(json.dumps(data), encoding="utf-8")
+    write_scores(scores, [
+        score("sample-001", "vi", "listener-a", 4),
+        score("sample-002", "vi", "listener-a", 3),
+        score("sample-003", "en", "listener-a", 4),
+        score("sample-004", "vi", "listener-a", 5),
+    ])
+
+    result = MODULE.merge(analysis, scores, output)
+    vi = result["human_voice_rankings_by_language"]["vi"]
+    by_model = {}
+    for row in vi:
+        by_model.setdefault(row["model_id"], []).append(row)
+    assert set(by_model) == {"eleven_v4", "gemini-3.8-flash-tts"}
+    assert by_model["eleven_v4"][0]["voice_id"] == "Kore"
+    assert by_model["eleven_v4"][0]["average_overall"] == 4
+    assert by_model["gemini-3.8-flash-tts"][0]["voice_id"] == "Kore"
+    assert by_model["gemini-3.8-flash-tts"][0]["average_overall"] == 5
+    assert all(row["rank"] == 1 for rows in by_model.values() for row in rows)
