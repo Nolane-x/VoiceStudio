@@ -226,4 +226,4 @@ def test_score_merger_is_wired_as_a_standalone_post_review_tool():
     source = merger.read_text(encoding="utf-8")
     assert "voice_rankings_by_language" in source
     assert "voice_rankings_by_language_and_scenario" in source
-    assert "commercial-use" in source
+    assert '"commercial_use"' in source
