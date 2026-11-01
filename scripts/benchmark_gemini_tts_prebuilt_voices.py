@@ -403,7 +403,10 @@ def run(args) -> int:
         "# Gemini 3.8 TTS benchmark\n\n"
         f"- Model: {args.model_id}\n- Successful samples: {len(successes)}\n"
         f"- Failed samples: {len(failures)}\n- Human review required: yes\n\n"
-        "Merge the blind CSV with the private analysis manifest using the VoiceStudio blind-score merge script. "
+        "Merge the blind CSV with the private analysis manifest using: "
+        "python scripts/merge_elevenlabs_v4_blind_scores.py --analysis dist/gemini-tts-benchmark/analysis.json "
+        "--scores gemini-blind-review.csv --output dist/gemini-tts-benchmark/scored-analysis.json "
+        "--summary-csv dist/gemini-tts-benchmark/voice-rankings.csv. "
         "Provider voice IDs remain managed by Google. No request is retried after a network timeout.\n",
         encoding="utf-8",
     )
