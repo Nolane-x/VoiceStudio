@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "job_id": "video-en-kokoro-demo",
+  "title": "English narration with a curated Kokoro voice",
+  "language": "en",
+  "engine": "kokoro",
+  "voice_id": "en-kokoro-v1-af_heart",
+  "segments": [
+    {
+      "id": "intro",
+      "text": "Welcome back. Today, we are exploring a story worth understanding.",
+      "pause_ms_after": 350
+    },
+    {
+      "id": "main",
+      "text": "Listen closely, because every detail helps reveal a bigger picture.",
+      "pause_ms_after": 500
+    },
+    {
+      "id": "outro",
+      "text": "Thanks for watching. I'll see you in the next video.",
+      "pause_ms_after": 0
+    }
+  ]
+}
