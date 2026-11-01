@@ -200,3 +200,20 @@ The contract separates permissions instead of assuming a single blanket release:
 The latter four remain separate opt-ins. A contribution cannot become production-ready until rights review and native-language quality review both pass. The validator also rejects personal identifiers and public audio URLs in manifests. Only pseudonymous contributor IDs, opaque private-vault references and consent hashes may live in public Git; signed records, identity checks and raw audio remain in private storage.
 
 The intake directory currently contains policy only, not real contributors or ready-to-use voice assets. The objective is to recruit original, consenting adult voice actors across Vietnamese regional accents and English locales, then build toward hundreds or thousands only at the pace that review, withdrawal and rights management can support. Never reproduce a celebrity, creator or other identifiable person's voice without authorization from that exact person.
+
+
+### Scoring the 48-sample open-model benchmark
+
+After listeners export `blind-human-review.csv` from the blind gallery, merge scores with the separate analyst manifest:
+
+```bash
+python scripts/merge_tts_blind_scores.py \
+  --analysis dist/tts-candidate-benchmark/benchmark.json \
+  --scores dist/tts-candidate-benchmark/human-review.csv \
+  --output dist/tts-candidate-benchmark/scored-benchmark.json \
+  --summary-csv dist/tts-candidate-benchmark/voice-rankings.csv
+```
+
+The merger accepts both legacy score sheets without a reviewer column and new multi-reviewer sheets. It validates the blind sample ID, language and scenario against the manifest; rejects duplicate reviewer/sample pairs, partial ratings and scores outside 1–5; and reports overall and per-scenario ranks separately for VI and EN. Overall preference is the mean of naturalness, pronunciation, prosody and emotional fit. Sample counts, listener counts, score spread and source rights status remain visible. Human ranking does not upgrade a license or clear a source for commercial use.
+
+The benchmark gallery exports a reviewer code so separate listeners can score the same blind set independently. Keep the mapping manifest private until scoring closes; send listeners only the anonymized archive. Ratings are cohort-specific preference data, not standardized MOS or a universal guarantee.
