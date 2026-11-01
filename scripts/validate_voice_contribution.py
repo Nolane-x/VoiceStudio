@@ -30,7 +30,12 @@ def custom_errors(manifest: dict[str, Any]) -> list[str]:
 
     review = manifest.get("rights_review", {})
     quality = manifest.get("quality_review", {})
+    if review.get("status") == "approved":
+        if not review.get("reviewer_ref") or not review.get("reviewed_at"):
+            errors.append("approved rights_review requires reviewer_ref and reviewed_at")
     if quality.get("status") == "approved":
+        if not quality.get("blind_review_id") or not quality.get("reviewed_at"):
+            errors.append("approved quality_review requires blind_review_id and reviewed_at")
         required_checks = (
             "native_language_review",
             "pronunciation_review",
