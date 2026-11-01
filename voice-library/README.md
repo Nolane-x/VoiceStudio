@@ -174,3 +174,9 @@ The final audio is checked in a streaming pass for finite samples, RMS,
 clipping, 48 kHz mono PCM-24 format and post-save watermark verification.
 These are machine checks, not a substitute for listening to the finished
 voiceover before publishing a video.
+
+
+
+### ElevenLabs marketplace and Eleven v4
+
+VoiceStudio includes an optional marketplace-discovery workflow for public ElevenLabs shared voices and a separate manually confirmed Eleven v4 benchmark. Discovery captures language-tagged, high-quality/professional shared-voice metadata and provider adoption signals; it does not download or rehost marketplace audio. The premium benchmark uses the current Eleven v4 Text-to-Dialogue API, with up to eight paid synthesis requests per manual run, and produces separate blind-listening and private analysis artifacts. It is disabled on public repositories and cannot run without explicit paid-usage confirmation. See VOICE_EXPANSION.md for the voice-rights, language-routing and evaluation rules.
