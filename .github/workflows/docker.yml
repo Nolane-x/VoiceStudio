@@ -82,6 +82,19 @@ on:
       - "mobile/**"
       - "changelog.d/**"
       - "CHANGELOG.md"
+      # TTS assets and Actions render workflows do not change the headless app container.
+      # Keep catalog generation and voice rendering on their dedicated Actions workflows.
+      - "voice-library/**"
+      - "voice-jobs/**"
+      - "scripts/build_voice_library.py"
+      - "scripts/render_video_voice.py"
+      - "tests/test_voice_library_contract.py"
+      - "tests/test_video_voice_contract.py"
+      - "tests/test_voice_library_ci_scope.py"
+      - ".github/scripts/ci_scope.py"
+      - ".github/workflows/voice-library.yml"
+      - ".github/workflows/render-video-narration.yml"
+      - ".github/workflows/docker.yml"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/*.md"
   release:

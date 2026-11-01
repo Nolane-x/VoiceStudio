@@ -53,6 +53,10 @@ def runtime_needed(files: list[dict], limit: int) -> bool:
         paths = [file.get("filename", "")]
         if file["status"] == "renamed":
             paths.append(file.get("previous_filename", ""))
+        # Editing the classifier is not an application payload change, but it
+        # must always exercise runtime CI so the classifier cannot skip itself.
+        if ".github/scripts/ci_scope.py" in paths:
+            return True
         if not all(non_runtime(path) for path in paths):
             return True
     return False

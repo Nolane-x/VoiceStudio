@@ -80,7 +80,7 @@ def split_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
     text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
     if not text:
         return []
-    sentences = [part.strip() for part in re.split(r"(?<=[.!?。！？])\s+|\n+", text) if part.strip()]
+    sentences = [part.strip() for part in re.split(r"(?<=[.!?\u3002\uff01\uff1f])\s+|\n+", text) if part.strip()]
     chunks: list[str] = []
     for sentence in sentences:
         remaining = sentence
