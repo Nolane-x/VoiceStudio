@@ -131,6 +131,13 @@ def write_captions(rows: list[dict], output: Path) -> None:
     )
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
 def run_ffmpeg(command: list[str], *, timeout: int = 900) -> None:
     try:
         result = subprocess.run(
@@ -271,7 +278,7 @@ def validate_final_audio(path: Path) -> dict:
         "peak": round(peak, 6),
         "rms": round(rms, 6),
         "clipped_ratio": round(clipped_ratio, 8),
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "sha256": sha256_file(path),
         "checks": "passed",
     }
 
@@ -445,7 +452,8 @@ def deterministic_zip(output: Path, archive: Path) -> None:
             info.date_time = (2020, 1, 1, 0, 0, 0)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
-            zf.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=4)
+            with path.open("rb") as source, zf.open(info, "w") as target:
+                shutil.copyfileobj(source, target, length=1024 * 1024)
 
 
 def render_job(payload: dict, output: Path) -> int:
