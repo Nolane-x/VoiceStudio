@@ -120,11 +120,7 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-
+class ExpandedProviderContractTests(unittest.TestCase):
     def test_eleven_v4_is_a_separate_high_priority_synthesis_candidate(self):
         registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
         candidate = next(row for row in registry["production_candidates"] if row["id"] == "elevenlabs-eleven-v4")
@@ -158,3 +154,26 @@ if __name__ == "__main__":
         self.assertEqual(candidate["language_codes"], ["vi", "en"])
         self.assertEqual(candidate["page_size_max"], 1000)
         self.assertIn("prompted and replicated", candidate["note"])
+
+
+    def test_paid_eleven_v4_benchmark_is_private_confirmed_and_bounded(self):
+        workflow = (ROOT / ".github" / "workflows" / "elevenlabs-v4-marketplace-benchmark.yml").read_text(encoding="utf-8")
+        script = (ROOT / "scripts" / "benchmark_elevenlabs_v4_marketplace.py").read_text(encoding="utf-8")
+        self.assertIn("github.event.repository.private == true", workflow)
+        self.assertIn("inputs.confirm_paid_api_usage == true", workflow)
+        self.assertIn("default: false", workflow)
+        self.assertIn("MAX_TOTAL_REQUESTS = 8", script)
+        self.assertIn("if not args.confirm_paid_api_usage", script)
+        self.assertIn("do not retry until usage/history is checked", script)
+
+    def test_gemini_voice_discovery_is_metadata_only(self):
+        workflow = (ROOT / ".github" / "workflows" / "discover-gemini-prebuilt-voices.yml").read_text(encoding="utf-8")
+        script = (ROOT / "scripts" / "discover_gemini_prebuilt_voices.py").read_text(encoding="utf-8")
+        self.assertIn("GEMINI_API_KEY", workflow)
+        self.assertIn("type=prebuilt", script)
+        self.assertNotIn("/interactions", script)
+        self.assertNotIn("generateContent", script)
+
+
+if __name__ == "__main__":
+    unittest.main()
