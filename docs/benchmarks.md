@@ -133,7 +133,27 @@ RTFx is audio duration divided by warmed TTS synthesis time; higher means faster
 
 The separate blind-review ZIP contains only anonymized samples,
 reference text, a rating form and neutral sample IDs; the page and WAV paths
-contain no model identity, ASR transcript or objective score. The full analyst
+contain no model identity, ASR transcript or objective score. The separate analyst
 artifact retains the mapping in `benchmark.json`. After listening, export the
 scores and join `blind_sample_id` to that manifest. **No engine has been
 promoted or replaced by this run.**
+
+## Fully anonymized listening package verification
+
+The follow-up [Actions run #21](https://github.com/Nolane-x/VoiceStudio/actions/runs/41287037138)
+verified the neutral-name blind-review package against the complete analyst manifest:
+
+- 24/24 samples rendered; zero sample failures.
+- All 24 WAVs are mono 48 kHz PCM-24 and their SHA-256 values match the manifest.
+- All 24 saved WAVs passed VoiceStudio AudioSeal watermark verification.
+- All 24 Faster-Whisper small CPU diagnostics completed.
+- The blind ZIP contains 24 neutral-name WAVs, the HTML listening gallery, the blank CSV score sheet and review instructions; its CSV IDs exactly match the manifest IDs.
+- An independent content check found no engine names, voice IDs, model revision map, ASR output or quality metrics in the blind ZIP.
+
+Blind ZIP SHA-256: `18503c3a7227888584f28c4be5e8b1c86e984d98d46da87fbe46339816a3000c`.
+
+The following workflow change separates that blind ZIP from the analyst manifest
+as two Actions artifacts, avoiding duplicate WAV payloads. Its Actions
+verification is tracked in [run #25](https://github.com/Nolane-x/VoiceStudio/actions/runs/41288807370).
+Human listening has not yet been completed; the manifest continues to mark it
+as required.
