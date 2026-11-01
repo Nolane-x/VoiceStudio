@@ -217,3 +217,18 @@ python scripts/merge_tts_blind_scores.py \
 The merger accepts both legacy score sheets without a reviewer column and new multi-reviewer sheets. It validates the blind sample ID, language and scenario against the manifest; rejects duplicate reviewer/sample pairs, partial ratings and scores outside 1–5; and reports overall and per-scenario ranks separately for VI and EN. Overall preference is the mean of naturalness, pronunciation, prosody and emotional fit. Sample counts, listener counts, score spread and source rights status remain visible. Human ranking does not upgrade a license or clear a source for commercial use.
 
 The benchmark gallery exports a reviewer code so separate listeners can score the same blind set independently. Keep the mapping manifest private until scoring closes; send listeners only the anonymized archive. Ratings are cohort-specific preference data, not standardized MOS or a universal guarantee.
+
+
+### xAI Grok built-in TTS voice discovery
+
+VoiceStudio indexes the xAI built-in voice set via `GET /v1/tts/voices`. The endpoint returns the provider-managed built-in IDs and names. xAI exposes custom/user-created voices separately through `GET /v1/custom-voices`; VoiceStudio intentionally never calls that endpoint in its public discovery workflow and never exports another user's custom voice IDs.
+
+The current xAI Text-to-Speech documentation lists 20 supported language codes, including Vietnamese (`vi`) and English (`en`), and states that built-in voices can speak any supported language. The official voice overview publishes tone/use-case descriptions for the built-in roster. These profiles are useful for initial audition selection, not proof of native-level pronunciation or listener preference.
+
+- `GET /v1/tts/voices` supplies the dynamic ID/name inventory. The weekly workflow stores a metadata snapshot and an HTML catalogue.
+- The voice profiles in `scripts/discover_grok_builtin_voices.py` are limited to descriptions published by xAI; future unknown IDs remain in the catalogue with no guessed persona.
+- The endpoint has no usage or clone counters. The catalogue therefore does not claim that a voice is popular or rank voices by adoption.
+- xAI documents TTS at $15 per million input characters. The manual benchmark prints an estimated maximum batch cost and is gated by a private repository, the `XAI_API_KEY` secret, explicit `confirm_paid_api_usage=true`, and a maximum of eight synthesis requests.
+- Only the provider-managed built-ins are tested. Custom voices and celebrity/creator imitation are outside this workflow.
+
+The list is a provider-managed menu, not a catalogue of thousands of independently recorded/licensed speaker identities. Every voice still needs matched Vietnamese and English blind listening, number and name pronunciation checks, style consistency and long-form stability review before production use.
