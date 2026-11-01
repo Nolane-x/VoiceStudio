@@ -236,7 +236,7 @@ The list is a provider-managed menu, not a catalogue of thousands of independent
 
 ### Grok built-in voice inventory and audition workflow
 
-The current xAI Voice Overview publishes 25 built-in voice options: Carina, Zagan, Helix, Orion, Luna, Iris, Altair, Zenith, Perseus, Helios, Lux, Kepler, Rigel, Cosmo, Celeste, Ursa, Sirius, Lumen, Castor, Naksh, Atlas, Ara, Eve, Leo, Rex and Sal. Their tone/use-case descriptions are stored in `voice-library/grok-builtin-studio-voices.json`. These are 25 provider-managed voice choices, not 25 separately licensed human speaker recordings or 25 independently consented voice identities.
+The current xAI Voice Overview publishes 26 built-in voice options: Carina, Zagan, Helix, Orion, Luna, Iris, Altair, Zenith, Perseus, Helios, Lux, Kepler, Rigel, Cosmo, Celeste, Ursa, Sirius, Lumen, Castor, Naksh, Atlas, Ara, Eve, Leo, Rex and Sal. Their tone/use-case descriptions are stored in `voice-library/grok-builtin-studio-voices.json`. These are 26 provider-managed voice choices, not 25 separately licensed human speaker recordings or 25 independently consented voice identities.
 
 The read-only discovery workflow calls `GET /v1/tts/voices` when `XAI_API_KEY` is configured. Without the key, it uploads the static official documentation snapshot and clearly states that the live refresh was skipped. It never calls `GET /v1/custom-voices`; user-created voice IDs are private to their owner and are outside this catalogue.
 
