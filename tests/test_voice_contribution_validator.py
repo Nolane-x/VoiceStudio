@@ -104,19 +104,19 @@ def test_minor_or_non_contributor_speaker_is_rejected(tmp_path):
     manifest = valid_manifest()
     manifest["adult_attested"] = False
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
-    assert any("True was expected" in issue for issue in issues)
+    assert any("expected constant True" in issue for issue in issues)
 
     manifest = valid_manifest()
     manifest["speaker_is_contributor"] = False
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
-    assert any("True was expected" in issue for issue in issues)
+    assert any("expected constant True" in issue for issue in issues)
 
 
 def test_public_manifest_rejects_personal_information_and_audio_urls(tmp_path):
     manifest = valid_manifest()
     manifest["email"] = "person@example.com"
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
-    assert any("Additional properties are not allowed" in issue for issue in issues)
+    assert any("additional properties are not allowed" in issue for issue in issues)
 
     manifest = valid_manifest()
     manifest["sample_asset_ref"] = "https://example.com/raw-voice.wav"
@@ -176,11 +176,11 @@ def test_malformed_nested_values_return_validation_errors_without_crashing(tmp_p
     manifest["consent"] = "not-an-object"
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
     assert issues
-    assert any("not of type 'object'" in issue for issue in issues)
+    assert any("expected object" in issue for issue in issues)
 
     manifest = valid_manifest()
     manifest["rights_review"] = []
     manifest["quality_review"] = "approved"
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
     assert issues
-    assert any("not of type 'object'" in issue for issue in issues)
+    assert any("expected object" in issue for issue in issues)
