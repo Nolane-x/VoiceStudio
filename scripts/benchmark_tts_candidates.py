@@ -454,9 +454,9 @@ def run(args) -> int:
     )
     with (output / "human-review.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["sample_file", "language", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
+        writer.writerow(["blind_sample_id", "language", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
         for row in results:
-            writer.writerow([row["audio_file"], row["language"], row["scenario_id"], "", "", "", "", ""])
+            writer.writerow([row["blind_sample_id"], row["language"], row["scenario_id"], "", "", "", "", ""])
     create_blind_review_archive(output)
     archive = output / "tts-candidate-benchmark.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4) as bundle:
