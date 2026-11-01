@@ -10,6 +10,7 @@ SCHEMA = ROOT / "voice-library" / "video-job.schema.json"
 SAMPLES = [
     ROOT / "voice-library" / "video-job.example.vi.json",
     ROOT / "voice-library" / "video-job.example.en.json",
+    ROOT / "voice-library" / "video-job.example.en-kokoro.json",
 ]
 SPEC = importlib.util.spec_from_file_location("render_video_voice", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
@@ -57,6 +58,28 @@ def test_narration_job_has_bounded_size_and_unique_segment_ids():
         assert "unique" in str(exc).lower()
     else:
         raise AssertionError("duplicate segment IDs must be rejected")
+
+
+def test_kokoro_is_english_only_and_uses_a_canonical_curated_voice_id():
+    payload = json.loads((ROOT / "voice-library" / "video-job.example.en-kokoro.json").read_text(encoding="utf-8"))
+    assert payload["engine"] == "kokoro"
+    assert payload["language"] == "en"
+    assert payload["voice_id"] == "en-kokoro-v1-af_heart"
+    invalid = dict(payload)
+    invalid["language"] = "vi"
+    try:
+        MODULE.validate_job_payload(invalid)
+    except Exception:
+        pass
+    else:
+        raise AssertionError("Kokoro Vietnamese jobs must not be accepted")
+
+def test_renderer_dispatches_kokoro_to_the_pinned_voice_registry():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert 'elif engine == "kokoro"' in source
+    assert "builder.prepare_kokoro()" in source
+    assert "builder.render_kokoro_wav" in source
+    assert "upstream_quality_grade" in source
 
 
 def test_watermarking_is_streamed_and_each_saved_block_is_rechecked():
