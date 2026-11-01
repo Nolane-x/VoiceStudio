@@ -53,6 +53,26 @@
       "note": "Eleven v4 is the current flagship quality/expressive generation target for creator narration, audiobooks and multi-speaker dialogue. The model family documents Vietnamese and English among 90+ languages. Use the Text-to-Dialogue API for eleven_v4; current endpoint guidance recommends keeping all input text at or below 2,000 characters per request for reliable generation. Benchmark actual voice IDs in both languages; voice-design blueprints are not model voice IDs."
     },
     {
+      "id": "xai-grok-builtin-tts-voice-library",
+      "provider": "xAI",
+      "kind": "provider_managed_builtin_voice_catalog",
+      "discovery_endpoint": "GET /v1/tts/voices",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "supported_language_count": 20,
+      "catalog_refresh": "weekly GitHub Actions metadata snapshot",
+      "access": "XAI_API_KEY; metadata-only endpoint",
+      "public_redistribution": "not-granted-by-this-registry",
+      "custom_voice_endpoint_excluded": "GET /v1/custom-voices",
+      "status": "high_priority_builtin_voice_discovery_and_paid_benchmark_candidate",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech",
+      "voice_overview": "https://docs.x.ai/developers/model-capabilities/audio/voice",
+      "api_reference": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+      "note": "The official built-in endpoint returns provider-managed voice IDs and names. xAI's TTS language reference includes Vietnamese and English among 20 BCP-47 codes and states that built-in voices can speak any supported language. The API has no popularity counters; VoiceStudio does not infer adoption from listing order. Custom voices are stored in a separate endpoint and are not queried."
+    },
+    {
       "id": "google-gemini-prebuilt-voice-library",
       "provider": "Google Gemini API",
       "kind": "provider_hosted_prebuilt_voice_catalog",
@@ -619,6 +639,16 @@
       "id": "google-gemini-tss-interactions",
       "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
       "fact": "Gemini 3.8 TTS uses POST /v1beta/interactions with model, user_input text blocks, speech_metadata annotations, response_format audio, and generation_config.speech_config; unary audio returns WAV (24 kHz mono 16-bit default)."
+    },
+    {
+      "id": "xai-list-built-in-tts-voices",
+      "source": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+      "fact": "GET /v1/tts/voices returns provider-managed built-in voice IDs and names. User-created custom voices are returned separately by GET /v1/custom-voices."
+    },
+    {
+      "id": "xai-grok-tts-language-and-price",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech",
+      "fact": "POST /v1/tts accepts text, voice_id and BCP-47 language; officially supports 20 languages including vi and en; text max 15,000 characters; text normalization and speech tags are supported. Official voice docs list $15 per one million input characters; rate and plan conditions may change."
     }
   ],
   "market_signal_sources": [
@@ -693,6 +723,18 @@
       "scope": "provider-managed Gemini TTS voice discovery and metadata",
       "refresh": "weekly GitHub Actions snapshot of GET /v1beta/voices",
       "interpretation": "The API provides descriptive metadata, not marketplace usage counts or public adoption rank. VoiceStudio does not claim popularity for Gemini options without independent evidence."
+    },
+    {
+      "id": "xai-grok-builtin-voice-list",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/voice",
+      "signal_types": [
+        "provider_builtin_voice_availability",
+        "provider_documented_voice_tone",
+        "provider_documented_use_case"
+      ],
+      "scope": "provider-managed built-in voice inventory",
+      "refresh": "weekly metadata snapshot",
+      "interpretation": "The list has no adoption counters or listener ratings. Provider voice descriptions are discovery hints only; all voices require native-language blind auditions."
     }
   ],
   "market_snapshots": {
