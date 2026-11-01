@@ -232,3 +232,20 @@ The current xAI Text-to-Speech documentation lists 20 supported language codes, 
 - Only the provider-managed built-ins are tested. Custom voices and celebrity/creator imitation are outside this workflow.
 
 The list is a provider-managed menu, not a catalogue of thousands of independently recorded/licensed speaker identities. Every voice still needs matched Vietnamese and English blind listening, number and name pronunciation checks, style consistency and long-form stability review before production use.
+
+
+### Grok built-in voice inventory and audition workflow
+
+The current xAI Voice Overview publishes 25 built-in voice options: Carina, Zagan, Helix, Orion, Luna, Iris, Altair, Zenith, Perseus, Helios, Lux, Kepler, Rigel, Cosmo, Celeste, Ursa, Sirius, Lumen, Castor, Naksh, Atlas, Ara, Eve, Leo, Rex and Sal. Their tone/use-case descriptions are stored in `voice-library/grok-builtin-studio-voices.json`. These are 25 provider-managed voice choices, not 25 separately licensed human speaker recordings or 25 independently consented voice identities.
+
+The read-only discovery workflow calls `GET /v1/tts/voices` when `XAI_API_KEY` is configured. Without the key, it uploads the static official documentation snapshot and clearly states that the live refresh was skipped. It never calls `GET /v1/custom-voices`; user-created voice IDs are private to their owner and are outside this catalogue.
+
+The manual Grok benchmark tests the selected built-in voice in Vietnamese and/or English using one composite request with four matched passages (story, numbers, conversation and long-form narration). One audio file per voice is produced so the run can compare more voices while keeping request count bounded. Reviewers score the composite voice output overall; this does **not** provide separate per-scenario rankings. The generic blind-score merger joins the sample ID, language and mixed-corpus scenario to the private manifest.
+
+- The manual workflow is gated on a private repository, `XAI_API_KEY`, and explicit `confirm_paid_api_usage=true`.
+- At most four voices per selected language and eight total POST requests can be sent in one run.
+- Each request's text is capped at 3,000 characters. At the currently documented xAI rate of USD 15 per million input characters, the hard theoretical ceiling for eight maximum-length requests is USD 0.36, before any provider-side taxes or account-specific charges.
+- The runner prints its calculated character count and estimated charge before sending the requests; ambiguous POST outcomes are never retried automatically.
+- Outputs are normalized to 48 kHz/24-bit WAV and must pass the VoiceStudio watermark detector and audio validator. Blind audio is a separate artifact from the private voice-ID mapping.
+
+The built-in endpoint has no usage counters. VoiceStudio does not claim the most frequently listed item is the most popular or best sounding. A high-quality native-language blind review, number/date pronunciation checks, long-form continuity and provider-plan rights review remain mandatory before choosing a production voice.
