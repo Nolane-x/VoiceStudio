@@ -32,6 +32,14 @@ def _record(blind_id="candidate-001"):
         ),
         "shareability": "not_shareable_to_public_elevenlabs_voice_library",
         "generation_state": "preview_generated_not_saved_as_persistent_voice",
+        "human_review": {
+            "approved": True,
+            "scores": {
+                "naturalness": 5, "pronunciation": 5, "accent_fit": 5,
+                "prosody": 4, "distinctiveness": 4, "overall": 5
+            },
+            "notes": "Approved by human listener",
+        },
     }
 
 
@@ -129,6 +137,35 @@ def test_payload_creates_account_voice_without_publication():
     assert payload["voice_name"].startswith("VS-VI-")
     assert payload["labels"]["review"] == "human-approved"
     assert "celebrity" not in payload["voice_name"].lower()
+
+
+def test_payload_refuses_to_create_a_voice_without_human_approval_and_qualified_scores():
+    record = _record()
+    record.pop("human_review")
+    try:
+        MODULE.build_voice_payload(record)
+    except ValueError as exc:
+        assert "explicit human approval" in str(exc)
+    else:
+        raise AssertionError("Promotion without explicit approval must be blocked")
+
+    record = _record()
+    record["human_review"]["approved"] = False
+    try:
+        MODULE.build_voice_payload(record)
+    except ValueError as exc:
+        assert "explicit human approval" in str(exc)
+    else:
+        raise AssertionError("Unapproved preview must never be promoted")
+
+    record = _record()
+    record["human_review"]["scores"]["pronunciation"] = 3
+    try:
+        MODULE.build_voice_payload(record)
+    except ValueError as exc:
+        assert "do not meet promotion thresholds" in str(exc)
+    else:
+        raise AssertionError("Low pronunciation scores must block promotion")
 
 
 class _FakeResponse:

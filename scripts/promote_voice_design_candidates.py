@@ -173,6 +173,24 @@ def build_voice_payload(record: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(f"{blind_id}: only Vietnamese and English voices are supported")
     if not 20 <= len(description) <= 1000:
         raise ValueError(f"{blind_id}: voice_description must contain 20-1000 characters")
+    review = record.get("human_review")
+    if not isinstance(review, dict) or review.get("approved") is not True:
+        raise ValueError(f"{blind_id}: persistent voice creation requires explicit human approval")
+    scores = review.get("scores")
+    if not isinstance(scores, dict) or not set(SCORE_FIELDS).issubset(scores):
+        raise ValueError(f"{blind_id}: human review must contain all required scores")
+    try:
+        numeric_scores = {field: float(scores[field]) for field in SCORE_FIELDS}
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{blind_id}: human review scores must be numeric") from exc
+    if any(not 1.0 <= value <= 5.0 for value in numeric_scores.values()):
+        raise ValueError(f"{blind_id}: human review scores must be between 1 and 5")
+    thresholds = {
+        "overall": 4.0, "naturalness": 4.0, "pronunciation": 4.0,
+        "accent_fit": 4.0, "prosody": 3.0, "distinctiveness": 3.0,
+    }
+    if any(numeric_scores[field] < minimum for field, minimum in thresholds.items()):
+        raise ValueError(f"{blind_id}: human review scores do not meet promotion thresholds")
     if record.get("shareability") != "not_shareable_to_public_elevenlabs_voice_library":
         raise ValueError(f"{blind_id}: refusing to promote a record with unexpected sharing rights")
 
