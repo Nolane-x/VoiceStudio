@@ -183,3 +183,6 @@ VoiceStudio includes an optional marketplace-discovery workflow for public Eleve
 
 
 Human review of Eleven v4 blind auditions can be merged back into a ranked Vietnamese/English voice report with `scripts/merge_elevenlabs_v4_blind_scores.py`; see `VOICE_EXPANSION.md` for validation rules and the command.
+
+
+Google Gemini prebuilt Vietnamese and English voice metadata can be indexed with the read-only `Discover Gemini prebuilt Vietnamese and English voices` Actions workflow. It filters private prompted/replicated voices, does not synthesize audio, and does not grant redistribution rights. See `VOICE_EXPANSION.md` for scope and plan requirements.
