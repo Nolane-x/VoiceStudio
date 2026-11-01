@@ -122,3 +122,29 @@ class VoiceLibraryContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+    def test_eleven_v4_is_a_separate_high_priority_synthesis_candidate(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "elevenlabs-eleven-v4")
+        self.assertEqual(candidate["model_id"], "eleven_v4")
+        self.assertIn("vi", candidate["language_codes"])
+        self.assertIn("en", candidate["language_codes"])
+        self.assertEqual(candidate["recommended_api"], "POST /v1/text-to-dialogue")
+        self.assertNotEqual(candidate["model_id"], "eleven_ttv_v3")
+
+    def test_elevenlabs_marketplace_registry_records_separate_adoption_and_quality_signals(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "elevenlabs-shared-voice-marketplace")
+        self.assertEqual(candidate["discovery_endpoint"], "GET /v1/shared-voices")
+        self.assertIn("high_quality", candidate["note"])
+        self.assertIn("famous", candidate["note"])
+        self.assertFalse(any("celebrity" in row["id"] for row in registry["production_candidates"]))
+
+    def test_vietnamese_voice_arena_snapshot_is_source_attributed(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        snapshot = registry["market_snapshots"]
+        self.assertEqual(snapshot["source"], "https://voicearena.com/tts-leaderboard/vietnamese")
+        self.assertEqual(snapshot["overall_vietnamese_top_models"][0]["model"], "Gemini 3.8 Flash-Lite TTS")
+        self.assertEqual(snapshot["overall_vietnamese_top_models"][3]["model"], "Eleven v4")
