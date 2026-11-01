@@ -44,8 +44,23 @@ jobs:
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: |
-          python scripts/discover_grok_builtin_voices.py \
-            --output dist/grok-builtin-voices
+          if [ -n "$XAI_API_KEY" ]; then
+            python scripts/discover_grok_builtin_voices.py \
+              --output dist/grok-builtin-voices
+          else
+            mkdir -p dist/grok-builtin-voices
+            cp voice-library/grok-builtin-studio-voices.json dist/grok-builtin-voices/catalog.json
+            cat > dist/grok-builtin-voices/README.md <<'EOF'
+          # Grok built-in voice discovery — static provider documentation snapshot
+
+          The official xAI List TTS Voices endpoint requires XAI_API_KEY, which
+          is not configured in repository Actions secrets. This artifact falls
+          back to the checked-in 25-option provider documentation snapshot.
+          Dynamic API refresh was skipped. No audio was generated or paid TTS
+          request sent. Configure XAI_API_KEY and rerun for a live API snapshot.
+          EOF
+            echo "::notice::XAI_API_KEY is not configured; uploaded the static official voice menu snapshot."
+          fi
 
       - name: Upload Grok built-in voice metadata snapshot or setup report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
