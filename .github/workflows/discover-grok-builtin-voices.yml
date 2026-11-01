@@ -8,6 +8,7 @@ on:
       - .github/workflows/discover-grok-builtin-voices.yml
       - scripts/discover_grok_builtin_voices.py
       - tests/test_grok_builtin_voice_discovery.py
+      - voice-library/grok-builtin-studio-voices.json
   schedule:
     - cron: "55 8 * * 1"
   workflow_dispatch:
@@ -55,7 +56,7 @@ jobs:
 
           The official xAI List TTS Voices endpoint requires XAI_API_KEY, which
           is not configured in repository Actions secrets. This artifact falls
-          back to the checked-in 25-option provider documentation snapshot.
+          back to the checked-in 26-option provider documentation snapshot.
           Dynamic API refresh was skipped. No audio was generated or paid TTS
           request sent. Configure XAI_API_KEY and rerun for a live API snapshot.
           EOF
