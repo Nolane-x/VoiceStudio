@@ -256,6 +256,35 @@
       "public_redistribution": "not_granted_by_this_registry",
       "status": "provider_integration_candidate",
       "source": "https://api-docs.vbee.vn/vbee-api/text-to-speech/realtime-api"
+    },
+    {
+      "id": "consented-original-human-voice-contributions",
+      "provider": "VoiceStudio community contribution pipeline",
+      "kind": "original_contributor_recordings",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "intake_schema": "voice-library/voice-contribution.schema.json",
+      "validator": "scripts/validate_voice_contribution.py",
+      "intake_directory": "voice-library/contributions/",
+      "status": "intake_contract_ready_no_contributions_claimed",
+      "eligibility": "adult contributor (18+) who is the recorded speaker",
+      "required_permissions": [
+        "tts_synthesis",
+        "voice_replication"
+      ],
+      "separate_opt_ins": [
+        "commercial_use",
+        "public_preview",
+        "public_distribution",
+        "model_training",
+        "derivative_voice_generation"
+      ],
+      "storage_policy": "only pseudonymous manifests and opaque vault references in public Git; signed consent, identity verification and raw audio remain in private access-controlled storage",
+      "production_gate": "approved rights review plus approved native-language pronunciation and long-form stability review",
+      "source": "https://github.com/Nolane-x/VoiceStudio/blob/main/voice-library/contributions/README.md",
+      "note": "This intake contract is an infrastructure prerequisite for building a large original voice actor library. It does not mean any contributors or usable voice assets have already been collected. Public figures and other named speakers must not be imitated without that exact speaker's explicit authorization."
     }
   ],
   "research_only_or_blocked": [
