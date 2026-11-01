@@ -131,7 +131,7 @@ def test_request_uses_documented_shared_voice_filters(monkeypatch):
 
 def test_discovery_report_preserves_provider_total_count():
     def fake_fetcher(*, language, category, sort, page, api_key=None):
-        return {"voices": [], "has_more": page == 0, "total_count": 247}
+        return {"voices": [], "has_more": True, "total_count": 247}
 
     _, queries = MODULE.collect_catalog(["vi"], 2, fetcher=fake_fetcher)
     assert len(queries) == 6
