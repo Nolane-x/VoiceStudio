@@ -32,12 +32,20 @@ SCRIPTS = {
          "A quiet decision can change the direction of an entire story. Today, we will follow the small details that reveal why that moment mattered, and what happened next."),
         ("numbers", "Numbers, names and punctuation",
          "At 7:45 in the morning, Linh's research team recorded 3 unusual signals near the northern coast. The result was surprising: the distance was 12.6 kilometres, not 21.6."),
+        ("conversation", "Conversational podcast delivery",
+         "Before we get into the details, here's a question worth keeping in mind: when was the last time a small change made your everyday routine noticeably better?"),
+        ("longform", "Long-form documentary narration",
+         "Imagine arriving in a coastal town just before sunrise. The streets are quiet, the market is beginning to open, and the first boats are returning to shore. Nothing dramatic happens at first. Instead, the story unfolds through ordinary details: a familiar greeting, the sound of waves against the harbour wall, and a shopkeeper preparing the day's first cup of tea. A good narrator needs to make every moment clear without rushing the listener."),
     ],
     "vi": [
         ("story", "Văn kể chuyện",
          "Đôi khi, một lựa chọn nhỏ có thể thay đổi cả hành trình. Hôm nay, chúng ta sẽ cùng khám phá những chi tiết tưởng như bình thường, nhưng lại quyết định điều gì xảy ra tiếp theo."),
         ("numbers", "Số, tên riêng và dấu câu",
          "Vào lúc 7 giờ 45 phút sáng, nhóm nghiên cứu của Linh ghi nhận ba tín hiệu bất thường gần bờ biển phía Bắc. Khoảng cách đo được là 12,6 ki-lô-mét, chứ không phải 21,6."),
+        ("conversation", "Hội thoại tự nhiên",
+         "Trước khi bắt đầu, hãy thử nghĩ về một điều rất quen thuộc: lần gần nhất bạn thay đổi một thói quen nhỏ và nhận ra cuộc sống của mình dễ chịu hơn là khi nào?"),
+        ("longform", "Thuyết minh dài",
+         "Hãy tưởng tượng bạn đến một thị trấn ven biển khi mặt trời vừa ló dạng. Những con phố còn yên tĩnh, khu chợ bắt đầu mở cửa, và vài chiếc thuyền đầu tiên trở về sau chuyến ra khơi. Không có sự kiện bất ngờ nào xảy ra. Câu chuyện được tạo nên từ những chi tiết giản dị: một lời chào quen thuộc, tiếng sóng vỗ nhẹ vào bờ kè, và người bán hàng chuẩn bị tách trà đầu tiên trong ngày. Người kể chuyện cần giữ nhịp điệu rõ ràng, tự nhiên, để người nghe muốn ở lại đến cuối cùng."),
     ],
 }
 
