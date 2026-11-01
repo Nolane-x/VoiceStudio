@@ -146,30 +146,21 @@ def _stable_seed(profile_id: str, dimensions: dict[str, str], used: set[int]) ->
 
 def _voice_description(language: str, accent: tuple[str, str, str], dimensions: dict[str, str], archetype: tuple[str, str, str]) -> str:
     language_rule = (
-        "Speak Vietnamese fluently and preserve all six Vietnamese tones, final consonants, "
-        "natural sentence melody, and regional vowel/consonant distinctions."
+        "Preserve all six Vietnamese tones, clear final consonants, natural sentence melody, "
+        "and the target regional pronunciation."
         if language == "vi"
-        else "Speak fluent English with consistent accent placement, natural vowel quality, "
-             "clear consonants, and idiomatic sentence stress."
+        else "Use accurate English vowels, clear consonants, stable accent placement, "
+             "and natural sentence stress."
     )
-    role = dimensions["use_case"].replace("-", " ")
     return (
-        "Create an original synthetic voice identity for professional narration. "
-        f"Language: {'Vietnamese' if language == 'vi' else 'English'}. "
-        f"Accent target: {accent[1]}. {accent[2]} "
-        f"Voice presentation: {dimensions['presentation'].replace('-', ' ')}; "
-        f"perceived age: {dimensions['perceived_age'].replace('-', ' ')}; "
-        f"timbre: {dimensions['timbre'].replace('-', ' ')}; "
-        f"pitch: {dimensions['pitch'].replace('-', ' ')}. "
-        f"Intended role: {role}. "
-        f"Market archetype: {archetype[1]}. {archetype[2]} "
-        f"Delivery: {dimensions['delivery'].replace('-', ' ')}; "
-        f"pacing: {dimensions['pace'].replace('-', ' ')}. "
-        f"{language_rule} Keep the speaker identity stable across sentences, with natural "
-        "breathing, believable phrasing, precise articulation, and no robotic cadence. "
-        "Do not imitate, resemble, name, or reference any real person, celebrity, public figure, "
-        "existing commercial voice, or copyrighted character. This must be a distinct, original "
-        "synthetic persona."
+        f"Create an original {'Vietnamese' if language == 'vi' else 'English'} synthetic voice. "
+        f"Accent: {accent[1]}; {accent[2]} "
+        f"Vocal profile: {dimensions['presentation']}, {dimensions['perceived_age']}, "
+        f"{dimensions['timbre']}, {dimensions['pitch']} pitch. "
+        f"Persona style: {archetype[1]}; {archetype[2]} "
+        f"Delivery: {dimensions['delivery']}; pace: {dimensions['pace']}. "
+        f"{language_rule} "
+        "Do not imitate any real person, public figure, celebrity, creator, or copyrighted character."
     )
 
 
