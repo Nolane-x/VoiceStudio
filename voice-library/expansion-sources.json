@@ -70,7 +70,13 @@
       "source": "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech",
       "voice_overview": "https://docs.x.ai/developers/model-capabilities/audio/voice",
       "api_reference": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
-      "note": "The official built-in endpoint returns provider-managed voice IDs and names. xAI's TTS language reference includes Vietnamese and English among 20 BCP-47 codes and states that built-in voices can speak any supported language. The API has no popularity counters; VoiceStudio does not infer adoption from listing order. Custom voices are stored in a separate endpoint and are not queried."
+      "note": "The official built-in endpoint returns provider-managed voice IDs and names. xAI's TTS language reference includes Vietnamese and English among 20 BCP-47 codes and states that built-in voices can speak any supported language. The API has no popularity counters; VoiceStudio does not infer adoption from listing order. Custom voices are stored in a separate endpoint and are not queried. The official Voice Overview currently describes 25 built-in profiles. VoiceStudio keeps a static documentation snapshot so the menu remains browsable without an API key, while the authenticated API snapshot is refreshed when XAI_API_KEY is available.",
+      "static_voice_snapshot": "voice-library/grok-builtin-studio-voices.json",
+      "documented_builtin_voice_count": 25,
+      "paid_benchmark_workflow": ".github/workflows/grok-tts-builtin-benchmark.yml",
+      "paid_benchmark_max_requests": 8,
+      "paid_benchmark_max_characters_per_request": 3000,
+      "documented_price_usd_per_million_characters": 15
     },
     {
       "id": "google-gemini-prebuilt-voice-library",
