@@ -68,22 +68,24 @@ self-hosted GPU is required.
 
 The artifact `tts-candidate-benchmark-<run_id>` contains:
 
-- `blind-listening-review.zip` — a **shareable blind-review package** with
-  neutral `sample-001.wav` filenames, reference scripts, browser gallery
+- `blind-listening-review.zip` — a **shareable blind-review package**
+  with neutral `sample-001.wav` filenames, reference scripts, browser gallery
   and blank score sheet. It contains no engine/voice mapping, ASR output or
   objective benchmark metrics.
 - `index.html` and `blind-samples/*.wav` — the same blind gallery and
-  neutral-name audio inside the full artifact.
+  neutral-name audio inside the full artifact. The page itself contains no
+  engine identity, ASR transcript, objective score or reveal control.
 - `human-review.csv` — ratings keyed by neutral `blind_sample_id`.
 - `benchmark.json` — the separate analyst mapping from blind sample IDs to
   model/voice, with revisions, checksums, audio measurements, ASR diagnostics,
   rights notices and per-sample failures.
 - `tts-candidate-benchmark.zip` — the full deterministic analyst bundle.
 
-Share only `blind-listening-review.zip` with listeners. After collecting
-scores, join `blind_sample_id` to the separate `benchmark.json` to reveal
-which engine produced each voice. Do not share the full analyst bundle before
-the blind review is complete.
+Share only `blind-listening-review.zip` with listeners. The WAV filenames
+and HTML contain only neutral sample IDs; the ZIP does not include the mapping.
+After collecting scores, join `blind_sample_id` to the separate
+`benchmark.json` in the analyst package to reveal which engine produced each
+voice. Do not share the full analyst bundle before the blind review is complete.
 
 
 The current comparison includes Piper LibriTTS High (English baseline),
@@ -133,8 +135,8 @@ RTFx is audio duration divided by warmed TTS synthesis time; higher means faster
 **Current engineering decision:** retain VieNeu as the Vietnamese production default. Its mean ASR diagnostics were better than the Supertonic aggregate in this small sample; Supertonic F3 was much closer than M1, but the engine remains comparison-only because its OpenRAIL-M terms need separate review. For English, Kokoro and Supertonic showed similar ASR diagnostics, with Supertonic faster on this CPU runner; retain Kokoro as the existing production candidate until a blind human listening review is complete. Piper remains a baseline with restricted/uncleared rights evidence.
 
 The separate blind-review ZIP contains only anonymized samples,
-reference text, a rating form and neutral sample IDs; it has no model mapping,
-ASR transcript or objective score. The full analyst artifact retains the
-mapping in `benchmark.json`. After listening, export scores and join
-`blind_sample_id` to that manifest. **No engine has been promoted or replaced
-by this run.**
+reference text, a rating form and neutral sample IDs; the page and WAV paths
+contain no model identity, ASR transcript or objective score. The full analyst
+artifact retains the mapping in `benchmark.json`. After listening, export the
+scores and join `blind_sample_id` to that manifest. **No engine has been
+promoted or replaced by this run.**
