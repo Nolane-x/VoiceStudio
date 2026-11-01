@@ -150,6 +150,19 @@ def run_ffmpeg(command: list[str], *, timeout: int = 900) -> None:
         raise RuntimeError(f"FFmpeg exceeded its {timeout}s time limit") from exc
 
 
+def normalize_master(source: Path, target: Path) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("FFmpeg is required to master the narration")
+    run_ffmpeg([
+        ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+        "-i", str(source),
+        "-af", f"loudnorm=I={TARGET_LUFS}:TP={TRUE_PEAK_DBTP}:LRA={LRA}",
+        "-ar", str(SAMPLE_RATE), "-ac", "1",
+        "-c:a", "pcm_s24le", "-map_metadata", "-1",
+        str(target),
+    ], timeout=1800)
+
 def resample_video_part(source: Path, target: Path) -> None:
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
@@ -466,7 +479,7 @@ def render_job(payload: dict, output: Path) -> int:
         temporary = Path(temp_name)
         timeline, source = build_rendered_chunks(payload, builder, temporary)
         mastered = temporary / "master-loudnorm.wav"
-        builder.run_ffmpeg_normalize(source["raw_master"], mastered, SAMPLE_RATE, BITS)
+        normalize_master(source["raw_master"], mastered)
         final_wav = output / "narration.wav"
         watermark = stream_watermark_and_verify(
             mastered, final_wav, context=f"video-job.{payload.get('job_id', 'unnamed')}"
