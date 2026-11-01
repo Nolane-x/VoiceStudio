@@ -70,9 +70,7 @@ def test_extract_audio_concatenates_all_distinct_wav_blocks_in_order():
     second = wav_bytes(frame_count=2200, value=222)
     encoded_first = base64.b64encode(first).decode("ascii")
     encoded_second = base64.b64encode(second).decode("ascii")
-    # API may repeat output_audio data in steps; duplicate copies are deduped.
     result = MODULE.extract_audio_bytes({
-        "output_audio": {"data": encoded_first},
         "steps": [{
             "content": [
                 {"type": "audio", "data": encoded_first},
@@ -84,6 +82,19 @@ def test_extract_audio_concatenates_all_distinct_wav_blocks_in_order():
         assert merged.getframerate() == 24_000
         assert merged.getnchannels() == 1
         assert merged.getnframes() == 1500 + 2200
+
+
+def test_extract_audio_prefers_complete_output_audio_over_duplicated_step_reference():
+    full_audio = wav_bytes(frame_count=3100, value=111)
+    encoded = base64.b64encode(full_audio).decode("ascii")
+    result = MODULE.extract_audio_bytes({
+        "output_audio": {"data": encoded},
+        "steps": [{
+            "content": [{"type": "audio", "data": encoded}]
+        }],
+    })
+    with wave.open(io.BytesIO(result), "rb") as merged:
+        assert merged.getnframes() == 3100
 
 
 def test_extract_audio_rejects_incompatible_wav_segments_instead_of_dropping_one():
