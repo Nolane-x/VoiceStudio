@@ -275,8 +275,8 @@ def make_gallery(rows: list[dict], manifest: dict) -> str:
 <p class="scenario">{html.escape(row['scenario_title'])}</p>
 <audio controls preload="none" src="{html.escape(row['audio_file'], quote=True)}"></audio>
 <p><b>Reference</b><br>{html.escape(row['reference_text'])}</p>
-<p><b>ASR</b><br>{html.escape(row.get('asr', {}).get('transcript', ''))}</p>
-<div class="metrics"><span>{token_name}: {metrics.get('token_error_rate', 'n/a')}</span>
+<p class="asr objective"><b>ASR</b><br>{html.escape(row.get('asr', {}).get('transcript', ''))}</p>
+<div class="metrics objective"><span>{token_name}: {metrics.get('token_error_rate', 'n/a')}</span>
 <span>CER: {metrics.get('character_error_rate', 'n/a')}</span><span>RTFx: {row['rtfx']:.2f}</span></div>
 <div class="ratings">
 <label>Naturalness <input type="number" min="1" max="5" data-field="naturalness"></label>
@@ -293,6 +293,7 @@ header{{border-bottom:1px solid #8886;padding-bottom:18px}}.notice{{border:1px s
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:20px}}
 .sample{{border:1px solid #8888;border-radius:14px;padding:16px;min-width:0}}.meta{{font-size:.75rem;opacity:.7;letter-spacing:.08em}}
 .identity{{border:1px dashed #8888;border-radius:8px;padding:6px 9px;margin:8px 0;font-size:.85rem}}
+.objective{{display:none}}body.revealed .objective{{display:flex}}.asr.objective{{display:none}}body.revealed .asr.objective{{display:block}}
 audio{{width:100%;margin:10px 0}}.metrics{{display:flex;flex-wrap:wrap;gap:8px}}.metrics span{{border:1px solid #8888;border-radius:20px;padding:3px 9px;font-size:.8rem}}
 .ratings{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}label{{display:block;font-size:.85rem}}
 input,textarea{{box-sizing:border-box;width:100%;padding:7px;margin-top:4px;background:transparent;color:inherit;border:1px solid #8888;border-radius:7px}}
@@ -307,6 +308,7 @@ button{{padding:8px 12px;border:1px solid #8888;border-radius:8px;background:tra
 let revealed=false;
 document.getElementById('reveal').addEventListener('click',()=>{{
  revealed=!revealed;
+ document.body.classList.toggle('revealed',revealed);
  document.querySelectorAll('.sample').forEach(card=>{{
   const identity=card.querySelector('.identity');
   identity.hidden=!revealed;
