@@ -177,3 +177,32 @@ def test_shareable_blind_archive_excludes_the_engine_mapping(tmp_path):
         assert "blind-samples/sample-001.wav" in names
         assert "benchmark.json" not in names
         assert all("supertonic" not in name.casefold() for name in names)
+
+
+
+def test_longform_benchmark_uses_extended_duration_cap_only_for_longform():
+    class Builder:
+        def __init__(self):
+            self.calls = []
+
+        def validate_audio(self, path, sample_rate, bits, *, max_duration_s=None):
+            self.calls.append((path, sample_rate, bits, max_duration_s))
+            return {"duration_seconds": 53.44}
+
+    builder = Builder()
+    longform = MODULE.validate_benchmark_audio(builder, Path("longform.wav"), "longform")
+    shortform = MODULE.validate_benchmark_audio(builder, Path("story.wav"), "story")
+
+    assert longform["duration_seconds"] == 53.44
+    assert shortform["duration_seconds"] == 53.44
+    assert builder.calls[0] == (Path("longform.wav"), 48_000, 24, 75.0)
+    assert builder.calls[1] == (Path("story.wav"), 48_000, 24, None)
+
+
+def test_library_audio_validator_keeps_its_default_duration_cap():
+    import inspect
+
+    builder = MODULE.load_builder()
+    parameter = inspect.signature(builder.validate_audio).parameters["max_duration_s"]
+    assert parameter.default is None
+    assert builder.QUALITY["max_duration_s"] == 35.0
