@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { startHealthBackend } from './fake-health-backend.mjs';
 import { routesForShard } from './crawler-shards.mjs';
-import { waitForQuietRequests } from './crawler-settle.mjs';
+import { shouldTrackApiRequest, waitForQuietRequests } from './crawler-settle.mjs';
 
 /**
  * Clicks every enabled button on every static route, once per backend fault mode, and fails on
@@ -15,7 +15,7 @@ import { waitForQuietRequests } from './crawler-settle.mjs';
  *    new toast or alert, no changed text), so the user sees a button that "does nothing"
  *  - crash: an uncaught exception or unhandled promise rejection
  *  - console: a console.error the click caused
- *  - unsettled: API traffic never gives the UI a full quiet grace within the request budget
+ *  - unsettled: user-triggered API traffic never gives the UI a full quiet grace within the request budget
  *  - frozen: the renderer stops answering after the click
  *
  * Fault modes apply to API writes (anything but GET/HEAD) issued after the click, so every button
@@ -112,7 +112,11 @@ async function openSession(browser, mode) {
   });
   page.on('requestfailed', countFailure);
   page.on('request', (request) => {
-    if (isApi(request) && request.resourceType() !== 'eventsource') {
+    if (shouldTrackApiRequest({
+      method: request.method(),
+      resourceType: request.resourceType(),
+      url: request.url(),
+    })) {
       state.inflight.add(request);
       state.activity += 1;
       recent.push(request);

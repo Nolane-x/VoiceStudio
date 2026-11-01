@@ -19,13 +19,14 @@
       "commercial_status": "apache_2_0_model_and_voice_assets"
     },
     "vieneu_v3turbo": {
-      "distinct_speaker_ids": 23,
-      "language_variants": 46,
+      "distinct_speaker_ids": 25,
+      "language_variants": 50,
       "commercial_status": "upstream_model_card_states_preset_consent_and_commercial_generated_audio"
     },
-    "estimated_distinct_identities": 931,
-    "estimated_language_variants": 954,
-    "full_build_verified": false
+    "estimated_distinct_identities": 933,
+    "estimated_language_variants": 958,
+    "full_build_verified": false,
+    "evidence": "Pinned VieNeu SDK metadata in GitHub Actions Voice Library smoke run #55 lists 25 preset IDs; only two were actually rendered in that smoke."
   },
   "production_candidates": [
     {
@@ -39,11 +40,12 @@
         "en-AU",
         "en-IN"
       ],
-      "distinct_named_voice_styles": 29,
+      "distinct_named_voice_styles": 30,
       "access": "billing_required",
       "public_redistribution": "not_granted_by_this_registry",
       "status": "provider_integration_candidate",
-      "source": "https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd"
+      "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
+      "note": "Google documents 30 Chirp 3 HD styles, including Vietnamese vi-VN and multiple English locales. Pull exact locale/voice pairs with voices:list before large-scale synthesis."
     },
     {
       "id": "elevenlabs-voice-design",
@@ -194,7 +196,8 @@
     "Model downloads, likes, repository stars and leaderboard standings are discovery signals, not voice quality scores.",
     "No celebrity, public-figure, creator, or identifiable person's voice may be imitated without explicit authorization.",
     "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities.",
-    "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals."
+    "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals.",
+    "A create-from-preview POST has no documented idempotency-key contract. VoiceStudio tags each created voice with the source generated_voice_id and reconciles through List Voices before retries; ambiguous outcomes require manual confirmation."
   ],
   "research_data_sources": [
     {
@@ -309,6 +312,33 @@
       "status": "research_only_noncommercial_dataset",
       "voice_catalog_eligibility": "do_not_assume_model_license_grants_dataset_or_speaker_rights",
       "source": "https://huggingface.co/datasets/pnnbao-ump/VieNeu-TTS-1000h"
+    }
+  ],
+  "provider_documentation": [
+    {
+      "id": "elevenlabs-voice-design",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design",
+      "fact": "Design endpoint returns preview audio plus generated_voice_id."
+    },
+    {
+      "id": "elevenlabs-save-voice",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/create",
+      "fact": "POST /v1/text-to-voice saves an existing generated_voice_id as a private account voice."
+    },
+    {
+      "id": "elevenlabs-list-voices",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/search",
+      "fact": "GET /v2/voices searches names/descriptions/labels, used to reconcile promotion by a unique generated_voice_id label."
+    },
+    {
+      "id": "elevenlabs-public-library",
+      "source": "https://elevenlabs.io/docs/help-center/product/voices/voice-library/what-is-the-voice-library",
+      "fact": "Only Professional Voice Clones are shareable publicly; Voice Design voices are not shareable."
+    },
+    {
+      "id": "google-cloud-chirp3-hd",
+      "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
+      "fact": "Google lists 30 Chirp 3 HD styles and Vietnamese/English locale voice IDs."
     }
   ]
 }

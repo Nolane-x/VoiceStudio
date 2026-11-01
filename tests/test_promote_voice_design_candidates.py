@@ -182,23 +182,111 @@ class _FakeResponse:
         return json.dumps(self.payload).encode("utf-8")
 
 
-def test_create_voice_uses_expected_endpoint_and_api_key_header():
-    captured = {}
+def test_create_voice_searches_account_before_post_and_tags_generated_preview_id():
+    captured = []
 
     def fake_open(request, timeout):
-        captured["url"] = request.full_url
-        captured["method"] = request.method
-        captured["headers"] = {k.lower(): v for k, v in request.header_items()}
-        captured["body"] = json.loads(request.data.decode("utf-8"))
-        return _FakeResponse({"voice_id": "persisted-voice-123"})
+        captured.append({
+            "url": request.full_url,
+            "method": request.method,
+            "headers": {k.lower(): v for k, v in request.header_items()},
+            "body": json.loads(request.data.decode("utf-8")) if request.data else None,
+        })
+        if request.method == "GET":
+            return _FakeResponse({"voices": [], "has_more": False, "next_page_token": None})
+        return _FakeResponse({"voice_id": "persisted-voice-123", "name": "VS-VI-north-hanoi-001"})
 
     result = MODULE.create_voice(_record(), "test-key", opener=fake_open)
-    assert captured["url"] == MODULE.CREATE_URL
-    assert captured["method"] == "POST"
-    assert captured["headers"]["xi-api-key"] == "test-key"
-    assert captured["body"]["generated_voice_id"] == "generated-preview-id"
+    assert len(captured) == 2
+    assert captured[0]["url"].startswith(MODULE.LIST_VOICES_URL + "?")
+    assert "voice_type=non-community" in captured[0]["url"]
+    assert captured[0]["method"] == "GET"
+    assert captured[0]["headers"]["xi-api-key"] == "test-key"
+    assert captured[1]["url"] == MODULE.CREATE_URL
+    assert captured[1]["method"] == "POST"
+    assert captured[1]["headers"]["xi-api-key"] == "test-key"
+    assert captured[1]["body"]["generated_voice_id"] == "generated-preview-id"
+    assert captured[1]["body"]["labels"][MODULE.PROMOTION_MARKER_LABEL] == "generated-preview-id"
     assert result["voice_id"] == "persisted-voice-123"
+    assert result["generated_voice_id"] == "generated-preview-id"
     assert result["shareability"] == "workspace_only_not_public_voice_library"
+
+
+def test_existing_matching_voice_is_reconciled_without_duplicate_post():
+    post_count = 0
+
+    def fake_open(request, timeout):
+        nonlocal post_count
+        if request.method == "GET":
+            return _FakeResponse({
+                "voices": [{
+                    "voice_id": "already-created",
+                    "name": "VS-VI-north-hanoi-001",
+                    "labels": {MODULE.PROMOTION_MARKER_LABEL: "generated-preview-id"},
+                }],
+                "has_more": False,
+                "next_page_token": None,
+            })
+        post_count += 1
+        return _FakeResponse({"voice_id": "duplicate-should-not-exist"})
+
+    result = MODULE.create_voice(_record(), "test-key", opener=fake_open)
+    assert result["voice_id"] == "already-created"
+    assert result["reconciled_existing"] is True
+    assert post_count == 0
+
+
+def test_ambiguous_post_records_unknown_after_reconciliation_finds_no_voice():
+    import urllib.error
+
+    calls = {"get": 0, "post": 0}
+
+    def fake_open(request, timeout):
+        if request.method == "GET":
+            calls["get"] += 1
+            return _FakeResponse({"voices": [], "has_more": False, "next_page_token": None})
+        calls["post"] += 1
+        raise urllib.error.URLError("connection dropped after server accepted request")
+
+    try:
+        MODULE.create_voice(_record(), "test-key", opener=fake_open, sleep=lambda _delay: None)
+    except MODULE.VoiceCreationOutcomeUnknown:
+        pass
+    else:
+        raise AssertionError("An ambiguous create response must never be called a definite failure")
+    assert calls["post"] == 1
+    assert calls["get"] == 4  # initial preflight plus three reconciliation reads
+
+
+def test_unknown_ledger_is_not_counted_as_completed():
+    ledger = {
+        "records": [
+            {"blind_sample_id": "candidate-001", "status": "created"},
+            {"blind_sample_id": "candidate-002", "status": "unknown", "generated_voice_id": "generated-002"},
+        ],
+    }
+    MODULE._refresh_ledger_counts(ledger)
+    assert ledger["created_count"] == 1
+    assert ledger["unknown_count"] == 1
+    assert ledger["completed"] is False
+
+
+def test_previous_unknown_ledger_requires_manual_confirmation_before_post(tmp_path):
+    previous_path = tmp_path / "previous-ledger.json"
+    previous = {
+        "provider": "ElevenLabs",
+        "operation": "create_voice_from_existing_voice_design_preview",
+        "source_run_id": "41234567890",
+        "records": [{
+            "blind_sample_id": "candidate-001",
+            "generated_voice_id": "generated-preview-id",
+            "status": "unknown",
+            "error": "connection lost",
+        }],
+    }
+    previous_path.write_text(json.dumps(previous), encoding="utf-8")
+    loaded = MODULE.load_previous_ledger(previous_path, "41234567890")
+    assert loaded["records"][0]["status"] == "unknown"
 
 
 def test_public_repository_and_default_confirmation_gates_are_required():
@@ -208,6 +296,11 @@ def test_public_repository_and_default_confirmation_gates_are_required():
     assert "secrets.ELEVENLABS_API_KEY" in workflow
     assert "default: false" in workflow
     assert "actions: read" in workflow or "permissions:" in workflow
+    assert "previous_ledger_run_id" in workflow
+    assert "actions/download-artifact@" in workflow
+    assert "run-id: ${{ inputs.previous_ledger_run_id }}" in workflow
+    assert "confirm_retry_unknown" in workflow
+    assert "confirm-retry-unknown" in workflow
 
 
 def test_promotion_batch_is_hard_capped_at_eight():

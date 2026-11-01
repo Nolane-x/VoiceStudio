@@ -15,10 +15,13 @@ import os
 import re
 import urllib.error
 import urllib.request
+from urllib.parse import urlencode
 from pathlib import Path
 from typing import Any, Callable
 
 CREATE_URL = "https://api.elevenlabs.io/v1/text-to-voice"
+LIST_VOICES_URL = "https://api.elevenlabs.io/v2/voices"
+PROMOTION_MARKER_LABEL = "voicestudio_generated_voice_id"
 MAX_PROMOTION_BATCH = 8
 SCORE_FIELDS = (
     "naturalness",
@@ -200,6 +203,7 @@ def build_voice_payload(record: dict[str, Any]) -> dict[str, Any]:
     dimensions = record.get("dimensions") or {}
     labels = {
         "language": language,
+        PROMOTION_MARKER_LABEL: generated_voice_id,
         "locale": str(record.get("locale", "")),
         "accent": accent_id,
         "use_case": str(record.get("intended_use_case") or dimensions.get("use_case", "")),
@@ -215,15 +219,136 @@ def build_voice_payload(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+class VoiceCreationOutcomeUnknown(RuntimeError):
+    """A create request may have succeeded, but the client did not receive a definitive result."""
+
+
+def find_existing_voice(
+    record: dict[str, Any],
+    api_key: str,
+    *,
+    opener: Callable[..., Any] = urllib.request.urlopen,
+    timeout: int = 30,
+    max_pages: int = 20,
+) -> dict[str, Any] | None:
+    """Reconcile a preview by searching the account for its exact unique marker label."""
+    generated_id = str(record.get("generated_voice_id", "")).strip()
+    if not generated_id or not api_key:
+        raise ValueError("generated_voice_id and ELEVENLABS_API_KEY are required for reconciliation")
+
+    page_token: str | None = None
+    seen_tokens: set[str] = set()
+    for _ in range(max_pages):
+        query = {
+            "search": generated_id,
+            "page_size": "100",
+            "include_total_count": "false",
+            "voice_type": "non-community",
+        }
+        if page_token:
+            query["next_page_token"] = page_token
+        request = urllib.request.Request(
+            f"{LIST_VOICES_URL}?{urlencode(query)}",
+            headers={"xi-api-key": api_key},
+            method="GET",
+        )
+        try:
+            with opener(request, timeout=timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"ElevenLabs voice reconciliation failed: {exc}") from exc
+
+        voices = payload.get("voices")
+        if not isinstance(voices, list):
+            raise RuntimeError("ElevenLabs List Voices response has no voices array")
+        matches = [
+            voice for voice in voices
+            if (voice.get("labels") or {}).get(PROMOTION_MARKER_LABEL) == generated_id
+            and voice.get("voice_id")
+        ]
+        if len(matches) > 1:
+            raise RuntimeError(
+                f"Multiple account voices match promotion marker {generated_id}; "
+                "manual account reconciliation is required"
+            )
+        if matches:
+            return matches[0]
+
+        if not payload.get("has_more"):
+            return None
+        token = payload.get("next_page_token")
+        if not isinstance(token, str) or not token or token in seen_tokens:
+            raise RuntimeError("ElevenLabs List Voices returned an invalid pagination token")
+        seen_tokens.add(token)
+        page_token = token
+
+    raise RuntimeError("ElevenLabs List Voices exceeded the 20-page reconciliation safety limit")
+
+
+def _ledger_record_from_voice(
+    record: dict[str, Any],
+    voice: dict[str, Any],
+    *,
+    reconciled: bool,
+) -> dict[str, Any]:
+    payload = build_voice_payload(record)
+    return {
+        "blind_sample_id": record["blind_sample_id"],
+        "generated_voice_id": record["generated_voice_id"],
+        "voice_id": voice["voice_id"],
+        "voice_name": voice.get("name") or payload["voice_name"],
+        "language": record["language"],
+        "locale": record.get("locale"),
+        "accent_id": record.get("accent_id"),
+        "market_archetype_id": record.get("market_archetype_id"),
+        "human_review": record["human_review"],
+        "reconciled_existing": reconciled,
+        "shareability": "workspace_only_not_public_voice_library",
+        "status": "created",
+    }
+
+
+def _reconcile_after_ambiguous_post(
+    record: dict[str, Any],
+    api_key: str,
+    *,
+    opener: Callable[..., Any],
+    sleep: Callable[[float], None],
+) -> dict[str, Any] | None:
+    last_error: Exception | None = None
+    for attempt, delay in enumerate((0, 1, 2), start=1):
+        if delay:
+            sleep(delay)
+        try:
+            existing = find_existing_voice(record, api_key, opener=opener)
+            if existing:
+                return existing
+            last_error = None
+        except Exception as exc:
+            last_error = exc
+    if last_error:
+        raise VoiceCreationOutcomeUnknown(
+            f"Create POST may have succeeded but List Voices reconciliation failed: {last_error}"
+        ) from last_error
+    return None
+
+
 def create_voice(
     record: dict[str, Any],
     api_key: str,
     *,
     opener: Callable[..., Any] = urllib.request.urlopen,
     timeout: int = 60,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
     if not api_key:
         raise ValueError("ELEVENLABS_API_KEY is required")
+
+    # A retry first checks whether an earlier POST already created this exact preview.
+    existing = find_existing_voice(record, api_key, opener=opener)
+    if existing:
+        return _ledger_record_from_voice(record, existing, reconciled=True)
+
     payload = build_voice_payload(record)
     request = urllib.request.Request(
         CREATE_URL,
@@ -234,26 +359,39 @@ def create_voice(
     try:
         with opener(request, timeout=timeout) as response:
             result = json.loads(response.read().decode("utf-8"))
+        voice_id = str(result.get("voice_id", "")).strip()
+        if not voice_id:
+            raise VoiceCreationOutcomeUnknown(
+                "Create Voice returned success without voice_id; reconcile through List Voices before retrying"
+            )
+        return _ledger_record_from_voice(
+            record,
+            {"voice_id": voice_id, "name": result.get("name") or payload["voice_name"]},
+            reconciled=False,
+        )
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")[:500]
+        if exc.code == 409 or exc.code >= 500:
+            existing = _reconcile_after_ambiguous_post(
+                record, api_key, opener=opener, sleep=sleep
+            )
+            if existing:
+                return _ledger_record_from_voice(record, existing, reconciled=True)
+            raise VoiceCreationOutcomeUnknown(
+                f"Create Voice returned HTTP {exc.code}; no matching account voice is visible. "
+                "Check My Voices before retrying. " + detail
+            ) from exc
         raise RuntimeError(f"ElevenLabs create-voice HTTP {exc.code}: {detail}") from exc
-    except urllib.error.URLError as exc:
-        raise RuntimeError(f"ElevenLabs create-voice network failure: {exc.reason}") from exc
-    voice_id = str(result.get("voice_id", "")).strip()
-    if not voice_id:
-        raise RuntimeError("ElevenLabs create-voice response did not contain voice_id")
-    return {
-        "blind_sample_id": record["blind_sample_id"],
-        "voice_id": voice_id,
-        "voice_name": payload["voice_name"],
-        "language": record["language"],
-        "locale": record.get("locale"),
-        "accent_id": record.get("accent_id"),
-        "market_archetype_id": record.get("market_archetype_id"),
-        "human_review": record["human_review"],
-        "shareability": "workspace_only_not_public_voice_library",
-        "status": "created",
-    }
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        existing = _reconcile_after_ambiguous_post(
+            record, api_key, opener=opener, sleep=sleep
+        )
+        if existing:
+            return _ledger_record_from_voice(record, existing, reconciled=True)
+        raise VoiceCreationOutcomeUnknown(
+            "The POST may have succeeded, but List Voices did not confirm the result. "
+            "Check My Voices before another POST."
+        ) from exc
 
 
 def write_ledger(path: Path, payload: dict[str, Any]) -> None:
@@ -263,6 +401,60 @@ def write_ledger(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+def load_previous_ledger(path: Path | None, source_run_id: str) -> dict[str, Any]:
+    if path is None:
+        return {"records": []}
+    try:
+        previous = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Cannot read previous promotion ledger: {exc}") from exc
+    if previous.get("provider") != "ElevenLabs":
+        raise ValueError("Previous ledger is not an ElevenLabs promotion ledger")
+    if previous.get("operation") != "create_voice_from_existing_voice_design_preview":
+        raise ValueError("Previous ledger has an unexpected operation")
+    if str(previous.get("source_run_id", "")) != str(source_run_id):
+        raise ValueError("Previous ledger belongs to a different Voice Design source run")
+    records = previous.get("records")
+    if not isinstance(records, list):
+        raise ValueError("Previous ledger has no records list")
+    seen: set[str] = set()
+    for row in records:
+        blind_id = str(row.get("blind_sample_id", "")).strip()
+        if not blind_id or blind_id in seen:
+            raise ValueError("Previous ledger contains a missing or duplicate blind_sample_id")
+        seen.add(blind_id)
+        if row.get("status") not in {"created", "failed", "unknown"}:
+            raise ValueError(f"Previous ledger record {blind_id} has an unknown status")
+        if row.get("status") == "created" and not row.get("voice_id"):
+            raise ValueError(f"Previous ledger record {blind_id} has no saved voice_id")
+        if row.get("status") == "unknown" and not row.get("generated_voice_id"):
+            raise ValueError(f"Unknown ledger record {blind_id} has no generated_voice_id to reconcile")
+    return previous
+
+
+def exclude_previously_created(
+    candidates: list[dict[str, Any]],
+    previous_ledger: dict[str, Any],
+) -> list[dict[str, Any]]:
+    created_ids = {
+        str(row["blind_sample_id"])
+        for row in previous_ledger.get("records", [])
+        if row.get("status") == "created"
+    }
+    return [
+        row for row in candidates
+        if str(row["blind_sample_id"]) not in created_ids
+    ]
+
+
+def _refresh_ledger_counts(ledger: dict[str, Any]) -> None:
+    records = ledger["records"]
+    ledger["created_count"] = sum(row.get("status") == "created" for row in records)
+    ledger["failed_count"] = sum(row.get("status") == "failed" for row in records)
+    ledger["unknown_count"] = sum(row.get("status") == "unknown" for row in records)
+    ledger["completed"] = ledger["failed_count"] == 0 and ledger["unknown_count"] == 0
+
+
 def run(args: argparse.Namespace) -> int:
     if not args.confirm_voice_creation:
         raise ValueError("Persistent voice creation is blocked. Set --confirm-voice-creation explicitly.")
@@ -270,6 +462,9 @@ def run(args: argparse.Namespace) -> int:
         raise ValueError(f"max_voices must be between 1 and {MAX_PROMOTION_BATCH}")
     if not 1.0 <= args.minimum_overall <= 5.0 or not 1.0 <= args.minimum_pronunciation <= 5.0:
         raise ValueError("minimum scores must be between 1 and 5")
+    source_run_id = str(args.source_run_id).strip()
+    if not source_run_id.isdigit() or int(source_run_id) <= 0:
+        raise ValueError("source_run_id must be a positive GitHub Actions run ID")
     api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     if not api_key:
         raise ValueError("Set ELEVENLABS_API_KEY in GitHub Actions secrets")
@@ -287,56 +482,117 @@ def run(args: argparse.Namespace) -> int:
         minimum_prosody=args.minimum_prosody,
         minimum_distinctiveness=args.minimum_distinctiveness,
     )
-    if not selected:
-        raise ValueError("No candidates passed explicit human approval and all score thresholds")
+    previous = load_previous_ledger(
+        Path(args.previous_ledger) if args.previous_ledger else None,
+        source_run_id,
+    )
+    selected_new = exclude_previously_created(selected, previous)
 
+    records_by_id = {
+        str(row["blind_sample_id"]): row
+        for row in previous.get("records", [])
+    }
     ledger: dict[str, Any] = {
         "schema_version": 1,
         "provider": "ElevenLabs",
         "operation": "create_voice_from_existing_voice_design_preview",
+        "source_run_id": source_run_id,
+        "previous_ledger_used": bool(args.previous_ledger),
         "created_from_previews": True,
         "new_preview_generations": 0,
         "public_voice_library_publications": 0,
         "workspace_only": True,
         "selected_count": len(selected),
+        "new_selected_count": len(selected_new),
         "created_count": 0,
         "failed_count": 0,
-        "records": [],
+        "records": list(records_by_id.values()),
     }
+    _refresh_ledger_counts(ledger)
     output_path = Path(args.output)
     write_ledger(output_path, ledger)
 
-    failures = []
-    for record in selected:
+    if not selected_new:
+        print(
+            f"No new voice requests: selected={len(selected)}, "
+            f"already created={ledger['created_count']}, failed in ledger={ledger['failed_count']}. "
+            "No provider calls were made."
+        )
+        return 1 if ledger["failed_count"] or ledger.get("unknown_count", 0) else 0
+
+    previous_unknown = {
+        str(row["blind_sample_id"]): row
+        for row in previous.get("records", [])
+        if row.get("status") == "unknown"
+    }
+    resolved_unknown: set[str] = set()
+    for record in selected_new:
+        blind_id = str(record["blind_sample_id"])
+        if blind_id not in previous_unknown:
+            continue
+        existing = find_existing_voice(record, api_key)
+        if existing:
+            records_by_id[blind_id] = _ledger_record_from_voice(record, existing, reconciled=True)
+            resolved_unknown.add(blind_id)
+            ledger["records"] = sorted(records_by_id.values(), key=lambda row: str(row["blind_sample_id"]))
+            _refresh_ledger_counts(ledger)
+            write_ledger(output_path, ledger)
+            continue
+        if not args.confirm_retry_unknown:
+            raise ValueError(
+                f"{blind_id} has an ambiguous previous POST and no matching account voice is visible. "
+                "Check My Voices, then rerun with --confirm-retry-unknown only after confirming it was not created."
+            )
+    selected_new = [row for row in selected_new if str(row["blind_sample_id"]) not in resolved_unknown]
+
+    failures_this_run = 0
+    for record in selected_new:
+        blind_id = str(record["blind_sample_id"])
         try:
             created = create_voice(record, api_key)
-            ledger["records"].append(created)
-            ledger["created_count"] += 1
-            write_ledger(output_path, ledger)
+            records_by_id[blind_id] = created
+        except VoiceCreationOutcomeUnknown as exc:
+            unknown = {
+                "blind_sample_id": blind_id,
+                "generated_voice_id": record["generated_voice_id"],
+                "status": "unknown",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+            records_by_id[blind_id] = unknown
+            failures_this_run += 1
         except Exception as exc:
             failure = {
-                "blind_sample_id": record["blind_sample_id"],
+                "blind_sample_id": blind_id,
+                "generated_voice_id": record["generated_voice_id"],
                 "status": "failed",
                 "error": f"{type(exc).__name__}: {exc}",
             }
-            failures.append(failure)
-            ledger["records"].append(failure)
-            ledger["failed_count"] += 1
-            write_ledger(output_path, ledger)
+            records_by_id[blind_id] = failure
+            failures_this_run += 1
 
-    ledger["completed"] = not failures
-    write_ledger(output_path, ledger)
+        ledger["records"] = sorted(
+            records_by_id.values(),
+            key=lambda row: str(row["blind_sample_id"]),
+        )
+        _refresh_ledger_counts(ledger)
+        write_ledger(output_path, ledger)
+
     print(
-        f"Promoted {ledger['created_count']} human-approved voices; "
-        f"failed={ledger['failed_count']}; new preview generations=0; public publications=0."
+        f"Created {ledger['created_count']} unique workspace voices "
+        f"(newly selected={len(selected_new)}, failures this run={failures_this_run}, "
+        f"cumulative failed={ledger['failed_count']}, unknown={ledger.get('unknown_count', 0)}); "
+        "new preview generations=0; public publications=0."
     )
-    return 1 if failures else 0
+    return 1 if ledger["failed_count"] or ledger.get("unknown_count", 0) else 0
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--analysis", required=True)
     parser.add_argument("--ratings", required=True)
+    parser.add_argument("--source-run-id", required=True)
+    parser.add_argument("--previous-ledger", default=None)
+    parser.add_argument("--confirm-retry-unknown", action="store_true")
     parser.add_argument("--output", default="dist/voice-promotion-ledger.json")
     parser.add_argument("--max-voices", type=int, default=4)
     parser.add_argument("--minimum-overall", type=float, default=4.0)

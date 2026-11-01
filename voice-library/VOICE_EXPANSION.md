@@ -7,9 +7,9 @@ Build a catalog of thousands of distinct, usable voice identities for Vietnamese
 The current source-derived inventory estimate is approximately:
 - 904 English Piper LibriTTS speaker IDs (rights evidence remains restricted per voice; not blanket commercial clearance).
 - 4 curated Kokoro English presets (Apache-2.0 model and packaged voice assets).
-- About 23 VieNeu preset identities. The same identities can generate Vietnamese and bilingual English variants.
+- 25 VieNeu preset identities, from the pinned SDK metadata in GitHub Actions smoke run #55. The same identities can generate Vietnamese and bilingual English variants.
 
-This is approximately 931 distinct source identities and 954 language variants. These are inventory estimates, not a claim that a full catalogue release has been built or that every candidate is commercially cleared.
+This is approximately 933 distinct source identities and 958 language variants. These are inventory estimates, not a claim that a full catalogue release has been built or that every candidate is commercially cleared.
 
 ## New 2,000-profile expansion pool
 Each profile is assigned one of 16 creator-facing archetypes: cinematic documentary narrator, warm history storyteller, friendly educator, expert explainer, immersive audiobook performer, reflective storyteller, conversational podcast host, curious interviewer, short-form creator hook, energetic social-video narrator, professional presenter, premium brand storyteller, credible news anchor, journalistic explainer, calm wellness guide, or mindful reflection narrator. These are generic role directions, never descriptions of named creators or identifiable voices.
@@ -19,7 +19,7 @@ The deterministic catalog generator creates 1,000 Vietnamese and 1,000 English v
 
 The no-cost GitHub Actions catalog workflow builds these blueprints without model downloads, API keys, or paid generation. A separate manual workflow can create up to 8 provider design requests per run (each can return up to 3 previews) using the ElevenLabs Voice Design API. It is disabled unless confirm_paid_api_usage=true and ELEVENLABS_API_KEY is configured. It does not save persistent account voices or change a production model.
 
-**Voice Design previews are account-scoped and cannot be shared in the ElevenLabs public Voice Library.** The public marketplace track must instead use Professional Voice Clones from voice actors who have explicitly consented to sharing and accepted the provider's terms, or use a provider that grants the necessary redistribution rights. Never clone or imitate a celebrity, public figure, or identifiable creator.
+**Voice Design previews are account-scoped and cannot be shared in the ElevenLabs public Voice Library. A selected preview can be saved to the account through `POST /v1/text-to-voice`, but it remains workspace-only; only Professional Voice Clones can be published to the public Voice Library.** The public marketplace track must instead use Professional Voice Clones from voice actors who have explicitly consented to sharing and accepted the provider's terms, or use a provider that grants the necessary redistribution rights. Never clone or imitate a celebrity, public figure, or identifiable creator.
 
 ## External sources and eligibility
 
@@ -27,7 +27,7 @@ The no-cost GitHub Actions catalog workflow builds these blueprints without mode
 |---|---|---|
 | Google Cloud Chirp 3: HD | 29 named voice styles; supports vi-VN and English locales en-US, en-GB, en-AU, en-IN. | Strong paid cloud candidate; billing required; validate exact locale/voice pairs. |
 | ElevenLabs Voice Design | Original synthetic identity design; multiple previews per request. | Private-account previews only; paid requests require explicit manual dispatch and API key. |
-| VieNeu-TTS v3 Turbo | About 23 dynamic preset identities with Vietnamese and bilingual English output. | Current Vietnamese production candidate; read the live preset roster from the pinned SDK. |
+| VieNeu-TTS v3 Turbo | 25 preset identities listed by the pinned VieNeu SDK metadata; smoke run #55 exercised two presets across Vietnamese and bilingual English output. | Current Vietnamese production candidate; read the live preset roster from the pinned SDK. |
 | Kokoro-82M | Curated English voices and very high Hub usage. | Retain as English candidate; measure listener preference, not just downloads. |
 | OmniVoice Vietnamese fine-tunes | Published 1,000-hour, 152-speaker Vietnamese corpus. | Research-only: dataset CC-BY-NC-SA-4.0; do not use in monetized production. |
 | G-OmniVoice | Vietnamese-specific voice design/cloning; gated access. | Quarantine until tokenizer, dataset and downstream rights are reviewed. |
@@ -66,3 +66,17 @@ Profile IDs and seeds are deterministic. Full prompt-to-preview mapping is in a 
 ### Human-approved account voice creation
 
 The blind review CSV includes an `approve` field. After a human listener has approved a preview and entered the required scores, the separate `Promote human-reviewed Voice Design candidates` workflow can create up to eight persistent workspace voices from their existing `generated_voice_id` values. This calls the provider's create-from-preview endpoint, not a new preview-generation endpoint. The workflow requires a private repository, `ELEVENLABS_API_KEY`, and a separate `confirm_voice_creation=true` input. Candidates must pass naturalness, pronunciation, accent-fit, prosody, distinctiveness and overall score thresholds. The returned IDs are workspace-only; Voice Design voices cannot be published to the public ElevenLabs Voice Library. No preview is generated and no public distribution is attempted by the promotion step.
+
+
+### Official provider documentation
+
+- [ElevenLabs Voice Design API](https://elevenlabs.io/docs/api-reference/text-to-voice/design): previews return a `generated_voice_id` and base64 audio.
+- [ElevenLabs Create a voice](https://elevenlabs.io/docs/api-reference/text-to-voice/create): saves an existing `generated_voice_id` as an account voice.
+- [ElevenLabs List voices](https://elevenlabs.io/docs/api-reference/voices/search): supports account search by name, description and labels, used to reconcile interrupted promotion requests.
+- [ElevenLabs Voice Library sharing rules](https://elevenlabs.io/docs/help-center/product/voices/voice-library/what-is-the-voice-library): only Professional Voice Clones can be publicly shared; Voice Design voices are not shareable.
+- [Google Cloud Chirp 3 HD voice IDs](https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types): lists Chirp 3 styles and supported Vietnamese/English locale voices.
+
+
+### Duplicate-safe voice promotion
+
+The create-from-preview endpoint does not document an idempotency-key header. VoiceStudio therefore tags each created account voice with the original `generated_voice_id` and searches the account through the List Voices API before every create request. If a POST times out or returns an ambiguous server error, the script searches again and records an `unknown` outcome unless it can find the matching voice. A later run can reconcile that ID through the same label. If the voice is still not visible, another POST is blocked unless an operator explicitly sets `confirm_retry_unknown=true` after checking My Voices. The optional `previous_ledger_run_id` also preserves completed IDs and retries only failed/unprocessed entries. This is deliberately fail-closed to avoid creating duplicate account voices.

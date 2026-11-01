@@ -7,6 +7,16 @@ on:
         description: Actions run ID that produced the private Voice Design analysis artifact
         required: true
         type: string
+      confirm_retry_unknown:
+        description: Confirm you checked My Voices and the ambiguous preview was not saved before allowing another create request
+        required: true
+        type: boolean
+        default: false
+      previous_ledger_run_id:
+        description: Previous promotion workflow run ID; set this only when resuming a partially completed promotion
+        required: false
+        type: string
+        default: ""
       human_review_csv:
         description: Paste the exported human-review CSV, including approve=yes for each selected candidate
         required: true
@@ -57,6 +67,8 @@ jobs:
         env:
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
           MAX_VOICES: ${{ inputs.max_voices }}
+          PREVIOUS_LEDGER_RUN_ID: ${{ inputs.previous_ledger_run_id }}
+          CONFIRM_RETRY_UNKNOWN: ${{ inputs.confirm_retry_unknown }}
         run: |
           python - <<'PY'
           import os
@@ -64,6 +76,10 @@ jobs:
           maximum = int(os.environ["MAX_VOICES"])
           assert run_id > 0, "source_run_id must be a positive Actions run ID"
           assert 1 <= maximum <= 8, "max_voices must be between 1 and 8"
+          previous = os.environ["PREVIOUS_LEDGER_RUN_ID"].strip()
+          assert not previous or (previous.isdigit() and int(previous) > 0), "previous_ledger_run_id must be blank or a positive run ID"
+          assert not previous or previous != os.environ["SOURCE_RUN_ID"], "previous_ledger_run_id cannot be the source preview run ID"
+          assert os.environ["CONFIRM_RETRY_UNKNOWN"] in {"true", "false"}, "confirm_retry_unknown must be a boolean"
           PY
       - name: Download private analysis mapping from the preview run
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -73,6 +89,15 @@ jobs:
           run-id: ${{ inputs.source_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/source-analysis
+      - name: Download previous promotion ledger for safe resume
+        if: ${{ inputs.previous_ledger_run_id != '' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: voice-promotion-ledger-${{ inputs.previous_ledger_run_id }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.previous_ledger_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/previous-ledger
       - name: Write listener scores without echoing the CSV
         env:
           HUMAN_REVIEW_CSV: ${{ inputs.human_review_csv }}
@@ -94,19 +119,31 @@ jobs:
           MAX_VOICES: ${{ inputs.max_voices }}
           MINIMUM_OVERALL: ${{ inputs.minimum_overall }}
           MINIMUM_PRONUNCIATION: ${{ inputs.minimum_pronunciation }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          PREVIOUS_LEDGER_RUN_ID: ${{ inputs.previous_ledger_run_id }}
+          CONFIRM_RETRY_UNKNOWN: ${{ inputs.confirm_retry_unknown }}
         run: |
           test -n "$ELEVENLABS_API_KEY" || {
             echo "::error::Set ELEVENLABS_API_KEY in repository Actions secrets."
             exit 1
           }
-          python scripts/promote_voice_design_candidates.py \
-            --analysis dist/source-analysis/analysis.json \
-            --ratings dist/human-review.csv \
-            --output dist/voice-promotion-ledger.json \
-            --max-voices "$MAX_VOICES" \
-            --minimum-overall "$MINIMUM_OVERALL" \
-            --minimum-pronunciation "$MINIMUM_PRONUNCIATION" \
+          args=(
+            --analysis dist/source-analysis/analysis.json
+            --ratings dist/human-review.csv
+            --source-run-id "$SOURCE_RUN_ID"
+            --output dist/voice-promotion-ledger.json
+            --max-voices "$MAX_VOICES"
+            --minimum-overall "$MINIMUM_OVERALL"
+            --minimum-pronunciation "$MINIMUM_PRONUNCIATION"
             --confirm-voice-creation
+          )
+          if test -n "$PREVIOUS_LEDGER_RUN_ID"; then
+            args+=(--previous-ledger dist/previous-ledger/voice-promotion-ledger.json)
+          fi
+          if test "$CONFIRM_RETRY_UNKNOWN" = "true"; then
+            args+=(--confirm-retry-unknown)
+          fi
+          python scripts/promote_voice_design_candidates.py "${args[@]}"
       - name: Upload private voice promotion ledger
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

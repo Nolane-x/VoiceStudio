@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ROUTE_WEIGHTS, routesForShard } from './crawler-shards.mjs';
-import { waitForQuietRequests } from './crawler-settle.mjs';
+import { BACKGROUND_POLL_PATHS, shouldTrackApiRequest, waitForQuietRequests } from './crawler-settle.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -68,6 +68,38 @@ function clock(events = [], options = {}) {
     }),
   };
 }
+
+test('known background status GETs do not block click settlement', () => {
+  assert.equal(BACKGROUND_POLL_PATHS.size, 6);
+  for (const url of [
+    'http://localhost:3912/api/engines',
+    'http://localhost:3912/api/api/settings/performance-profile',
+    'http://localhost:3912/api/model/loaded',
+    'http://localhost:3912/api/model/status',
+    'http://localhost:3912/api/engines/diarisation',
+    'http://localhost:3912/api/batch/jobs',
+  ]) {
+    assert.equal(shouldTrackApiRequest({ method: 'GET', resourceType: 'fetch', url }), false, url);
+  }
+});
+
+test('user GETs, writes and non-poll API work remain tracked', () => {
+  assert.equal(shouldTrackApiRequest({
+    method: 'GET', resourceType: 'fetch', url: 'http://localhost:3912/api/settings/sharing'
+  }), true);
+  assert.equal(shouldTrackApiRequest({
+    method: 'POST', resourceType: 'fetch', url: 'http://localhost:3912/api/model/status'
+  }), true);
+  assert.equal(shouldTrackApiRequest({
+    method: 'GET', resourceType: 'eventsource', url: 'http://localhost:3912/api/ws/events'
+  }), false);
+  assert.equal(shouldTrackApiRequest({
+    method: 'GET', resourceType: 'fetch', url: 'http://example.com/api/status'
+  }), true);
+  assert.equal(shouldTrackApiRequest({
+    method: 'GET', resourceType: 'document', url: 'http://localhost:3912/settings/sharing'
+  }), false);
+});
 
 test('quiet traffic gets the React grace without extending the budget', async () => {
   const run = clock();
