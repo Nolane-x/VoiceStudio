@@ -259,7 +259,7 @@ def run(args) -> int:
                     final, TARGET_BITS,
                     context=f"eleven-v4-marketplace.{language}.{voice_id}",
                 )
-                audio = builder.validate_audio(final, TARGET_RATE, TARGET_BITS)
+                audio = builder.validate_audio(final, TARGET_RATE, TARGET_BITS, max_duration_s=75.0)
                 reference_text = "\n\n".join(text for _, text in SCRIPTS[language])
                 successes.append({
                     "blind_sample_id": sample_id,
