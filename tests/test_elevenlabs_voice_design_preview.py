@@ -112,7 +112,7 @@ def test_design_request_uses_api_key_header_and_returns_preview_metadata():
         opener=fake_open,
     )
     assert captured["url"] == MODULE.DESIGN_URL
-    assert captured["headers"]["x-xi-api-key"] == "not-a-real-secret"
+    assert captured["headers"]["xi-api-key"] == "not-a-real-secret"
     assert captured["body"]["seed"] == 123456
     assert result["previews"][0]["generated_voice_id"] == "generated-test-id"
 
