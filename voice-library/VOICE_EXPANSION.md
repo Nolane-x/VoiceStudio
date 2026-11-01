@@ -168,3 +168,19 @@ The crawler is deliberately restricted to `type=prebuilt` and language prefixes 
 - The weekly Actions workflow requires the read-only GEMINI_API_KEY secret. If it is absent, the run records a setup note and skips discovery rather than failing the repository CI.
 
 This catalog is a metadata index, not a count of verified voice quality. A voice must still pass matched VI/EN listening, locale pronunciation, long-form stability and authorized commercial-use review before being recommended for a particular production.
+
+
+
+### Gemini 3.8 Flash TTS and Flash-Lite matched voice benchmark
+
+Google publishes 30 official prebuilt studio voice options and a separate Extended Voice Library with hundreds of additional provider-managed options. The static 30-option index is stored in `voice-library/gemini-prebuilt-studio-voices.json`; the dynamic metadata crawler reads `GET /v1beta/voices` and filters to prebuilt Vietnamese/English records. Gemini's catalog metadata does not contain usage counts comparable to the ElevenLabs marketplace, so VoiceStudio does not label these options popular or rank them by adoption.
+
+The manual workflow, Gemini 3.8 prebuilt voice quality benchmark, tests one model per run:
+- `gemini-3.8-flash-tts` is the high-fidelity expressive candidate.
+- `gemini-3.8-flash-lite-tts` is the throughput-oriented candidate.
+
+Each run refreshes the provider voice metadata, selects up to four voices per language (eight requests maximum), and uses the same four-scenario text corpus: story, numbers, conversation and long-form narration. Every voice receives the same style instruction for each matched passage in its language. Output is normalized to 48 kHz/24-bit, VoiceStudio-watermarked, validated, and placed in a blind-listening archive separate from the voice-ID mapping.
+
+The workflow requires a private repository, `GEMINI_API_KEY`, and explicit `confirm_paid_api_usage=true`. It is manual-only, disabled on this public fork, and never triggered by normal CI. Run it once for each model with the same offset/limit to compare Flash vs Flash-Lite fairly. An ambiguous request timeout is not retried automatically.
+
+The score-merger keeps model IDs separate when ranking the same voice ID across providers or model variants. Scores are human preference for this review cohort, not standardized MOS. This workflow uses prebuilt provider voices only; it does not replicate named people or expose caller-owned prompted/replicated voices.
