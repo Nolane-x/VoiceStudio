@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "provider": "xAI",
+  "kind": "provider_published_builtin_tts_voice_options",
+  "source": "https://docs.x.ai/developers/model-capabilities/audio/voice",
+  "api_reference": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+  "snapshot_date": "2026-11-01",
+  "count": 26,
+  "supported_language_count": 20,
+  "language_scope": [
+    "vi",
+    "en"
+  ],
+  "usage_note": "This is a snapshot of provider-managed built-in voice choices, not a set of 25 independent licensed speaker recordings or 25 separate human identities. The xAI TTS API lists Vietnamese and English among its 20 supported languages and states that all built-in voices can speak supported languages. These are not popularity or quality rankings.",
+  "dynamic_refresh": "GET https://api.x.ai/v1/tts/voices via .github/workflows/discover-grok-builtin-voices.yml; requires XAI_API_KEY",
+  "privacy_note": "Only provider built-in voice IDs are included. User-created custom voices are returned separately from GET /v1/custom-voices and are not included.",
+  "voices": [
+    {
+      "voice_id": "carina",
+      "name": "Carina",
+      "tone": "soft, empathetic, and soothing",
+      "use_cases": [
+        "wellness",
+        "support"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "zagan",
+      "name": "Zagan",
+      "tone": "powerful, dramatic, and unmistakable",
+      "use_cases": [
+        "characters",
+        "narration"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "helix",
+      "name": "Helix",
+      "tone": "bold, dynamic, and adrenaline-fueled",
+      "use_cases": [
+        "commentary",
+        "podcast"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "orion",
+      "name": "Orion",
+      "tone": "rich, cinematic, and resonant",
+      "use_cases": [
+        "narration",
+        "audiobooks"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "luna",
+      "name": "Luna",
+      "tone": "gentle, patient, and deeply nurturing",
+      "use_cases": [
+        "education",
+        "assistant"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "iris",
+      "name": "Iris",
+      "tone": "friendly, upbeat, and naturally charming",
+      "use_cases": [
+        "sales",
+        "support"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "altair",
+      "name": "Altair",
+      "tone": "elegant, refined, and effortlessly premium",
+      "use_cases": [
+        "advertising",
+        "narration"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "zenith",
+      "name": "Zenith",
+      "tone": "sharp, focused, and driven",
+      "use_cases": [
+        "sales",
+        "advertising"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "perseus",
+      "name": "Perseus",
+      "tone": "strong, confident, and trustworthy",
+      "use_cases": [
+        "advertising",
+        "narration"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "helios",
+      "name": "Helios",
+      "tone": "upbeat, energetic, and endlessly versatile",
+      "use_cases": [
+        "assistant",
+        "wellness"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "lux",
+      "name": "Lux",
+      "tone": "grounded, calm, and quietly wise",
+      "use_cases": [
+        "wellness",
+        "narration"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "kepler",
+      "name": "Kepler",
+      "tone": "inventive, forward-thinking, and charismatic",
+      "use_cases": [
+        "advertising",
+        "podcast"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "rigel",
+      "name": "Rigel",
+      "tone": "precise, professional, and calmly confident",
+      "use_cases": [
+        "assistant",
+        "support"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "cosmo",
+      "name": "Cosmo",
+      "tone": "bright, curious, and easy to follow",
+      "use_cases": [
+        "education",
+        "podcast"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "celeste",
+      "name": "Celeste",
+      "tone": "compassionate, confident, and reassuring",
+      "use_cases": [
+        "support",
+        "assistant"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "ursa",
+      "name": "Ursa",
+      "tone": "friendly, warm, and steadfast",
+      "use_cases": [
+        "assistant",
+        "podcast"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "sirius",
+      "name": "Sirius",
+      "tone": "quick-witted, clever, and playful",
+      "use_cases": [
+        "commentary",
+        "characters"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "lumen",
+      "name": "Lumen",
+      "tone": "warm, articulate, and engaging",
+      "use_cases": [
+        "education",
+        "advertising"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "castor",
+      "name": "Castor",
+      "tone": "charismatic, down-to-earth, and easygoing",
+      "use_cases": [
+        "sales",
+        "support"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "naksh",
+      "name": "Naksh",
+      "tone": "warm, thoughtful, and wise",
+      "use_cases": [
+        "assistant",
+        "support"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "atlas",
+      "name": "Atlas",
+      "tone": "confident, commanding, and reassuring",
+      "use_cases": [
+        "sales",
+        "assistant"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "ara",
+      "name": "Ara",
+      "tone": "warm and friendly",
+      "use_cases": [
+        "general"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "eve",
+      "name": "Eve",
+      "tone": "energetic and upbeat",
+      "use_cases": [
+        "general"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "leo",
+      "name": "Leo",
+      "tone": "authoritative and strong",
+      "use_cases": [
+        "general"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "rex",
+      "name": "Rex",
+      "tone": "confident and clear",
+      "use_cases": [
+        "general"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    },
+    {
+      "voice_id": "sal",
+      "name": "Sal",
+      "tone": "smooth and balanced",
+      "use_cases": [
+        "general"
+      ],
+      "language_scope": [
+        "vi",
+        "en"
+      ],
+      "source": "xAI official Voice Overview"
+    }
+  ]
+}

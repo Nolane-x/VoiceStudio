@@ -1,0 +1,165 @@
+name: Promote human-reviewed Voice Design candidates
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Actions run ID that produced the private Voice Design analysis artifact
+        required: true
+        type: string
+      confirm_retry_unknown:
+        description: Confirm you checked My Voices and the ambiguous preview was not saved before allowing another create request
+        required: true
+        type: boolean
+        default: false
+      previous_ledger_run_id:
+        description: Previous promotion workflow run ID; set this only when resuming a partially completed promotion
+        required: false
+        type: string
+        default: ""
+      human_review_csv:
+        description: Paste the exported human-review CSV, including approve=yes for each selected candidate
+        required: true
+        type: string
+      max_voices:
+        description: Maximum number of persistent voices to create in this run (1-8)
+        required: true
+        type: number
+        default: 4
+      minimum_overall:
+        description: Minimum human overall score (1-5)
+        required: true
+        type: number
+        default: 4
+      minimum_pronunciation:
+        description: Minimum human pronunciation score (1-5)
+        required: true
+        type: number
+        default: 4
+      confirm_voice_creation:
+        description: Explicitly approve saving selected preview IDs as persistent account voices
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: voice-promotion-${{ github.ref }}-${{ inputs.source_run_id }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Save approved previews as private workspace voices
+    if: ${{ github.event.repository.private == true && inputs.confirm_voice_creation == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Validate run ID and bounded promotion count
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          MAX_VOICES: ${{ inputs.max_voices }}
+          PREVIOUS_LEDGER_RUN_ID: ${{ inputs.previous_ledger_run_id }}
+          CONFIRM_RETRY_UNKNOWN: ${{ inputs.confirm_retry_unknown }}
+        run: |
+          python - <<'PY'
+          import os
+          run_id = int(os.environ["SOURCE_RUN_ID"])
+          maximum = int(os.environ["MAX_VOICES"])
+          assert run_id > 0, "source_run_id must be a positive Actions run ID"
+          assert 1 <= maximum <= 8, "max_voices must be between 1 and 8"
+          previous = os.environ["PREVIOUS_LEDGER_RUN_ID"].strip()
+          assert not previous or (previous.isdigit() and int(previous) > 0), "previous_ledger_run_id must be blank or a positive run ID"
+          assert not previous or previous != os.environ["SOURCE_RUN_ID"], "previous_ledger_run_id cannot be the source preview run ID"
+          assert os.environ["CONFIRM_RETRY_UNKNOWN"] in {"true", "false"}, "confirm_retry_unknown must be a boolean"
+          PY
+      - name: Download private analysis mapping from the preview run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: elevenlabs-voice-design-analysis-${{ inputs.source_run_id }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/source-analysis
+      - name: Download previous promotion ledger for safe resume
+        if: ${{ inputs.previous_ledger_run_id != '' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: voice-promotion-ledger-${{ inputs.previous_ledger_run_id }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.previous_ledger_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/previous-ledger
+      - name: Write listener scores without echoing the CSV
+        env:
+          HUMAN_REVIEW_CSV: ${{ inputs.human_review_csv }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          value = os.environ["HUMAN_REVIEW_CSV"]
+          if not value.strip():
+              raise SystemExit("Human review CSV is empty")
+          path = Path("dist/human-review.csv")
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(value, encoding="utf-8", newline="")
+          print(f"Saved human review form ({len(value)} characters); contents are not logged.")
+          PY
+      - name: Create persistent voices from approved preview IDs
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          MAX_VOICES: ${{ inputs.max_voices }}
+          MINIMUM_OVERALL: ${{ inputs.minimum_overall }}
+          MINIMUM_PRONUNCIATION: ${{ inputs.minimum_pronunciation }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          PREVIOUS_LEDGER_RUN_ID: ${{ inputs.previous_ledger_run_id }}
+          CONFIRM_RETRY_UNKNOWN: ${{ inputs.confirm_retry_unknown }}
+        run: |
+          test -n "$ELEVENLABS_API_KEY" || {
+            echo "::error::Set ELEVENLABS_API_KEY in repository Actions secrets."
+            exit 1
+          }
+          args=(
+            --analysis dist/source-analysis/analysis.json
+            --ratings dist/human-review.csv
+            --source-run-id "$SOURCE_RUN_ID"
+            --output dist/voice-promotion-ledger.json
+            --max-voices "$MAX_VOICES"
+            --minimum-overall "$MINIMUM_OVERALL"
+            --minimum-pronunciation "$MINIMUM_PRONUNCIATION"
+            --confirm-voice-creation
+          )
+          if test -n "$PREVIOUS_LEDGER_RUN_ID"; then
+            args+=(--previous-ledger dist/previous-ledger/voice-promotion-ledger.json)
+          fi
+          if test "$CONFIRM_RETRY_UNKNOWN" = "true"; then
+            args+=(--confirm-retry-unknown)
+          fi
+          python scripts/promote_voice_design_candidates.py "${args[@]}"
+      - name: Upload private voice promotion ledger
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: voice-promotion-ledger-${{ github.run_id }}
+          path: dist/voice-promotion-ledger.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  no-promotion:
+    name: No persistent voice created
+    if: ${{ github.event.repository.private != true || inputs.confirm_voice_creation != true }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Explain the safety gate
+        run: |
+          echo "No persistent voice was created."
+          echo "This workflow requires a private repository and confirm_voice_creation=true."
+          echo "The selected previews must be human-approved and pass pronunciation and overall-score thresholds."

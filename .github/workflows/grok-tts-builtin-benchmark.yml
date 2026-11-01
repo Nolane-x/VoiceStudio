@@ -1,0 +1,173 @@
+name: Grok built-in Vietnamese and English voice benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Which language pool to audition
+        required: true
+        type: choice
+        options: [both, vi, en]
+        default: both
+      offset:
+        description: Zero-based alphabetical offset in the built-in voice list
+        required: true
+        type: number
+        default: 0
+      limit:
+        description: Number of voices per language; max four (eight total with both)
+        required: true
+        type: number
+        default: 2
+      confirm_paid_api_usage:
+        description: Explicitly approve paid Grok TTS requests (estimate shown in job log)
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grok-tts-benchmark-${{ github.ref }}-${{ inputs.language }}-${{ inputs.offset }}
+  cancel-in-progress: false
+
+jobs:
+  paid-benchmark:
+    name: Render matched four-part Grok built-in voice auditions
+    if: ${{ github.event.repository.private == true && inputs.confirm_paid_api_usage == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HOME: /tmp/voice-studio-grok-tts/hf
+      HF_HUB_CACHE: /tmp/voice-studio-grok-tts/hf/hub
+      AUDIOSEAL_CACHE_DIR: /tmp/voice-studio-grok-tts/audioseal
+      TORCH_HOME: /tmp/voice-studio-grok-tts/torch
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      OMP_NUM_THREADS: "4"
+    steps:
+      - name: Check out VoiceStudio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Validate bounded paid request and secret
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          REQUEST_LANGUAGE: ${{ inputs.language }}
+          REQUEST_LIMIT: ${{ inputs.limit }}
+          REQUEST_OFFSET: ${{ inputs.offset }}
+        run: |
+          test -n "$XAI_API_KEY" || {
+            echo "::error::Set XAI_API_KEY in repository Actions secrets."
+            exit 1
+          }
+          python - <<'PY'
+          import os
+          language = os.environ["REQUEST_LANGUAGE"] or "both"
+          limit = int(os.environ["REQUEST_LIMIT"] or "2")
+          offset = int(os.environ["REQUEST_OFFSET"] or "0")
+          assert language in {"both", "vi", "en"}
+          assert 1 <= limit <= 4
+          assert 0 <= offset <= 100000
+          count = limit * (2 if language == "both" else 1)
+          assert count <= 8
+          max_characters = count * 3000
+          maximum_charge = max_characters * 15 / 1_000_000
+          print(f"Maximum TTS requests: {count}")
+          print(f"Maximum input characters by VoiceStudio guard: {max_characters}")
+          print(f"Hard cost ceiling at documented xAI rate of USD 15 / 1M chars: USD {maximum_charge:.4f}")
+          PY
+
+      - name: Install FFmpeg and audio runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1
+
+      - name: Install pinned CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            "torch==2.8.0" "torchaudio==2.8.0"
+
+      - name: Install watermark and audio dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "audioseal>=0.1.3" \
+            "soundfile>=0.12.1" \
+            "pytest"
+
+      - name: Refresh built-in voice metadata (GET only)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          python scripts/discover_grok_builtin_voices.py \
+            --output dist/grok-builtin-voices
+
+      - name: Run Grok discovery and benchmark contract tests
+        run: |
+          python -m pytest \
+            tests/test_grok_builtin_voice_discovery.py \
+            tests/test_grok_tts_builtin_voice_benchmark.py -q
+
+      - name: Render bounded paid Grok TTS auditions
+        id: generate
+        continue-on-error: true
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          REQUEST_LANGUAGE: ${{ inputs.language }}
+          REQUEST_OFFSET: ${{ inputs.offset }}
+          REQUEST_LIMIT: ${{ inputs.limit }}
+        run: |
+          python scripts/benchmark_grok_tts_builtin_voices.py \
+            --language "${REQUEST_LANGUAGE:-both}" \
+            --offset "${REQUEST_OFFSET:-0}" \
+            --limit "${REQUEST_LIMIT:-2}" \
+            --voice-catalog dist/grok-builtin-voices/catalog.json \
+            --output dist/grok-tts-benchmark \
+            --confirm-paid-api-usage
+
+      - name: Upload anonymized blind listening archive
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: grok-tts-blind-review-${{ github.run_id }}
+          path: dist/grok-tts-benchmark/blind-listening-review.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload private voice mapping and analysis manifest
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: grok-tts-analysis-${{ github.run_id }}
+          path: |
+            dist/grok-tts-benchmark/analysis.json
+            dist/grok-tts-benchmark/README.md
+            dist/grok-builtin-voices/catalog.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if any voice request or audio validation failed
+        if: steps.generate.outcome == 'failure'
+        run: |
+          echo "::error::The Grok batch had failed requests or audio checks. Inspect the partial analysis artifact. Do not retry ambiguous outcomes until provider usage is reconciled."
+          exit 1
+
+  no-paid-calls:
+    name: No paid Grok TTS requests made
+    if: ${{ github.event.repository.private != true || inputs.confirm_paid_api_usage != true }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Explain the two safety gates
+        run: |
+          echo "No Grok TTS synthesis request was sent and no TTS credits were used."
+          echo "The repository must be private and confirm_paid_api_usage must be true."
+          echo "The maximum batch is eight requests: four voices per selected language."

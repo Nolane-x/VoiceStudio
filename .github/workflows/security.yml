@@ -104,6 +104,18 @@ jobs:
           fetch-depth: 0
           # No authed git needed after clone; don't persist GITHUB_TOKEN.
           persist-credentials: false
+      # The Gitleaks action computes a PR commit range from the first commit
+      # on the feature branch. Fetch the exact base commit explicitly: a
+      # full-depth checkout of the PR merge ref did not always materialize
+      # that parent in the local object database (gitleaks then failed with
+      # "Invalid revision range" before scanning any bytes).
+      - name: Ensure pull-request base history is present
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags origin "$PR_BASE_SHA"
+          git cat-file -e "$PR_BASE_SHA^{commit}"
       - name: gitleaks
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
