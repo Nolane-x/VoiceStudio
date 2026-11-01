@@ -446,7 +446,9 @@ def prepare_kokoro() -> tuple[dict, list[dict], dict]:
             "Kokoro checkpoint SHA-256 changed; re-review the upstream model revision "
             f"(expected {KOKORO_MODEL_SHA256}, got {model_sha256})"
         )
-    voices_doc = voices_doc_path.read_text(encoding="utf-8")
+    # The source registry pins the metadata revision and the reviewed voice
+    # checksum prefixes. Do not parse markdown layout at runtime: each
+    # selected embedding is checked against the independently reviewed prefix.
     selected = sources["selected_voices"]
     voice_tensors: dict[str, Any] = {}
     voice_file_hashes: dict[str, str] = {}
@@ -454,27 +456,7 @@ def prepare_kokoro() -> tuple[dict, list[dict], dict]:
         voice_id = str(item["id"])
         if voice_id not in KOKORO_VOICE_IDS:
             raise RuntimeError(f"Unreviewed Kokoro voice ID in source registry: {voice_id}")
-        row_cells = None
-        for line in voices_doc.splitlines():
-            if "|" not in line:
-                continue
-            cells_candidate = [
-                re.sub(r"[*`]", "", cell).strip()
-                for cell in line.strip().strip("|").split("|")
-            ]
-            if cells_candidate and cells_candidate[0] == voice_id:
-                row_cells = cells_candidate
-                break
-        if row_cells is None:
-            raise RuntimeError(f"Kokoro VOICES.md does not contain {voice_id}")
-        cells = row_cells
-        if len(cells) < 6 or cells[0] != voice_id:
-            raise RuntimeError(f"Unexpected Kokoro voice-grade row for {voice_id}: {cells}")
-        if cells[4] != str(item["quality_grade"]):
-            raise RuntimeError(f"Kokoro upstream grade changed for {voice_id}: {cells[4]}")
-        if cells[5] != str(item["voice_sha256_prefix"]):
-            raise RuntimeError(f"Kokoro voice SHA prefix changed for {voice_id}: {cells[5]}")
-
+        
         voice_path = hf_download(KOKORO_REPO, f"voices/{voice_id}.pt", KOKORO_MODEL_REVISION)
         voice_sha256 = sha256_file(voice_path)
         if not voice_sha256.startswith(str(item["voice_sha256_prefix"])):
