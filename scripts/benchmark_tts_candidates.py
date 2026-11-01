@@ -197,8 +197,16 @@ def make_candidates(builder, languages: list[str], failures: list[dict]) -> tupl
             voice, info = builder.prepare_piper()
             revisions["piper"] = info["revision"]
             for label, speaker_id in info["speaker_pairs"][:2]:
-                def render(text: str, path: Path, *, _id=speaker_id):
-                    builder.render_piper_wav(voice, _id, path)
+                def render(text: str, path: Path, *, _voice=voice, _id=speaker_id):
+                    import wave
+                    from piper import SynthesisConfig
+
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    with wave.open(str(path), "wb") as wav_file:
+                        _voice.synthesize_wav(
+                            text, wav_file,
+                            syn_config=SynthesisConfig(speaker_id=int(_id)),
+                        )
 
                 rows.append({
                     "engine": "piper", "engine_label": "Piper LibriTTS High",
