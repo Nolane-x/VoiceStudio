@@ -6,7 +6,11 @@ on:
     paths:
       - "voice-library/**"
       - "scripts/build_voice_library.py"
+      - "scripts/render_video_voice.py"
       - "tests/test_voice_library_contract.py"
+      - "tests/test_video_voice_contract.py"
+      - "tests/test_voice_library_ci_scope.py"
+      - ".github/scripts/ci_scope.py"
       - ".github/workflows/voice-library.yml"
       - "backend/services/watermark.py"
       - "backend/core/prefs.py"
@@ -37,6 +41,10 @@ on:
         type: string
   workflow_call:
     inputs:
+      downstream_call:
+        description: "Set true when invoked as a reusable workflow from another repository"
+        required: true
+        type: boolean
       job_json:
         description: "JSON narration job to render for a downstream video workflow"
         required: true
@@ -64,7 +72,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Checkout VoiceStudio source for reusable calls
+        if: ${{ inputs.downstream_call == true }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: Nolane-x/VoiceStudio
+          ref: main
+          persist-credentials: false
+      - name: Checkout PR or main source
+        if: ${{ inputs.downstream_call != true }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
@@ -83,7 +100,7 @@ jobs:
   smoke:
     name: Real-model smoke build (two voices per source)
     needs: contract
-    if: github.event_name == 'pull_request'
+    if: ${{ github.event_name == 'pull_request' && inputs.downstream_call != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
@@ -120,6 +137,10 @@ jobs:
             --language all \
             --limit 2 \
             --output dist/voice-library-smoke
+      - name: End-to-end Vietnamese video narration smoke
+        run: |
+          export VOICE_JOB_JSON="$(cat voice-library/video-job.example.vi.json)"
+          python scripts/render_video_voice.py --output dist/video-voice-smoke
       - name: Upload smoke audio and manifest
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -128,11 +149,19 @@ jobs:
           path: dist/voice-library-smoke/
           if-no-files-found: warn
           retention-days: 7
+      - name: Upload video narration smoke assets
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: video-voice-smoke
+          path: dist/video-voice-smoke/
+          if-no-files-found: warn
+          retention-days: 7
 
   render-video-narration:
     name: Render video narration (48 kHz WAV + captions)
     needs: contract
-    if: ${{ github.event_name == 'workflow_call' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'render') }}
+    if: ${{ inputs.downstream_call == true || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'render') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
@@ -143,7 +172,16 @@ jobs:
       VOICE_JOB_JSON: ${{ inputs.job_json }}
       HF_HUB_DISABLE_TELEMETRY: "1"
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Checkout VoiceStudio source for reusable calls
+        if: ${{ inputs.downstream_call == true }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: Nolane-x/VoiceStudio
+          ref: main
+          persist-credentials: false
+      - name: Checkout PR or main source
+        if: ${{ inputs.downstream_call != true }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
@@ -166,6 +204,7 @@ jobs:
             "huggingface_hub>=0.28" \
             "jsonschema>=4.25,<5"
       - name: Render, master, watermark and verify narration
+        working-directory: .
         run: python scripts/render_video_voice.py --output dist/video-voice
       - name: Upload video narration assets
         if: always()
@@ -179,7 +218,7 @@ jobs:
   build-and-publish:
     name: Full voice library and release assets
     needs: contract
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'catalog') }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.downstream_call != true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'catalog') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
