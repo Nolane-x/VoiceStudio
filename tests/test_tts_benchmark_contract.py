@@ -31,6 +31,16 @@ def test_vietnamese_error_metrics_are_labelled_syllable_not_lexical_word_error()
 def test_vietnamese_reference_scripts_cover_tones_and_number_reading():
     assert "12,6" in MODULE.SCRIPTS["vi"][1][2]
     assert "Đôi khi" in MODULE.SCRIPTS["vi"][0][2]
+    assert len(MODULE.SCRIPTS["vi"]) == 4
+
+
+def test_matched_corpus_covers_conversation_and_long_form_in_both_languages():
+    for language in ("en", "vi"):
+        scenarios = {row[0] for row in MODULE.SCRIPTS[language]}
+        assert scenarios == {"story", "numbers", "conversation", "longform"}
+        long_form = next(row[2] for row in MODULE.SCRIPTS[language] if row[0] == "longform")
+        assert len(long_form) >= 450
+
 
 
 def test_supertonic_is_not_promoted_to_a_commercial_voice_catalogue():
