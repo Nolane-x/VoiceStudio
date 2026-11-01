@@ -127,3 +127,24 @@ def test_blind_archive_excludes_private_analysis_mapping(tmp_path):
         assert "analysis.json" not in names
         assert "blind-samples/sample-001.wav" in names
         assert all("secretvoice" not in name for name in names)
+
+
+def test_workflow_requires_private_repository_and_explicit_paid_confirmation():
+    workflow = (ROOT / ".github" / "workflows" / "grok-tts-builtin-benchmark.yml").read_text(encoding="utf-8")
+    assert "github.event.repository.private == true" in workflow
+    assert "inputs.confirm_paid_api_usage == true" in workflow
+    assert "default: false" in workflow
+    assert "XAI_API_KEY" in workflow
+    assert "Maximum input characters" in workflow
+    assert "USD {maximum_charge:.4f}" in workflow
+
+
+def test_static_official_builtin_voice_catalog_has_25_distinct_profiles():
+    import json
+
+    catalog = json.loads((ROOT / "voice-library" / "grok-builtin-studio-voices.json").read_text(encoding="utf-8"))
+    assert catalog["count"] == 25
+    assert len(catalog["voices"]) == 25
+    assert len({voice["voice_id"] for voice in catalog["voices"]}) == 25
+    assert all(voice["language_scope"] == ["vi", "en"] for voice in catalog["voices"])
+    assert "not a popularity" in catalog["usage_note"].lower()
