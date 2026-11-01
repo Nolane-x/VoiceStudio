@@ -23,17 +23,17 @@ QUERY_PLAN = (
     ("all_trending", "trendingScore", None),
     ("all_downloads", "downloads", None),
     ("all_likes", "likes", None),
-    ("vi_trending", "trendingScore", "vi"),
-    ("vi_downloads", "downloads", "vi"),
-    ("en_trending", "trendingScore", "en"),
-    ("en_downloads", "downloads", "en"),
+    ("vi_search_trending", "trendingScore", "Vietnamese"),
+    ("vi_search_downloads", "downloads", "Vietnamese"),
+    ("en_search_trending", "trendingScore", "English"),
+    ("en_search_downloads", "downloads", "English"),
 )
 
 
 def _request_models(
     sort: str,
     limit: int,
-    language: str | None,
+    search: str | None,
     *,
     opener: Callable[..., Any] = urllib.request.urlopen,
     timeout: int = 30,
@@ -56,10 +56,10 @@ def _request_models(
             "lastModified", "pipeline_tag", "library_name", "gated",
         )
     )
-    if language:
-        if language not in {"vi", "en"}:
-            raise ValueError(f"Unsupported language filter: {language}")
-        params.append(("filter", f"language:{language}"))
+    if search:
+        if search not in {"Vietnamese", "English"}:
+            raise ValueError(f"Unsupported language discovery search: {search}")
+        params.append(("search", search))
     url = API_URL + "?" + urllib.parse.urlencode(params)
     request = urllib.request.Request(
         url,
@@ -133,6 +133,7 @@ def _normalize(row: dict[str, Any]) -> dict[str, Any]:
         "discovery_status": "discovery_only_not_benchmarked_or_rights_cleared",
         "rights_review": "required_before_model_download_or_production_use",
         "human_listening_review": "required_before_voice_quality_claim",
+    "language_search_hints": [],
     }
 
 
@@ -148,13 +149,13 @@ def collect_discovery(
     merged: dict[str, dict[str, Any]] = {}
     source_results = []
     source_errors = []
-    for source_name, sort, language in QUERY_PLAN:
+    for source_name, sort, search_term in QUERY_PLAN:
         try:
-            rows = _request_models(sort, limit, language, opener=opener)
+            rows = _request_models(sort, limit, search_term, opener=opener)
             source_results.append({
                 "source": source_name,
                 "sort": sort,
-                "language": language,
+                "search_term": search_term,
                 "count": len(rows),
             })
             for rank, raw in enumerate(rows, start=1):
@@ -168,6 +169,8 @@ def collect_discovery(
                 )
                 target["signal_ranks"][source_name] = rank
                 target["discovered_by"].append(source_name)
+                if search_term and search_term not in target["language_search_hints"]:
+                    target["language_search_hints"].append(search_term)
                 for key, value in record.items():
                     if value is not None and value != []:
                         target[key] = value
@@ -202,8 +205,8 @@ def collect_discovery(
         "source": "Hugging Face Hub public model API",
         "source_url": API_URL,
         "query_plan": [
-            {"source": name, "sort": sort, "language": language}
-            for name, sort, language in QUERY_PLAN
+            {"source": name, "sort": sort, "search_term": search_term}
+            for name, sort, search_term in QUERY_PLAN
         ],
         "source_results": source_results,
         "source_errors": source_errors,
@@ -212,7 +215,7 @@ def collect_discovery(
         "limitations": [
             "Hub downloads, likes and trending scores are discovery/adoption signals, not human preference or proof of use by creators/channels.",
             "A model repository license tag does not clear weights, datasets, tokenizers, speaker recordings, generated identities or redistribution rights.",
-            "Language tags may be absent or incomplete; verify each model card and run native-language smoke tests.",
+            "Language tags may be absent or incomplete; search-term matches are unverified hints only. Verify each model card and run native-language smoke tests.",
             "This report does not download model weights, create audio, save provider voices or promote any candidate to production.",
         ],
     }
@@ -248,6 +251,9 @@ def write_report(payload: dict[str, Any], output: Path) -> tuple[Path, Path]:
     ]
     for row in payload["models"]:
         languages = ", ".join(row.get("language_tags") or []) or "not tagged"
+        hints = ", ".join(row.get("language_search_hints") or [])
+        if hints:
+            languages += f"; unverified search hint: {hints}"
         lines.append(
             f"| [{_md(row['model_id'])}](https://huggingface.co/{_md(row['model_id'])}) "
             f"| {_md(row.get('downloads'))} "
