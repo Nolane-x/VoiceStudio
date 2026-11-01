@@ -131,6 +131,7 @@ def write_blind_review(output: Path, rows: list[dict[str, Any]]) -> Path:
             f'<h2>Preview {html.escape(row["blind_sample_id"])}</h2>'
             f'<audio controls preload="none" src="{html.escape(row["audio_file"], quote=True)}"></audio>'
             f'<div class="ratings">{ratings}</div>'
+            '<label><input type="checkbox" data-field="approve"> Approve this candidate for persistent account voice creation</label>'
             '<label>Notes<textarea data-field="notes" rows="2"></textarea></label></article>'
         )
     page = """<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -148,10 +149,11 @@ label{display:block;font-size:.86rem}input,textarea{box-sizing:border-box;width:
 <script>
 document.getElementById('export').addEventListener('click',()=>{
  const fields=['naturalness','pronunciation','accent_fit','prosody','distinctiveness','overall','notes'];
- const rows=[['blind_sample_id','language',...fields]];
+ const rows=[['blind_sample_id','language','approve',...fields]];
  document.querySelectorAll('.sample').forEach(card=>rows.push([
   card.querySelector('.meta').textContent.split(' · ')[0],
   card.querySelector('.meta').textContent.split(' · ')[1],
+  card.querySelector('[data-field="approve"]').checked ? 'yes' : 'no',
   ...fields.map(field=>card.querySelector('[data-field="'+field+'"]').value)
  ]));
  const csv=rows.map(row=>row.map(value=>'"'+String(value??'').replaceAll('"','""')+'"').join(',')).join('\n');
@@ -164,9 +166,9 @@ document.getElementById('export').addEventListener('click',()=>{
     csv_path = output / "human-review.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["blind_sample_id", "language", "naturalness", "pronunciation", "accent_fit", "prosody", "distinctiveness", "overall", "notes"])
+        writer.writerow(["blind_sample_id", "language", "approve", "naturalness", "pronunciation", "accent_fit", "prosody", "distinctiveness", "overall", "notes"])
         for row in rows:
-            writer.writerow([row["blind_sample_id"], row["language"], "", "", "", "", "", "", ""])
+            writer.writerow([row["blind_sample_id"], row["language"], "no", "", "", "", "", "", "", ""])
     readme = output / "BLIND-REVIEW.md"
     readme.write_text(
         "# Blind Voice Design Review\n\n"
@@ -223,6 +225,9 @@ def run(args: argparse.Namespace) -> int:
                 "language": profile["language"],
                 "locale": profile["locale"],
                 "accent_id": profile["accent_id"],
+                "intended_use_case": profile.get("intended_use_case"),
+                "market_archetype_id": profile.get("market_archetype_id"),
+                "market_archetype_label": profile.get("market_archetype_label"),
                 "dimensions": profile["dimensions"],
                 "voice_description": profile["voice_description"],
                 "seed": profile["seed"],

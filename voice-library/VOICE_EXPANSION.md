@@ -61,3 +61,8 @@ The no-cost GitHub Actions catalog workflow builds these blueprints without mode
 ## Reproducibility
 
 Profile IDs and seeds are deterministic. Full prompt-to-preview mapping is in a separate analysis artifact; blind reviewers receive only audio and neutral IDs. Production promotion is manual and never triggered by profile count alone.
+
+
+### Human-approved account voice creation
+
+The blind review CSV includes an `approve` field. After a human listener has approved a preview and entered the required scores, the separate `Promote human-reviewed Voice Design candidates` workflow can create up to eight persistent workspace voices from their existing `generated_voice_id` values. This calls the provider's create-from-preview endpoint, not a new preview-generation endpoint. The workflow requires a private repository, `ELEVENLABS_API_KEY`, and a separate `confirm_voice_creation=true` input. Candidates must pass naturalness, pronunciation, accent-fit, prosody, distinctiveness and overall score thresholds. The returned IDs are workspace-only; Voice Design voices cannot be published to the public ElevenLabs Voice Library. No preview is generated and no public distribution is attempted by the promotion step.

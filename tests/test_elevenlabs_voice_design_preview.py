@@ -139,6 +139,10 @@ def test_blind_archive_excludes_profile_and_provider_mapping(tmp_path):
         names = set(bundle.namelist())
         assert "index.html" in names
         assert "human-review.csv" in names
+        review_csv = bundle.read("human-review.csv").decode("utf-8")
+        assert "approve" in review_csv.splitlines()[0]
+        blind_html = bundle.read("index.html").decode("utf-8")
+        assert "Approve this candidate" in blind_html
         assert "blind-audio/candidate-001.mp3" in names
         assert not any("analysis" in name or "profile" in name or "mapping" in name for name in names)
         page = bundle.read("index.html").decode("utf-8")
