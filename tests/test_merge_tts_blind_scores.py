@@ -94,7 +94,7 @@ def test_merge_ranks_voice_ids_by_language_and_separately_by_scenario(tmp_path):
     assert vi[0]["review_count"] == 3
     assert vi[1]["rights_status"] == "manual-review-required"
     assert result["voice_rankings_by_language"]["en"][0]["voice_id"] == "af_heart"
-    assert len(result["voice_rankings_by_language_and_scenario"]["vi"]) == 2
+    assert len(result["voice_rankings_by_language_and_scenario"]["vi"]) == 3
     assert summary.is_file()
 
 
