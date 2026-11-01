@@ -101,6 +101,13 @@ class VoiceLibraryContractTests(unittest.TestCase):
         } <= required)
         self.assertEqual(voice["properties"]["watermark"]["const"], "verified")
 
+    def test_optional_upstream_quality_grade_accepts_null_and_known_grades(self):
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        grade = schema["properties"]["voices"]["items"]["properties"]["upstream_quality_grade"]
+        self.assertIn("null", grade["type"])
+        self.assertIn(None, grade["enum"])
+        self.assertTrue({"A", "A-", "B-", "F+"} <= set(grade["enum"]))
+
     def test_every_generated_audio_uses_voice_studio_watermark_gate(self):
         script = BUILDER.read_text(encoding="utf-8")
         self.assertIn("mark_synthetic(", script)
