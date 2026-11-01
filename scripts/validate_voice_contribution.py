@@ -21,15 +21,20 @@ SCHEMA_PATH = ROOT / "voice-library" / "voice-contribution.schema.json"
 
 def custom_errors(manifest: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    consent = manifest.get("consent", {})
-    granted = set(consent.get("rights_granted", []))
-    denied = set(consent.get("rights_not_granted", []))
+    consent_raw = manifest.get("consent", {})
+    consent = consent_raw if isinstance(consent_raw, dict) else {}
+    granted_raw = consent.get("rights_granted", [])
+    denied_raw = consent.get("rights_not_granted", [])
+    granted = set(granted_raw) if isinstance(granted_raw, list) else set()
+    denied = set(denied_raw) if isinstance(denied_raw, list) else set()
     conflicts = sorted(granted & denied)
     if conflicts:
         errors.append(f"rights cannot be both granted and denied: {', '.join(conflicts)}")
 
-    review = manifest.get("rights_review", {})
-    quality = manifest.get("quality_review", {})
+    review_raw = manifest.get("rights_review", {})
+    quality_raw = manifest.get("quality_review", {})
+    review = review_raw if isinstance(review_raw, dict) else {}
+    quality = quality_raw if isinstance(quality_raw, dict) else {}
     if review.get("status") == "approved":
         if not review.get("reviewer_ref") or not review.get("reviewed_at"):
             errors.append("approved rights_review requires reviewer_ref and reviewed_at")
