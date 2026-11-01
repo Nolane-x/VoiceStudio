@@ -65,10 +65,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
-      HF_HOME: ${{ runner.temp }}/hf-home
-      HF_HUB_CACHE: ${{ runner.temp }}/hf-home/hub
-      AUDIOSEAL_CACHE_DIR: ${{ runner.temp }}/audioseal
-      TORCH_HOME: ${{ runner.temp }}/torch
+      HF_HOME: /tmp/voice-library-hf-home
+      HF_HUB_CACHE: /tmp/voice-library-hf-home/hub
+      AUDIOSEAL_CACHE_DIR: /tmp/voice-library-audioseal
+      TORCH_HOME: /tmp/voice-library-torch
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -116,10 +116,10 @@ jobs:
     permissions:
       contents: write
     env:
-      HF_HOME: ${{ runner.temp }}/hf-home
-      HF_HUB_CACHE: ${{ runner.temp }}/hf-home/hub
-      AUDIOSEAL_CACHE_DIR: ${{ runner.temp }}/audioseal
-      TORCH_HOME: ${{ runner.temp }}/torch
+      HF_HOME: /tmp/voice-library-hf-home
+      HF_HUB_CACHE: /tmp/voice-library-hf-home/hub
+      AUDIOSEAL_CACHE_DIR: /tmp/voice-library-audioseal
+      TORCH_HOME: /tmp/voice-library-torch
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
