@@ -661,29 +661,25 @@
         "rank": 1,
         "model": "Gemini 3.8 Flash-Lite TTS",
         "elo": 1117,
-        "confidence_interval": 35,
-        "samples": 158
+        "confidence_interval": 35
       },
       {
         "rank": 2,
         "model": "Gemini 3.8 Flash TTS",
         "elo": 1104,
-        "confidence_interval": 34,
-        "samples": 154
+        "confidence_interval": 34
       },
       {
         "rank": 3,
         "model": "Eleven v4",
         "elo": 1096,
-        "confidence_interval": 36,
-        "samples": 142
+        "confidence_interval": 36
       },
       {
         "rank": 4,
         "model": "Gemini 3.1 Flash TTS",
         "elo": 1086,
-        "confidence_interval": 20,
-        "samples": 546
+        "confidence_interval": 20
       }
     ]
   }
