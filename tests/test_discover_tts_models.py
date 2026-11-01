@@ -34,7 +34,7 @@ def test_discovery_collects_distinct_market_signals_and_merges_duplicate_models(
     def fake_open(request, timeout):
         query = parse_qs(urlparse(request.full_url).query)
         calls.append(query)
-        language_filter = query.get("filter", [None])[0]
+        search_term = query.get("search", [None])[0]
         rows = [{
             "id": "publisher/vietnamese-tts",
             "downloads": 1200,
@@ -43,7 +43,7 @@ def test_discovery_collects_distinct_market_signals_and_merges_duplicate_models(
             "tags": ["text-to-speech", "language:vi", "license:apache-2.0"],
             "pipeline_tag": "text-to-speech",
         }]
-        if language_filter is None:
+        if search_term is None or search_term == "English":
             rows.append({
                 "id": "publisher/english-tts",
                 "downloads": 900,
@@ -63,23 +63,25 @@ def test_discovery_collects_distinct_market_signals_and_merges_duplicate_models(
     assert result["generated_at"] == "2026-11-01T00:00:00+00:00"
     assert len(calls) == len(MODULE.QUERY_PLAN)
     vietnamese = next(row for row in result["models"] if row["model_id"] == "publisher/vietnamese-tts")
-    assert vietnamese["signal_ranks"]["vi_trending"] == 1
+    assert vietnamese["signal_ranks"]["vi_search_trending"] == 1
+    assert vietnamese["language_search_hints"] == ["Vietnamese"]
     assert vietnamese["license"] == "apache-2.0"
     assert vietnamese["discovery_status"] == "discovery_only_not_benchmarked_or_rights_cleared"
 
 
-def test_discovery_uses_hub_language_filter_and_trending_sort():
+def test_discovery_uses_hub_language_search_and_trending_sort():
     urls = []
 
     def fake_open(request, timeout):
         urls.append(request.full_url)
         return _FakeResponse([])
 
-    MODULE._request_models("trendingScore", 12, "vi", opener=fake_open)
+    MODULE._request_models("trendingScore", 12, "Vietnamese", opener=fake_open)
     query = parse_qs(urlparse(urls[0]).query)
     assert query["pipeline_tag"] == ["text-to-speech"]
     assert query["sort"] == ["trendingScore"]
-    assert query["filter"] == ["language:vi"]
+    assert query["search"] == ["Vietnamese"]
+    assert "filter" not in query
     assert query["limit"] == ["12"]
     assert {"downloads", "likes", "tags", "trendingScore", "createdAt", "lastModified"} <= set(query["expand"])
 
