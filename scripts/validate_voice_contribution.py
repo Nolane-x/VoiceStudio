@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
-
-from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "voice-library" / "voice-contribution.schema.json"
@@ -75,6 +76,87 @@ def custom_errors(manifest: dict[str, Any]) -> list[str]:
     return errors
 
 
+def schema_errors(value: Any, rule: dict[str, Any], location: str = "$") -> list[str]:
+    """Validate the JSON Schema keywords used by voice-contribution.schema.json.
+
+    Keeping this small validator in the standard library avoids silently relying
+    on an unpinned transitive jsonschema dependency in Actions.
+    """
+    errors: list[str] = []
+    expected = rule.get("type")
+    type_matches = {
+        "object": lambda item: isinstance(item, dict),
+        "array": lambda item: isinstance(item, list),
+        "string": lambda item: isinstance(item, str),
+        "boolean": lambda item: isinstance(item, bool),
+        "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
+        "number": lambda item: isinstance(item, (int, float)) and not isinstance(item, bool),
+    }
+    if expected in type_matches and not type_matches[expected](value):
+        return [f"{location}: expected {expected}, got {type(value).__name__}"]
+
+    if "const" in rule and value != rule["const"]:
+        errors.append(f"{location}: expected constant {rule['const']!r}")
+    if "enum" in rule and value not in rule["enum"]:
+        errors.append(f"{location}: value {value!r} is not one of the allowed values")
+
+    if isinstance(value, str):
+        if len(value) < rule.get("minLength", 0):
+            errors.append(f"{location}: string is shorter than minLength")
+        if len(value) > rule.get("maxLength", float("inf")):
+            errors.append(f"{location}: string is longer than maxLength")
+        pattern = rule.get("pattern")
+        if pattern and re.search(pattern, value) is None:
+            errors.append(f"{location}: string does not match required pattern")
+        fmt = rule.get("format")
+        if fmt == "uuid":
+            try:
+                uuid.UUID(value)
+            except (ValueError, AttributeError, TypeError):
+                errors.append(f"{location}: value is not a valid UUID")
+        elif fmt == "date-time":
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    raise ValueError("timezone required")
+            except (ValueError, TypeError):
+                errors.append(f"{location}: value is not an RFC3339 date-time")
+        return errors
+
+    if isinstance(value, list):
+        if len(value) < rule.get("minItems", 0):
+            errors.append(f"{location}: array has fewer than minItems")
+        if len(value) > rule.get("maxItems", float("inf")):
+            errors.append(f"{location}: array exceeds maxItems")
+        if rule.get("uniqueItems") is True:
+            encoded = [
+                json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                for item in value
+            ]
+            if len(encoded) != len(set(encoded)):
+                errors.append(f"{location}: array items must be unique")
+        item_rule = rule.get("items")
+        if isinstance(item_rule, dict):
+            for index, item in enumerate(value):
+                errors.extend(schema_errors(item, item_rule, f"{location}[{index}]"))
+        return errors
+
+    if isinstance(value, dict):
+        required = rule.get("required", [])
+        for key in required:
+            if key not in value:
+                errors.append(f"{location}: missing required property {key!r}")
+        properties = rule.get("properties", {})
+        if rule.get("additionalProperties") is False:
+            extras = sorted(set(value) - set(properties))
+            if extras:
+                errors.append(f"{location}: additional properties are not allowed: {', '.join(extras)}")
+        for key, child_rule in properties.items():
+            if key in value and isinstance(child_rule, dict):
+                errors.extend(schema_errors(value[key], child_rule, f"{location}.{key}"))
+    return errors
+
+
 def validate_manifest(path: Path, schema: dict[str, Any]) -> list[str]:
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
@@ -83,11 +165,7 @@ def validate_manifest(path: Path, schema: dict[str, Any]) -> list[str]:
     if not isinstance(manifest, dict):
         return [f"{path}: manifest root must be an object"]
 
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
-    issues = [
-        f"{path}: schema: {issue.message}"
-        for issue in sorted(validator.iter_errors(manifest), key=lambda item: list(item.path))
-    ]
+    issues = [f"{path}: schema: {issue}" for issue in schema_errors(manifest, schema)]
     issues.extend(f"{path}: policy: {message}" for message in custom_errors(manifest))
     return issues
 
