@@ -152,8 +152,19 @@ verified the neutral-name blind-review package against the complete analyst mani
 
 Blind ZIP SHA-256: `18503c3a7227888584f28c4be5e8b1c86e984d98d46da87fbe46339816a3000c`.
 
-The following workflow change separates that blind ZIP from the analyst manifest
-as two Actions artifacts, avoiding duplicate WAV payloads. Its Actions
-verification is tracked in [run #25](https://github.com/Nolane-x/VoiceStudio/actions/runs/41288807370).
+The workflow now publishes the blind ZIP and analyst manifest as two
+separate Actions artifacts. The verified [run #26](https://github.com/Nolane-x/VoiceStudio/actions/runs/41288986130)
+contains a 40.6 MB blind-review artifact and a 7.7 KB analyst artifact. The
+analyst package contains only `benchmark.json` and `README.md`; the audio is
+stored once, in the blind-review ZIP.
+
+- Blind ZIP SHA-256:
+  `fcce4015875f588a82bd3d07de592d86e658af0e3212b6bc0ef4f51b8a770619`.
+- 24 sample IDs match across the HTML gallery, score CSV and analyst manifest.
+- All 24 WAVs passed mono 48 kHz PCM-24, SHA-256 and watermark verification.
+- All 24 CPU ASR diagnostics completed successfully.
+
+The [voice library smoke workflow run #46](https://github.com/Nolane-x/VoiceStudio/actions/runs/41288985974)
+also passed the English Kokoro and Vietnamese VieNeu end-to-end narration paths.
 Human listening has not yet been completed; the manifest continues to mark it
 as required.
