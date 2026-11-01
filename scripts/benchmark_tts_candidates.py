@@ -446,8 +446,9 @@ def run(args) -> int:
     )
     (output / "README.md").write_text(
         "# VoiceStudio TTS candidate benchmark\n\n"
-        "Open index.html and listen to matched voice samples. The page exports human listening ratings as CSV.\n\n"
-        "RTFx measures speed; ASR token/CER errors are intelligibility diagnostics only. They do not assess naturalness, prosody, emotional fit or speaker similarity. Vietnamese token error uses whitespace-delimited syllables. Review full samples before selecting a production voice.\n\n"
+        "Share blind-listening-review.zip with listeners. It contains neutral-name WAVs, reference text and a scoring gallery, but no model mapping, ASR transcripts or objective metrics.\n\n"
+        "The full analyst package retains the model-to-sample mapping in benchmark.json; join blind_sample_id from the exported score CSV to that manifest only after listening is complete.\n\n"
+        "RTFx and ASR token/CER errors are diagnostics only. They do not measure naturalness, prosody, emotional fit or speaker similarity. Vietnamese token error uses whitespace-delimited syllables. Review full samples before selecting a production voice.\n\n"
         "Supertonic is comparison-only and OpenRAIL-M manual-review-required. Piper source evidence does not establish blanket commercial clearance.\n",
         encoding="utf-8",
     )
