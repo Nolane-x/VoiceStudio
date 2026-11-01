@@ -93,8 +93,8 @@ def summarize(analysis: dict, reviews: dict[str, list[dict]]) -> dict:
             raise ValueError(f"Analysis manifest contains duplicate sample ID {sample_id}")
         sample_map[sample_id] = sample
 
-    # Validate before mutating the analysis object.
-    attached = read_scores(Path(args_scores_placeholder), sample_map) if False else reviews
+    # Attach already-validated reviews to their anonymous sample IDs.
+    attached = reviews
     voice_buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for sample in samples:
         sample_reviews = attached.get(sample["blind_sample_id"], [])
