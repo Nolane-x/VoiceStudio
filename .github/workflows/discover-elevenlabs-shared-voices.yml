@@ -64,10 +64,23 @@ jobs:
           DISCOVERY_LANGUAGE: ${{ inputs.language || 'both' }}
           DISCOVERY_PAGES: ${{ inputs.pages_per_query || '2' }}
         run: |
-          python scripts/discover_elevenlabs_shared_voices.py \
-            --language "$DISCOVERY_LANGUAGE" \
-            --pages-per-query "$DISCOVERY_PAGES" \
-            --output dist/elevenlabs-shared-voices
+          if [ -z "$ELEVENLABS_API_KEY" ]; then
+            mkdir -p dist/elevenlabs-shared-voices
+            cat > dist/elevenlabs-shared-voices/README.md <<'EOF'
+          # ElevenLabs voice discovery not executed
+
+          Filtered marketplace discovery requires the repository Actions secret
+          ELEVENLABS_API_KEY. No voice generation or paid API request was sent.
+          Add the key and rerun this workflow to collect high-quality and
+          professional Vietnamese and English shared-voice metadata.
+          EOF
+            echo "::notice::ELEVENLABS_API_KEY is not configured; metadata discovery was skipped."
+          else
+            python scripts/discover_elevenlabs_shared_voices.py \
+              --language "$DISCOVERY_LANGUAGE" \
+              --pages-per-query "$DISCOVERY_PAGES" \
+              --output dist/elevenlabs-shared-voices
+          fi
 
       - name: Upload marketplace discovery snapshot
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
