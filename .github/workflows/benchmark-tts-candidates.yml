@@ -1,0 +1,111 @@
+name: Benchmark TTS candidates
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/benchmark_tts_candidates.py"
+      - "tests/test_tts_benchmark_contract.py"
+      - ".github/workflows/benchmark-tts-candidates.yml"
+      - "backend/engines/supertonic3/constants.py"
+      - "scripts/build_voice_library.py"
+      - "backend/services/watermark.py"
+  workflow_dispatch:
+    inputs:
+      language:
+        description: "Languages to compare using identical reference passages"
+        required: true
+        type: choice
+        options: [both, vi, en]
+        default: both
+      asr_model:
+        description: "CPU ASR model used for intelligibility diagnostics"
+        required: true
+        type: choice
+        options: [small, base, medium]
+        default: small
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tts-candidate-benchmark-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  HF_HOME: /tmp/voice-studio-tts-benchmark
+  HF_HUB_CACHE: /tmp/voice-studio-tts-benchmark/hub
+  AUDIOSEAL_CACHE_DIR: /tmp/voice-studio-tts-benchmark/audioseal
+  TORCH_HOME: /tmp/voice-studio-tts-benchmark/torch
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  HF_HUB_ETAG_TIMEOUT: "30"
+  HF_HUB_DOWNLOAD_TIMEOUT: "240"
+  OMP_NUM_THREADS: "4"
+  MKL_NUM_THREADS: "4"
+  TOKENIZERS_PARALLELISM: "false"
+
+jobs:
+  benchmark:
+    name: Compare Piper, VieNeu, Kokoro and Supertonic on CPU
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out VoiceStudio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Install FFmpeg and audio runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1 espeak-ng
+
+      - name: Install pinned CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            "torch==2.8.0" "torchaudio==2.8.0"
+
+      - name: Run benchmark contract tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest tests/test_tts_benchmark_contract.py -q
+
+      - name: Install benchmark TTS and ASR candidates
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "piper-tts==1.8.0" \
+            "vieneu==3.8.3" \
+            "kokoro==0.9.4" \
+            "misaki[en]==0.9.4" \
+            "supertonic==1.3.1" \
+            "audioseal>=0.1.3" \
+            "soundfile>=0.12.1" \
+            "huggingface_hub>=0.28" \
+            "faster-whisper==1.2.1"
+
+      - name: Render matched samples, master, watermark and evaluate
+        env:
+          BENCHMARK_LANGUAGE: ${{ inputs.language || 'both' }}
+          BENCHMARK_ASR_MODEL: ${{ inputs.asr_model || 'small' }}
+        run: |
+          python scripts/benchmark_tts_candidates.py \
+            --language "$BENCHMARK_LANGUAGE" \
+            --asr-model "$BENCHMARK_ASR_MODEL" \
+            --output dist/tts-candidate-benchmark
+
+      - name: Upload listening gallery and benchmark results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tts-candidate-benchmark-${{ github.run_id }}
+          path: dist/tts-candidate-benchmark/
+          if-no-files-found: warn
+          retention-days: 30
