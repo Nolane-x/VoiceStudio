@@ -31,12 +31,15 @@ The no-cost GitHub Actions catalog workflow builds these blueprints without mode
 | ElevenLabs Voice Design | Original synthetic identity design; up to three previews per request. Text-to-Voice v3 supports Vietnamese; Multilingual v2 does not list Vietnamese. | Private-account previews only; route VI to `eleven_ttv_v3`, EN to `eleven_multilingual_ttv_v2`; paid requests require explicit manual dispatch and API key. |
 | VieNeu-TTS v3 Turbo | 25 preset identities listed by the pinned VieNeu SDK metadata; smoke run #55 exercised two presets across Vietnamese and bilingual English output. | Current Vietnamese production candidate; read the live preset roster from the pinned SDK. |
 | Kokoro-82M | Curated English voices and very high Hub usage. | Retain as English candidate; measure listener preference, not just downloads. |
+| Kokoro Vietnamese community fine-tune | 14 named Vietnamese voicepacks; public model repository is tagged Apache-2.0. | Research-only: reviewed README does not establish speaker consent or dataset rights for each voice identity; do not bundle into the public library until separately verified. |
 | OmniVoice Vietnamese fine-tunes | Published 1,000-hour, 152-speaker Vietnamese corpus. | Research-only: dataset CC-BY-NC-SA-4.0; do not use in monetized production. |
 | G-OmniVoice | Vietnamese-specific voice design/cloning; gated access. | Quarantine until tokenizer, dataset and downstream rights are reviewed. |
 | Fish Audio S2 Pro | Multilingual incl. Vietnamese; strong benchmark visibility. | Licensed-provider candidate only; separate commercial license required. |
 | Fun-CosyVoice3 | Apache-2.0, 9 languages incl. English; no Vietnamese in published list. | English comparison candidate only. |
 | Pocket TTS | CPU-friendly streaming; English and several European languages, not Vietnamese. | English streaming candidate; review access terms. |
 | FPT AI / Viettel AI / Vbee | Vietnamese cloud voices and regional variants. | Integration candidates; provider agreement and per-voice terms required. |
+
+A promising Vietnamese community candidate, [contextboxai/Kokoro-Vietnamese](https://huggingface.co/contextboxai/Kokoro-Vietnamese), exposes 14 named voicepacks through the [iamdinhthuan/Kokoro-Vietnamese](https://github.com/iamdinhthuan/Kokoro-Vietnamese) runtime. The code/model repository is marked Apache-2.0, but the reviewed public README and training guide do not document per-speaker consent or complete training-data rights. VoiceStudio therefore records it as research-only and blocks public audio/catalogue publication until that separate evidence is supplied. The same distinction applies to noncommercial F5/ViVoice models: a popular or downloadable checkpoint is not a commercial voice asset.
 
 ## Market-demand discovery
 
