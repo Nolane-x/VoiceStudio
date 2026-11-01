@@ -139,7 +139,7 @@ def test_workflow_requires_private_repository_and_explicit_paid_confirmation():
     assert "USD {maximum_charge:.4f}" in workflow
 
 
-def test_static_official_builtin_voice_catalog_has_25_distinct_profiles():
+def test_static_official_builtin_voice_catalog_has_26_distinct_profiles():
     import json
 
     catalog = json.loads((ROOT / "voice-library" / "grok-builtin-studio-voices.json").read_text(encoding="utf-8"))
@@ -147,4 +147,4 @@ def test_static_official_builtin_voice_catalog_has_25_distinct_profiles():
     assert len(catalog["voices"]) == 26
     assert len({voice["voice_id"] for voice in catalog["voices"]}) == 26
     assert all(voice["language_scope"] == ["vi", "en"] for voice in catalog["voices"])
-    assert "not a popularity" in catalog["usage_note"].lower()
+    assert "not popularity or quality rankings" in catalog["usage_note"].lower()
