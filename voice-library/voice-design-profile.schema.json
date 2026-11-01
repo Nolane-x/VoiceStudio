@@ -4,7 +4,7 @@
   "title": "VoiceStudio original synthetic voice design profile",
   "type": "object",
   "additionalProperties": false,
-  "required": ["profile_id","record_type","generation_state","language","locale","accent_id","accent_label","intended_use_case","dimensions","voice_description","preview_text","seed","provider","model_id_default","identity_class","identity_rights","shareability","commercial_status","human_review_required"],
+  "required": ["profile_id","record_type","generation_state","language","locale","accent_id","accent_label","intended_use_case","market_archetype_id","market_archetype_label","dimensions","voice_description","preview_text","seed","provider","model_id_default","identity_class","identity_rights","shareability","commercial_status","human_review_required"],
   "properties": {
     "profile_id": {"type":"string","pattern":"^(vi|en)-[a-z0-9-]+-[0-9]{4}$"},
     "record_type": {"const":"voice_design_profile"},
@@ -14,6 +14,8 @@
     "accent_id": {"type":"string","minLength":2,"maxLength":48},
     "accent_label": {"type":"string","minLength":3,"maxLength":120},
     "intended_use_case": {"enum":["documentary","educational","audiobook","podcast","short-form","corporate","news","wellness"]},
+    "market_archetype_id":{"type":"string","minLength":2,"maxLength":64},
+    "market_archetype_label":{"type":"string","minLength":3,"maxLength":120},
     "dimensions": {
       "type":"object",
       "additionalProperties":false,

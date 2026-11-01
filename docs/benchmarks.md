@@ -187,3 +187,8 @@ Blind ZIP SHA-256: `5aebf157a5e219b09bd92f23ad7eb8d0214ebe51cf761bb932268d5775a0
 ## Multi-thousand voice catalog expansion
 
 The voice library's longer-term expansion plan and source eligibility registry are documented in [voice-library/VOICE_EXPANSION.md](../voice-library/VOICE_EXPANSION.md) and [voice-library/expansion-sources.json](../voice-library/expansion-sources.json). The 2,000-row design-profile generator creates blueprints only; it must never be counted as 2,000 rendered or approved voices. Paid preview generation is a separate manual workflow with an explicit confirmation gate.
+
+
+## Multi-thousand voice catalog expansion
+
+The English/Vietnamese expansion plan, original creator-style archetypes and source-rights registry are maintained in [voice-library/VOICE_EXPANSION.md](../voice-library/VOICE_EXPANSION.md) and [voice-library/expansion-sources.json](../voice-library/expansion-sources.json). Profile blueprints are not rendered voices. Paid previews are isolated behind a manual confirmation and private-repository guard.

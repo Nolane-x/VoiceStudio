@@ -229,6 +229,12 @@ def write_catalog(output: Path, language: str, per_language: int) -> dict[str, A
         "total_profiles": len(records),
         "unique_rendered_voice_identities": 0,
         "profiles_by_language": counts,
+        "market_archetype_count": sum(len(rows) for rows in MARKET_ARCHETYPES.values()),
+        "profiles_by_market_archetype": {
+            archetype[0]: sum(row["market_archetype_id"] == archetype[0] for row in records)
+            for rows in MARKET_ARCHETYPES.values()
+            for archetype in rows
+        },
         "provider": "ElevenLabs Voice Design API",
         "default_model": "eleven_multilingual_ttv_v2",
         "profiles_file": jsonl_path.name,
@@ -252,7 +258,7 @@ def write_catalog(output: Path, language: str, per_language: int) -> dict[str, A
         f"({counts['vi']:,} Vietnamese and {counts['en']:,} English).\n\n"
         "**Important:** these are prompt blueprints, not rendered voices. "
         "No API was called and no credits were spent to create this catalog. "
-        "A separate manually dispatched workflow creates paid previews only after explicit confirmation.\n\n"
+        "Profiles span 16 original creator-facing market archetypes. A separate manually dispatched workflow creates paid previews only after explicit confirmation.\n\n"
         "Every profile has a deterministic profile ID and seed, requested locale/accent, use case, "
         "vocal design dimensions, and a pronunciation evaluation script. Prompts prohibit imitating real people.\n\n"
         "ElevenLabs Voice Design profiles are account-scoped and are not eligible for publication in "

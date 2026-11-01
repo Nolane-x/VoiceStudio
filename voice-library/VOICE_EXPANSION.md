@@ -12,6 +12,8 @@ The current source-derived inventory estimate is approximately:
 This is approximately 931 distinct source identities and 954 language variants. These are inventory estimates, not a claim that a full catalogue release has been built or that every candidate is commercially cleared.
 
 ## New 2,000-profile expansion pool
+Each profile is assigned one of 16 creator-facing archetypes: cinematic documentary narrator, warm history storyteller, friendly educator, expert explainer, immersive audiobook performer, reflective storyteller, conversational podcast host, curious interviewer, short-form creator hook, energetic social-video narrator, professional presenter, premium brand storyteller, credible news anchor, journalistic explainer, calm wellness guide, or mindful reflection narrator. These are generic role directions, never descriptions of named creators or identifiable voices.
+
 
 The deterministic catalog generator creates 1,000 Vietnamese and 1,000 English voice-design blueprints. These are not WAVs, saved provider voices, or verified speaker identities. They are original, non-impersonating descriptions with accent/locale, timbre, pitch, pace, delivery, use-case and a deterministic seed.
 

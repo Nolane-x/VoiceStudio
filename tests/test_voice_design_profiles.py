@@ -23,6 +23,8 @@ def test_catalog_creates_one_thousand_original_profiles_per_language(tmp_path):
     assert manifest["unique_rendered_voice_identities"] == 0
     assert manifest["is_rendered_voice_catalog"] is False
     assert manifest["paid_api_calls_performed"] == 0
+    assert manifest["market_archetype_count"] == 16
+    assert sum(manifest["profiles_by_market_archetype"].values()) == 2000
 
 
 def test_profile_ids_seeds_and_design_combinations_are_unique():

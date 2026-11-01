@@ -193,6 +193,122 @@
   "evidence_policy": [
     "Model downloads, likes, repository stars and leaderboard standings are discovery signals, not voice quality scores.",
     "No celebrity, public-figure, creator, or identifiable person's voice may be imitated without explicit authorization.",
-    "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities."
+    "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities.",
+    "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals."
+  ],
+  "research_data_sources": [
+    {
+      "id": "mozilla-common-voice-27-vietnamese",
+      "provider": "Mozilla Common Voice / Mozilla Data Collective",
+      "dataset_version": "27.0",
+      "language_codes": [
+        "vi"
+      ],
+      "clips": 20605,
+      "hours_recorded": 22.97,
+      "hours_validated": 7.81,
+      "speaker_count": 419,
+      "regional_variants": [
+        "Hue",
+        "Saigon",
+        "Hanoi"
+      ],
+      "license": "CC0-1.0",
+      "restrictions": [
+        "Do not determine speaker identities",
+        "Do not re-host or re-share the dataset"
+      ],
+      "intended_use": "ASR and language evaluation; any acoustic/model training must respect Mozilla dataset terms and must not extract or publish speaker identities",
+      "voice_catalog_eligibility": "not_a_speaker_identity_source",
+      "status": "language_evaluation_only_no_identity_cloning",
+      "source": "https://mozilladatacollective.com/datasets/cmu5vci3w00agnq07hy4nbauv"
+    },
+    {
+      "id": "yodalingua-vietnamese",
+      "provider": "YodaLingua",
+      "language_codes": [
+        "vi"
+      ],
+      "clips": 47223,
+      "hours": 125,
+      "speaker_count": 1426,
+      "license_claim": "Permissive commercial use allowed (dataset card)",
+      "explicit_spdx_license": null,
+      "signed_consent_chain_verified": false,
+      "status": "quarantined_pending_written_license_and_consent_verification",
+      "voice_catalog_eligibility": "do_not_import_until_evidence_review",
+      "source": "https://huggingface.co/datasets/Thomcles/YodaLingua-Vietnamese",
+      "note": "Promising speaker-count lead, but a card statement is not a substitute for written license text and proof that all speakers consented to voice synthesis and downstream distribution."
+    },
+    {
+      "id": "speechdataai-vietnamese-conversational",
+      "provider": "SpeechData.ai",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 2000,
+      "speaker_count": 200,
+      "license_claim": "Commercial training and evaluation license",
+      "signed_consent_chain_claimed": true,
+      "published_price_usd_per_hour": 65,
+      "indicative_full_dataset_price_usd": 130000,
+      "status": "paid_vendor_due_diligence_candidate",
+      "voice_catalog_eligibility": "only_under_contract_and_per-speaker-rights",
+      "source": "https://www.speechdata.ai/datasets/vietnamese",
+      "note": "Vendor states signed commercial-use consent and a full chain of consent; verify contract, voice cloning, model redistribution and derivative voice rights before purchase."
+    },
+    {
+      "id": "vivos-vietnamese",
+      "provider": "AILAB VNU-HCM",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 15,
+      "speaker_count": 65,
+      "license": "CC-BY-NC-SA-4.0",
+      "status": "research_only_noncommercial",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/AILAB-VNUHCM/vivos"
+    },
+    {
+      "id": "phoaudiobook-vietnamese",
+      "provider": "PhoAudiobook authors",
+      "language_codes": [
+        "vi"
+      ],
+      "training_hours": 940,
+      "training_speakers": 710,
+      "license": "research_or_educational_use_only",
+      "redistribution": "prohibited",
+      "status": "research_only_noncommercial",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/thivux/phoaudiobook"
+    },
+    {
+      "id": "vivoice-vietnamese",
+      "provider": "viVoice dataset authors",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 1016.97,
+      "estimated_source_channels": 186,
+      "license": "CC-BY-NC-SA-4.0",
+      "data_source_risk": "includes audio sourced from YouTube channels",
+      "status": "research_only_noncommercial_and_creator-rights_review_required",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/capleaf/viVoice"
+    },
+    {
+      "id": "vieneu-1000h-training-dataset",
+      "provider": "VieNeu dataset authors",
+      "language_codes": [
+        "vi"
+      ],
+      "license": "CC-BY-NC-4.0",
+      "access": "gated",
+      "status": "research_only_noncommercial_dataset",
+      "voice_catalog_eligibility": "do_not_assume_model_license_grants_dataset_or_speaker_rights",
+      "source": "https://huggingface.co/datasets/pnnbao-ump/VieNeu-TTS-1000h"
+    }
   ]
 }

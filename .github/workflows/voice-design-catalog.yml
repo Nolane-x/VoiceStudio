@@ -62,6 +62,8 @@ jobs:
           assert hashlib.sha256(payload).hexdigest() == manifest["profiles_sha256"]
           assert len({row["profile_id"] for row in rows}) == 2000
           assert len({row["seed"] for row in rows}) == 2000
+          assert manifest["market_archetype_count"] == 16
+          assert len({row["market_archetype_id"] for row in rows}) == 16
           print("Verified 2,000 design blueprints; zero audio renders; zero paid API calls.")
           PY
       - name: Upload profile blueprint catalog
