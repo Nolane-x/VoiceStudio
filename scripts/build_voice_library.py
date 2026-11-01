@@ -466,14 +466,22 @@ def watermark_and_verify(path: Path, bits: int, context: str) -> dict:
     }
 
 
-def validate_audio(path: Path, expected_sample_rate: int) -> dict:
+def validate_audio(path: Path, expected_sample_rate: int, expected_bits: int) -> dict:
     import numpy as np
     import soundfile as sf
 
     info = sf.info(str(path))
     audio, sample_rate = sf.read(str(path), dtype="float32", always_2d=True)
-    if info.format != "WAV":
-        raise RuntimeError(f"Expected WAV, got {info.format}")
+    # FFmpeg emits WAVE_FORMAT_EXTENSIBLE (WAVEX) for some valid PCM-24
+    # streams. Accept both RIFF WAV containers, but enforce the exact PCM
+    # subtype so this does not accidentally admit float or compressed audio.
+    if info.format not in {"WAV", "WAVEX"}:
+        raise RuntimeError(f"Expected a WAV container, got {info.format}")
+    expected_subtype = {16: "PCM_16", 24: "PCM_24"}.get(int(expected_bits))
+    if expected_subtype is None or info.subtype != expected_subtype:
+        raise RuntimeError(
+            f"Expected {expected_subtype or 'supported PCM'} samples, got {info.subtype}"
+        )
     if int(sample_rate) != int(expected_sample_rate):
         raise RuntimeError(f"Sample-rate mismatch: {sample_rate} != {expected_sample_rate}")
     if info.channels != 1:
@@ -579,7 +587,7 @@ def render_one(
             watermark = watermark_and_verify(
                 normalized, bits, context=f"voice-library.{language}.{voice_id}"
             )
-            audio = validate_audio(normalized, sample_rate)
+            audio = validate_audio(normalized, sample_rate, bits)
             shutil.copy2(normalized, destination)
         return {
             "id": voice_id,
