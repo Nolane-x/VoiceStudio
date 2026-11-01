@@ -3,7 +3,7 @@
 ## English: Piper LibriTTS High
 
 - Voice model: `rhasspy/piper-voices`, entry `en_US-libritts-high`.
-- Model card: https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/libritts/high
+- Model card: https://huggingface.co/rhasspy/piper-voices/tree/49a0d23f04e055f1766e5ad15ea2d121a90fa17a/en/en_US/libritts/high
 - Dataset: LibriTTS `train-clean-360`, CC BY 4.0 as identified by the
   model card.
 - Dataset citation: Heiga Zen et al., “LibriTTS: A Corpus Derived from
@@ -41,7 +41,8 @@ releases.
 ## VoiceStudio provenance
 
 All generated WAVs are sent through
-`backend/services/watermark.py:mark_synthetic(force=True)`. Publication
-requires a positive result from `detect_watermark` after the final WAV is
-written. This is a provenance mark, not a copyright grant or proof of
-speaker consent.
+`backend/services/watermark.py:mark_synthetic(force=True)`, which uses
+Meta AudioSeal when its runtime is available. Publication requires a
+positive `detect_watermark` result identifying the VoiceStudio watermark
+after the final WAV is written. The watermark is a synthetic-audio provenance
+signal, not a copyright grant, licence, or proof of speaker consent.
