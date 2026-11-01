@@ -46,8 +46,16 @@ def _request_models(
         ("pipeline_tag", "text-to-speech"),
         ("sort", sort),
         ("limit", str(limit)),
-        ("expand", "downloads,likes,tags,trendingScore,createdAt,lastModified,pipeline_tag,library_name"),
     ]
+    # The Hub OpenAPI array parameter is sent as repeated expand keys, not one
+    # comma-joined value. This is the same encoding used by its API clients.
+    params.extend(
+        ("expand", field)
+        for field in (
+            "downloads", "likes", "tags", "trendingScore", "createdAt",
+            "lastModified", "pipeline_tag", "library_name", "gated",
+        )
+    )
     if language:
         if language not in {"vi", "en"}:
             raise ValueError(f"Unsupported language filter: {language}")
@@ -69,10 +77,13 @@ def _request_models(
                 raise ValueError("Hugging Face Hub model listing did not return a JSON array")
             return [row for row in payload if isinstance(row, dict)]
         except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", "replace")[:1000]
             if attempt == 0 and (exc.code == 429 or 500 <= exc.code <= 599):
                 time.sleep(2)
                 continue
-            raise RuntimeError(f"Hugging Face Hub API returned HTTP {exc.code}") from exc
+            raise RuntimeError(
+                f"Hugging Face Hub API returned HTTP {exc.code}: {detail}"
+            ) from exc
         except urllib.error.URLError as exc:
             if attempt == 0:
                 time.sleep(1)
