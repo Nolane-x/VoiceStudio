@@ -153,3 +153,18 @@ python scripts/merge_elevenlabs_v4_blind_scores.py \
 The merger supports multiple reviewers per blind sample, rejects duplicate reviewer/sample pairs, unknown IDs, language mismatches, incomplete score rows, and values outside the 1–5 scale. It returns separate VI and EN rankings with average naturalness, pronunciation, prosody, emotion, accent-fit and overall preference. Blank template rows are ignored. These cohort-specific human ratings are not standardized MOS and should never be interpreted without review counts; they do not clear voice rights or prove universal listener preference.
 
 Blind audio and private voice mapping must remain in separate artifacts until scores have been submitted. Do not upload the mapping to a public issue, discussion, or public artifact.
+
+
+### Google Gemini prebuilt voice discovery
+
+VoiceStudio also indexes the Google Gemini Voices API using `GET /v1beta/voices`. Google exposes voice metadata such as language code, region, accent, persona, context, gender and pitch, and paginates the response with a page token (up to 1,000 voices per page).
+
+The crawler is deliberately restricted to `type=prebuilt` and language prefixes `vi` and `en`. The API can also return `prompted` and `replicated` voices; those may be caller-owned or custom voices, so they are excluded from the shared discovery catalog. The ListVoices result does not include sample audio for prebuilt voices; this workflow therefore generates no audio and does not claim to audition the voices.
+
+- Use Gemini 3.8 Flash TTS as the high-fidelity, expressive provider candidate.
+- Use Gemini 3.8 Flash-Lite TTS as the throughput-oriented candidate.
+- Treat the returned voice IDs as Google-managed identifiers, not audio files that VoiceStudio may redistribute.
+- Keep Google API use and model-generated audio subject to current plan, data-use and commercial terms. No TTS generation is performed by this metadata workflow.
+- The weekly Actions workflow requires the read-only GEMINI_API_KEY secret. If it is absent, the run records a setup note and skips discovery rather than failing the repository CI.
+
+This catalog is a metadata index, not a count of verified voice quality. A voice must still pass matched VI/EN listening, locale pronunciation, long-form stability and authorized commercial-use review before being recommended for a particular production.
