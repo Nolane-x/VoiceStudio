@@ -153,7 +153,7 @@ def make_blind_gallery(rows: list[dict], languages: list[str], built_at: str) ->
     cards = []
     for index, row in enumerate(rows, 1):
         cards.append(
-            '<article class="sample">'
+            f'<article class="sample" data-sample-id="{row["blind_sample_id"]}" data-language="{row["language"]}">'
             f'<p class="meta">BLIND SAMPLE {index:03d} · {row["language"].upper()}</p>'
             f'<h2>Sample {index:03d}</h2>'
             f'<audio controls preload="none" src="{row["audio_file"]}"></audio>'
@@ -183,13 +183,15 @@ button{{padding:8px 12px;border:1px solid #8888;border-radius:8px;background:tra
 </style></head><body><header><h1>Eleven v4 · blind marketplace audition</h1>
 <p>{len(rows)} anonymized samples · {", ".join(languages)} · built {built_at}</p>
 <p class="notice">Voice IDs and provider usage statistics are intentionally withheld in this listening package. Rate naturalness, pronunciation, prosody, emotional fit, accent fit and overall preference before opening the separate analyst manifest.</p>
+<label>Reviewer code <input id="reviewer-id" maxlength="32" value="reviewer-1"></label>
 <p><button id="export">Export listening scores as CSV</button></p></header>
 <main class="grid">{''.join(cards)}</main>
 <script>
 document.getElementById('export').addEventListener('click',()=>{{
- const all=[['blind_sample_id','language','naturalness','pronunciation','prosody','emotion','accent_fit','overall','notes']];
+ const reviewer=(document.getElementById('reviewer-id').value||'reviewer-1').trim().slice(0,32);
+ const all=[['blind_sample_id','language','reviewer_id','naturalness','pronunciation','prosody','emotion','accent_fit','overall','notes']];
  document.querySelectorAll('.sample').forEach(card=>all.push([
-  card.querySelector('.meta').textContent.split(' ')[2],card.querySelector('.meta').textContent.includes('VI')?'vi':'en',
+  card.dataset.sampleId,card.dataset.language,reviewer,
   ...['naturalness','pronunciation','prosody','emotion','accent_fit','overall','notes'].map(n=>card.querySelector('[data-field="'+n+'"]').value)
  ]));
  const csv=all.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\\n');
@@ -303,6 +305,7 @@ def run(args) -> int:
     for row in successes:
         import html
         blind_rows.append({
+            "blind_sample_id": row["blind_sample_id"],
             "language": row["language"],
             "audio_file": row["audio_file"],
             "reference_text_html": "<p>" + "</p><p>".join(
@@ -314,8 +317,8 @@ def run(args) -> int:
         make_blind_gallery(blind_rows, languages, built_at), encoding="utf-8",
     )
     (output / "blind-review.csv").write_text(
-        "blind_sample_id,language,naturalness,pronunciation,prosody,emotion,accent_fit,overall,notes\n"
-        + "".join(f"{row['blind_sample_id']},{row['language']},,,,,,,\n" for row in successes),
+        "blind_sample_id,language,reviewer_id,naturalness,pronunciation,prosody,emotion,accent_fit,overall,notes\n"
+        + "".join(f"{row['blind_sample_id']},{row['language']},reviewer-1,,,,,,,\n" for row in successes),
         encoding="utf-8",
     )
     (output / "BLIND-REVIEW.md").write_text(
