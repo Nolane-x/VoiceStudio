@@ -164,6 +164,62 @@
   ],
   "research_only_or_blocked": [
     {
+      "id": "kokoro-vietnamese-community",
+      "provider": "contextboxai",
+      "model": "contextboxai/Kokoro-Vietnamese",
+      "source_code": "iamdinhthuan/Kokoro-Vietnamese",
+      "language_codes": [
+        "vi"
+      ],
+      "listed_voicepack_count": 14,
+      "listed_voice_ids": [
+        "diem_trinh",
+        "hung_thinh",
+        "mai_linh",
+        "mai_loan",
+        "manh_dung",
+        "my_yen",
+        "ngoc_huyen",
+        "phat_tai",
+        "thanh_dat",
+        "thuc_trinh",
+        "tuan_ngoc",
+        "storyvert",
+        "duc_an",
+        "duc_duy"
+      ],
+      "repository_license": "Apache-2.0",
+      "model_hub_license_tag": "apache-2.0",
+      "voice_identity_consent": "not_documented_in_reviewed_public_readme",
+      "training_data_provenance": "not_sufficiently_documented_for_voice_identity_reuse",
+      "commercial_status": "not_cleared_for_public_voice_catalog",
+      "status": "research_only_blocked_pending_speaker_consent_and_dataset_provenance",
+      "production_eligible": false,
+      "source": "https://huggingface.co/contextboxai/Kokoro-Vietnamese",
+      "code_source": "https://github.com/iamdinhthuan/Kokoro-Vietnamese",
+      "note": "The public repository lists 14 named voicepacks and Apache-2.0 metadata. The reviewed README and training guide do not document a speaker-consent chain or enough dataset provenance to establish the right to redistribute each voice identity. Do not render into a public catalogue or ship voicepacks until rights are verified separately from the code/model license."
+    },
+    {
+      "id": "f5tts-vietnamese-vivoice",
+      "provider": "hynt",
+      "model": "hynt/F5-TTS-Vietnamese-ViVoice",
+      "language_codes": [
+        "vi"
+      ],
+      "model_card_license": "CC-BY-NC-SA-4.0",
+      "declared_datasets": [
+        "ViVoice",
+        "VLSP2021",
+        "VLSP2022",
+        "VLSP2023"
+      ],
+      "commercial_status": "noncommercial_sharealike_restriction",
+      "status": "blocked_for_monetized_production",
+      "production_eligible": false,
+      "source": "https://huggingface.co/hynt/F5-TTS-Vietnamese-ViVoice",
+      "note": "The model card declares CC-BY-NC-SA-4.0; exclude from monetized production unless a separate license expressly permits the intended use."
+    },
+    {
       "id": "omnivoice-vietnamese-dolly",
       "provider": "splendor1811",
       "model": "splendor1811/omnivoice-vietnamese",
@@ -260,7 +316,8 @@
     "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals.",
     "A create-from-preview POST has no documented idempotency-key contract. VoiceStudio tags each created voice with the source generated_voice_id and reconciles through List Voices before retries; ambiguous outcomes require manual confirmation.",
     "Market discovery must keep adoption signals (downloads, likes, trends), listener preference (blind votes/MOS), technical benchmarks (WER/RTFx/SIM), creator deployment evidence, and legal rights as separate signal families.",
-    "Popular commercial voices may inspire broad delivery archetypes only. Do not copy, clone, imitate or publish a named creator's or identifiable person's voice without explicit authorization; create original synthetic personas or use consented voice actors."
+    "Popular commercial voices may inspire broad delivery archetypes only. Do not copy, clone, imitate or publish a named creator's or identifiable person's voice without explicit authorization; create original synthetic personas or use consented voice actors.",
+    "An Apache-2.0 code or model repository tag does not independently establish consent from the speakers represented by individual voicepacks. A named voice preset requires a separate documented speaker-consent and training-data provenance review before public catalogue publication."
   ],
   "research_data_sources": [
     {
