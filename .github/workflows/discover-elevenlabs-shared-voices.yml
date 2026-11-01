@@ -1,6 +1,13 @@
 name: Discover ElevenLabs shared voices
 
 on:
+  push:
+    branches:
+      - feat/tts-quality-benchmark
+    paths:
+      - .github/workflows/discover-elevenlabs-shared-voices.yml
+      - scripts/discover_elevenlabs_shared_voices.py
+      - tests/test_elevenlabs_shared_voice_discovery.py
   schedule:
     - cron: "15 8 * * 1"
   workflow_dispatch:
