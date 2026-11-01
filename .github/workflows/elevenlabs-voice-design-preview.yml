@@ -1,0 +1,114 @@
+name: ElevenLabs Voice Design preview batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Language pool to draw profiles from
+        required: true
+        type: choice
+        options: [vi, en, both]
+        default: vi
+      offset:
+        description: Zero-based offset in the sorted profile pool
+        required: true
+        type: number
+        default: 0
+      limit:
+        description: Number of profile design requests (max 8; up to 3 previews per request)
+        required: true
+        type: number
+        default: 2
+      model_id:
+        description: Voice Design model
+        required: true
+        type: choice
+        options: [eleven_multilingual_ttv_v2, eleven_ttv3]
+        default: eleven_multilingual_ttv_v2
+      confirm_paid_api_usage:
+        description: Explicitly approve the selected billable Voice Design API requests
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elevenlabs-voice-design-preview-${{ github.ref }}-${{ inputs.language }}-${{ inputs.offset }}
+  cancel-in-progress: false
+
+jobs:
+  paid-preview:
+    name: Generate a small paid preview batch
+    if: ${{ github.event.repository.private == true && inputs.confirm_paid_api_usage == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Verify credentials and bounded request count
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          REQUEST_LIMIT: ${{ inputs.limit }}
+          REQUEST_OFFSET: ${{ inputs.offset }}
+        run: |
+          test -n "$ELEVENLABS_API_KEY" || {
+            echo "::error::Set ELEVENLABS_API_KEY in repository Actions secrets."
+            exit 1
+          }
+          python - <<'PY'
+          import os
+          limit = int(os.environ["REQUEST_LIMIT"])
+          offset = int(os.environ["REQUEST_OFFSET"])
+          assert 1 <= limit <= 8
+          assert offset >= 0
+          PY
+      - name: Generate the complete blueprint pool
+        run: |
+          python scripts/generate_voice_design_profiles.py \
+            --language both --per-language 1000 \
+            --output dist/voice-design-catalog
+      - name: Create blind previews (paid API calls)
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          python scripts/elevenlabs_voice_design_preview.py \
+            --profiles dist/voice-design-catalog/profiles.jsonl \
+            --language "${{ inputs.language }}" \
+            --offset "${{ inputs.offset }}" \
+            --limit "${{ inputs.limit }}" \
+            --model-id "${{ inputs.model_id }}" \
+            --output dist/elevenlabs-voice-design \
+            --confirm-paid-api-usage
+      - name: Upload blind listening package to private repository artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: elevenlabs-voice-design-blind-${{ github.run_id }}
+          path: dist/elevenlabs-voice-design/blind-review.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload private analysis mapping
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: elevenlabs-voice-design-analysis-${{ github.run_id }}
+          path: |
+            dist/elevenlabs-voice-design/analysis.json
+            dist/elevenlabs-voice-design/README.md
+          if-no-files-found: error
+          retention-days: 14
+
+  no-paid-calls:
+    name: No paid API requests made
+    if: ${{ github.event.repository.private != true || inputs.confirm_paid_api_usage != true }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Explain safety gate
+        run: |
+          echo "No ElevenLabs API request was sent and no credits were used."
+          echo "Voice Design audio is account-scoped; this paid preview workflow only runs on a private repository."
+          echo "For a private run, add ELEVENLABS_API_KEY and explicitly set confirm_paid_api_usage=true."

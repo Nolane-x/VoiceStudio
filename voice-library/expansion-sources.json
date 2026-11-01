@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "catalog_name": "VoiceStudio voice expansion discovery catalog",
+  "last_researched": "2026-11-01",
+  "count_policy": {
+    "identity_counting": "Count unique consented speaker/voice identities once; language variants and prompt profiles are not new identities.",
+    "profile_policy": "Voice-design blueprints are not voices until rendered, human-reviewed, and saved under provider terms.",
+    "public_distribution": "Only sources with explicit redistribution/sharing rights may be bundled into a public voice catalog."
+  },
+  "current_inventory_estimate": {
+    "piper_en": {
+      "distinct_speaker_ids": 904,
+      "language_variants": 904,
+      "commercial_status": "restricted_rights_evidence_per_voice"
+    },
+    "kokoro_en": {
+      "distinct_speaker_ids": 4,
+      "language_variants": 4,
+      "commercial_status": "apache_2_0_model_and_voice_assets"
+    },
+    "vieneu_v3turbo": {
+      "distinct_speaker_ids": 23,
+      "language_variants": 46,
+      "commercial_status": "upstream_model_card_states_preset_consent_and_commercial_generated_audio"
+    },
+    "estimated_distinct_identities": 931,
+    "estimated_language_variants": 954,
+    "full_build_verified": false
+  },
+  "production_candidates": [
+    {
+      "id": "google-cloud-chirp3-hd",
+      "provider": "Google Cloud Text-to-Speech",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN",
+        "en-US",
+        "en-GB",
+        "en-AU",
+        "en-IN"
+      ],
+      "distinct_named_voice_styles": 29,
+      "access": "billing_required",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd"
+    },
+    {
+      "id": "elevenlabs-voice-design",
+      "provider": "ElevenLabs",
+      "kind": "synthetic_voice_design_api",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "previews_per_design_request": 3,
+      "shareability": "voice_design_previews_not_shareable_to_public_voice_library",
+      "access": "api_key_and_paid_account_usage_may_apply",
+      "status": "optional_private_account_expansion",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design"
+    },
+    {
+      "id": "fpt-ai-tts",
+      "provider": "FPT AI",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_voice_ids": 7,
+      "access": "provider_api_key",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://docs.fpt.ai/docs/vi/speech/api/text-to-speech/"
+    },
+    {
+      "id": "viettel-ai-tts",
+      "provider": "Viettel AI",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_voice_ids": 11,
+      "access": "provider_token_and_paid_package",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://viettelgroup.ai/en/document/tts"
+    },
+    {
+      "id": "vbee-tts",
+      "provider": "Vbee",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_realtime_voice_ids": 5,
+      "access": "provider_token_and_app_id",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://api-docs.vbee.vn/vbee-api/text-to-speech/realtime-api"
+    }
+  ],
+  "research_only_or_blocked": [
+    {
+      "id": "omnivoice-vietnamese-dolly",
+      "provider": "splendor1811",
+      "model": "splendor1811/omnivoice-vietnamese",
+      "language_codes": [
+        "vi"
+      ],
+      "source_speaker_count": 152,
+      "model_card_license": "apache-2.0",
+      "training_dataset": "dolly-vn/dolly-audio-1000h-vietnamese",
+      "dataset_license": "CC-BY-NC-SA-4.0",
+      "commercial_status": "research_only_noncommercial_dataset",
+      "status": "blocked_for_monetized_production",
+      "source": "https://huggingface.co/splendor1811/omnivoice-vietnamese"
+    },
+    {
+      "id": "g-omnivoice",
+      "provider": "g-group-ai-lab",
+      "model": "g-group-ai-lab/g-omnivoice",
+      "language_codes": [
+        "vi"
+      ],
+      "access": "gated",
+      "status": "blocked_pending_access_and_tokenizer_rights_review",
+      "source": "https://huggingface.co/g-group-ai-lab/g-omnivoice"
+    },
+    {
+      "id": "fish-audio-s2-pro",
+      "provider": "Fish Audio",
+      "model": "fishaudio/s2-pro",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "license": "fish-audio-research-license",
+      "commercial_status": "separate_commercial_license_required",
+      "status": "licensed_candidate_only",
+      "source": "https://huggingface.co/fishaudio/s2-pro"
+    },
+    {
+      "id": "cosyvoice3",
+      "provider": "FunAudioLLM",
+      "model": "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
+      "language_codes": [
+        "en",
+        "zh",
+        "ja",
+        "ko",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ru"
+      ],
+      "license": "apache-2.0",
+      "commercial_status": "review_model_and_upstream_terms",
+      "status": "english_comparison_candidate_no_vietnamese",
+      "source": "https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+    },
+    {
+      "id": "pocket-tts",
+      "provider": "Kyutai",
+      "model": "kyutai/pocket-tts",
+      "language_codes": [
+        "en",
+        "fr",
+        "de",
+        "pt",
+        "it",
+        "es"
+      ],
+      "license": "cc-by-4.0",
+      "commercial_status": "review_attribution_and_gated_access",
+      "status": "english_cpu_streaming_candidate_no_vietnamese",
+      "source": "https://huggingface.co/kyutai/pocket-tts"
+    },
+    {
+      "id": "khanhtts-omnivoice",
+      "provider": "kjanh",
+      "model": "kjanh/KhanhTTS-OmniVoice",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "model_card_license": "apache-2.0",
+      "commercial_status": "dataset_and_base_weight_rights_unresolved",
+      "status": "research_only_pending_provenance_review",
+      "source": "https://huggingface.co/kjanh/KhanhTTS-OmniVoice"
+    }
+  ],
+  "evidence_policy": [
+    "Model downloads, likes, repository stars and leaderboard standings are discovery signals, not voice quality scores.",
+    "No celebrity, public-figure, creator, or identifiable person's voice may be imitated without explicit authorization.",
+    "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities."
+  ]
+}

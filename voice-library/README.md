@@ -97,6 +97,10 @@ is a genuine statement by a real speaker.
 See [ATTRIBUTION.md](ATTRIBUTION.md) and [sources.json](sources.json) for
 the exact source records.
 
+## Voice expansion roadmap
+
+See [VOICE_EXPANSION.md](VOICE_EXPANSION.md) for the multi-thousand English/Vietnamese catalog plan, provider discovery registry, voice identity counting rules, license gates, and original voice-design blueprint workflow.
+
 ## Video narration jobs (the production interface)
 
 The library workflow is also a **reusable GitHub Actions TTS service**. A

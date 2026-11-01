@@ -182,3 +182,8 @@ completed successfully in [Actions run #27](https://github.com/Nolane-x/VoiceStu
 - The blind ZIP contains no engine/voice mapping or objective/ASR metrics; the separate analyst artifact contains only `benchmark.json` and `README.md`.
 
 Blind ZIP SHA-256: `5aebf157a5e219b09bd92f23ad7eb8d0214ebe51cf761bb932268d5775a0a541`.
+
+
+## Multi-thousand voice catalog expansion
+
+The voice library's longer-term expansion plan and source eligibility registry are documented in [voice-library/VOICE_EXPANSION.md](../voice-library/VOICE_EXPANSION.md) and [voice-library/expansion-sources.json](../voice-library/expansion-sources.json). The 2,000-row design-profile generator creates blueprints only; it must never be counted as 2,000 rendered or approved voices. Paid preview generation is a separate manual workflow with an explicit confirmation gate.
