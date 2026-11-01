@@ -11,12 +11,14 @@ import base64
 import csv
 import html
 import importlib.util
+import io
 import json
 import os
 import re
 import sys
 import urllib.error
 import urllib.request
+import wave
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -78,6 +80,44 @@ def build_request(model_id: str, voice_id: str, language: str) -> dict:
     }
 
 
+def concatenate_wav_segments(segments: list[bytes]) -> bytes:
+    """Join sequential PCM WAV blocks without silently dropping earlier speech."""
+    unique: list[bytes] = []
+    seen: set[bytes] = set()
+    for segment in segments:
+        if segment not in seen:
+            seen.add(segment)
+            unique.append(segment)
+    if not unique:
+        raise RuntimeError("Gemini response did not contain WAV audio segments")
+
+    decoded = []
+    base_params = None
+    for index, segment in enumerate(unique):
+        try:
+            with wave.open(io.BytesIO(segment), "rb") as source:
+                params = source.getparams()
+                if params.comptype != "NONE":
+                    raise RuntimeError("Only uncompressed PCM WAV segments are supported")
+                frames = source.readframes(source.getnframes())
+        except (wave.Error, EOFError) as exc:
+            raise RuntimeError(f"Gemini returned an invalid WAV segment at index {index}: {exc}") from exc
+        signature = (params.nchannels, params.sampwidth, params.framerate, params.comptype, params.compname)
+        if base_params is None:
+            base_params = (params, signature)
+        elif signature != base_params[1]:
+            raise RuntimeError("Gemini audio segments have incompatible WAV formats; refusing to drop or resample audio")
+        decoded.append(frames)
+
+    params = base_params[0]
+    output = io.BytesIO()
+    with wave.open(output, "wb") as destination:
+        destination.setparams(params)
+        for frames in decoded:
+            destination.writeframesraw(frames)
+    return output.getvalue()
+
+
 def extract_audio_bytes(response: dict) -> bytes:
     candidates = []
     direct = response.get("output_audio")
@@ -94,16 +134,23 @@ def extract_audio_bytes(response: dict) -> bytes:
             for block in blocks:
                 if isinstance(block, dict) and block.get("type") == "audio":
                     candidates.append(block.get("data"))
-    for encoded in reversed(candidates):
+
+    decoded_segments = []
+    for encoded in candidates:
         if not isinstance(encoded, str) or not encoded:
             continue
         try:
             data = base64.b64decode(encoded, validate=True)
         except (ValueError, base64.binascii.Error):
             continue
-        if len(data) >= 2048 and data[:4] == b"RIFF" and data[8:12] == b"WAVE":
-            return data
-    raise RuntimeError("Gemini response did not contain a complete WAV audio block")
+        if len(data) >= 44 and data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+            decoded_segments.append(data)
+    if not decoded_segments:
+        raise RuntimeError("Gemini response did not contain a complete WAV audio block")
+    # Interactions can expose the same output through both output_audio and
+    # steps, or multiple ordered audio blocks. Deduplicate identical copies,
+    # then preserve every distinct segment in its original response order.
+    return concatenate_wav_segments(decoded_segments)
 
 
 def generate_speech(api_key: str, model_id: str, voice_id: str, language: str, timeout: int = 180) -> bytes:
