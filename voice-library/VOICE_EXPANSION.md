@@ -249,3 +249,8 @@ The manual Grok benchmark tests the selected built-in voice in Vietnamese and/or
 - Outputs are normalized to 48 kHz/24-bit WAV and must pass the VoiceStudio watermark detector and audio validator. Blind audio is a separate artifact from the private voice-ID mapping.
 
 The built-in endpoint has no usage counters. VoiceStudio does not claim the most frequently listed item is the most popular or best sounding. A high-quality native-language blind review, number/date pronunciation checks, long-form continuity and provider-plan rights review remain mandatory before choosing a production voice.
+
+
+## Reproducible candidate benchmark evidence
+
+The first matched CPU screening snapshot is recorded in [the November 1, 2026 benchmark report](../docs/tts-candidate-benchmark-2026-11-01.md). It includes the measured 48-sample comparison and a separately packaged blind-listening study. Treat these results as a screening baseline only; do not promote any voice until human listening and rights review are complete.

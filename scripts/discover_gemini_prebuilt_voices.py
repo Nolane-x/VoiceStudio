@@ -204,9 +204,9 @@ header{{border-bottom:1px solid #8888;padding-bottom:18px}}
 </header><main class="grid">{''.join(cards)}</main></body></html>"""
 
 
-def write_catalog(output: Path, api_key: str, max_pages: int = MAX_PAGES) -> dict:
+def write_catalog(output: Path, voices: list[dict], report: dict) -> dict:
+    """Persist already-normalized public catalog data; never receive provider secrets."""
     output.mkdir(parents=True, exist_ok=True)
-    voices, report = collect_catalog(api_key, max_pages)
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     catalog = {
         "schema_version": 1,
@@ -259,7 +259,8 @@ def main() -> int:
     args = parse_args()
     api_key = os.environ.get("GEMINI_API_KEY")
     try:
-        catalog = write_catalog(Path(args.output), api_key or "", args.max_pages)
+        voices, report = collect_catalog(api_key or "", args.max_pages)
+        catalog = write_catalog(Path(args.output), voices, report)
     except Exception as exc:
         print(f"[gemini-voice-discovery] ERROR {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1

@@ -107,6 +107,29 @@ def test_list_voices_request_uses_prebuilt_filter_and_pagination(monkeypatch):
     assert "page_token=token-123" in captured["url"]
 
 
+def test_writer_receives_only_normalized_catalog_data_and_never_serializes_api_key(tmp_path):
+    import inspect
+
+    parameters = inspect.signature(MODULE.write_catalog).parameters
+    assert list(parameters) == ["output", "voices", "report"]
+    voice = MODULE.normalize_voice(prebuilt("Kore", "Kore", "vi-VN"))
+    assert voice is not None
+    report = {
+        "pages_fetched": 1,
+        "page_size": MODULE.PAGE_SIZE,
+        "max_pages": 1,
+        "has_more_after_page_cap": False,
+        "unique_prebuilt_voices": 1,
+        "language_counts": {"vi": 1, "en": 0},
+    }
+    catalog = MODULE.write_catalog(tmp_path, [voice], report)
+    encoded = (tmp_path / "catalog.json").read_text(encoding="utf-8")
+    assert catalog["voices"][0]["voice_id"] == "Kore"
+    assert "Kore" in encoded
+    assert "api_key" not in encoded.casefold()
+    assert "GEMINI_API_KEY" not in encoded
+
+
 def test_html_catalog_escapes_untrusted_provider_metadata():
     voice = MODULE.normalize_voice(prebuilt(
         "Kore", "<script>alert(1)</script>", "vi-VN",
