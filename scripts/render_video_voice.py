@@ -63,6 +63,8 @@ def validate_job_payload(payload: Any) -> dict:
 
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     jsonschema.validate(payload, schema)
+    if payload["engine"] in {"piper", "kokoro"} and payload["language"] != "en":
+        raise ValueError(f"{payload['engine']} is only supported for English narration jobs")
     total_chars = sum(len(segment["text"].strip()) for segment in payload["segments"])
     if total_chars > MAX_TOTAL_CHARS:
         raise ValueError(f"Narration is too long ({total_chars} characters; limit {MAX_TOTAL_CHARS})")
@@ -340,7 +342,7 @@ def build_rendered_chunks(payload: dict, builder: Any, temporary: Path) -> tuple
                 "speaker publicity or blanket commercial rights."
             ),
         }
-    else:
+    elif engine == "vieneu":
         tts, presets, vieneu_info = builder.prepare_vieneu()
         match_row = None
         for label, preset_id in presets:
@@ -375,6 +377,45 @@ def build_rendered_chunks(payload: dict, builder: Any, temporary: Path) -> tuple
                 "commercial use of generated audio; attribution and revision data are retained."
             ),
         }
+    elif engine == "kokoro":
+        if language != "en":
+            raise ValueError("Kokoro-82M curated voices are English-only")
+        prepared, voice_rows, kokoro_info = builder.prepare_kokoro()
+        match_row = next(
+            (row for row in voice_rows
+             if selected_voice == f"en-kokoro-v1-{row['id']}"),
+            None,
+        )
+        if match_row is None:
+            raise ValueError(
+                "Unknown Kokoro voice ID. Use a canonical en-kokoro-v1-* ID from manifest.json."
+            )
+        preset_id = str(match_row["id"])
+        identity = f"kokoro-v1-{preset_id}"
+
+        def render(text: str, output: Path) -> None:
+            builder.render_kokoro_wav(prepared, preset_id, text, output)
+
+        source = {
+            "engine": f"Kokoro-82M {builder.KOKORO_PACKAGE_VERSION}",
+            "model": builder.KOKORO_REPO,
+            "revision": kokoro_info,
+            "source_voice_id": preset_id,
+            "display_name": str(match_row["display_name"]),
+            "voice_identity_id": identity,
+            "voice_id": selected_voice,
+            "upstream_quality_grade": str(match_row["quality_grade"]),
+            "quality_grade_source": "Kokoro upstream VOICES.md (subjective upstream rating)",
+            "rights_status": "upstream-apache-2.0-model-voice-assets",
+            "commercial_use": "apache-2.0-model-and-voice-assets",
+            "notice": (
+                "Kokoro model and packaged voice assets are marked Apache-2.0 upstream. "
+                "Its quality grade is a subjective upstream estimate, not an independent MOS test. "
+                "No real-person publicity, endorsement or identity rights are granted; do not impersonate."
+            ),
+        }
+    else:
+        raise ValueError(f"Unsupported TTS engine: {engine}")
 
     rows: list[dict] = []
     total_chunks = 0

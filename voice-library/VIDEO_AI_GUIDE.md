@@ -11,13 +11,16 @@ VoiceStudio desktop/Electron build.
 2. Select a canonical `voice_id` whose `language` matches the narration.
    Keep one speaker identity for a continuous narrator unless the video
    explicitly needs different speakers.
-3. Prefer VieNeu presets for public or monetized video: its upstream model
-   card documents preset consent and permits commercial use of generated
-   audio. Piper LibriTTS High is a separate English-only option with
-   restricted/uncleared commercial evidence; do not silently treat it as
-   commercially cleared.
+3. For Vietnamese, prefer VieNeu presets: its upstream model card documents
+   preset consent and permits commercial use of generated audio. For English,
+   select from Kokoro's curated A/A-/B- presets or VieNeu bilingual presets.
+   Kokoro's grades are subjective upstream labels, not independent MOS tests;
+   Apache-2.0 applies to model/voice assets, not personal endorsement. Piper
+   LibriTTS High remains an English-only option with restricted/uncleared
+   commercial evidence; do not silently treat it as commercially cleared.
 4. Prepare a JSON payload conforming to
-   [video-job.schema.json](video-job.schema.json). Use the examples as valid
+   [video-job.schema.json](video-job.schema.json), the English Kokoro
+   example (video-job.example.en-kokoro.json), and the bilingual starter jobs. Use the examples as valid
    starting points. Put each scene, paragraph or subtitle-sized passage in an
    ordered `segments` entry. Preserve punctuation and spelling; do not add
    stage directions that should not be spoken.
@@ -51,7 +54,7 @@ Required fields:
 
 - `schema_version`: `1`
 - `language`: `en` or `vi`
-- `engine`: `vieneu` or `piper`
+- `engine`: `vieneu`, `kokoro` (English only) or `piper` (English only)
 - `voice_id`: exact language-specific ID from the current release manifest
 - `segments`: ordered objects with unique `id`, `text` and optional
   `pause_ms_after` (0–3000 ms)

@@ -45,6 +45,16 @@ VIENEU_PACKAGE_VERSION = "3.8.3"
 VIENEU_REPO = "pnnbao-ump/VieNeu-TTS-v3-Turbo"
 VIENEU_CODEC_REPO = "OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX"
 
+KOKORO_PACKAGE_VERSION = "0.9.4"
+MISAKI_PACKAGE_VERSION = "0.9.4"
+KOKORO_REPO = "hexgrad/Kokoro-82M"
+KOKORO_MODEL_REVISION = "f3ff3571791e39611d31c381e3a41a3af07b4987"
+KOKORO_VOICES_REVISION = "c3327e9bac3dbe55779397bfa82de0f8806fb3bc"
+KOKORO_MODEL_FILE = "kokoro-v1_0.pth"
+KOKORO_MODEL_SHA256 = "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4"
+KOKORO_SAMPLE_RATE = 24_000
+KOKORO_VOICE_IDS = {"af_heart", "af_bella", "af_nicole", "bf_emma"}
+
 EN_TEXT = (
     "Welcome to your next story. Take a moment, settle in, and let every "
     "word bring the scene to life. This voice is made for clear narration, "
@@ -120,7 +130,13 @@ def load_sources() -> dict:
     assert vietnamese["sdk_package"] == f"vieneu=={VIENEU_PACKAGE_VERSION}"
     assert shared["watermark_required"] is True
     assert shared["verification"] == "VoiceStudio services.watermark.detect_watermark"
-    assert set(shared["formats"]) == {"piper", "vieneu"}
+    kokoro = data["kokoro_english"]
+    assert kokoro["model_repo"] == KOKORO_REPO
+    assert kokoro["model_revision"] == KOKORO_MODEL_REVISION
+    assert kokoro["voices_metadata_revision"] == KOKORO_VOICES_REVISION
+    assert kokoro["engine_package"] == f"kokoro=={KOKORO_PACKAGE_VERSION}"
+    assert {voice["id"] for voice in kokoro["selected_voices"]} == KOKORO_VOICE_IDS
+    assert set(shared["formats"]) == {"piper", "vieneu", "kokoro"}
     return data
 
 
@@ -133,7 +149,7 @@ def check_static_contract() -> None:
     )
     assert ATTRIBUTION_PATH.is_file()
     attribution = ATTRIBUTION_PATH.read_text(encoding="utf-8")
-    assert "LibriTTS" in attribution and "VieNeu-TTS" in attribution
+    assert "LibriTTS" in attribution and "VieNeu-TTS" in attribution and "Kokoro-82M" in attribution
     assert "AudioSeal" in attribution or "watermark" in attribution.lower()
     assert "vi" in sources["language_scope"] and "en" in sources["language_scope"]
     log("static source, schema, language-scope and attribution checks passed")
@@ -406,6 +422,90 @@ def prepare_vieneu() -> tuple[Any, list[tuple[str, str]], dict]:
     return tts, [(str(label), str(voice_id)) for label, voice_id in presets], revision
 
 
+def prepare_kokoro() -> tuple[dict, list[dict], dict]:
+    """Load the immutable Kokoro checkpoint and only reviewed A/B-grade English voices."""
+    import importlib.metadata
+    import torch
+    from kokoro.model import KModel
+    from kokoro.pipeline import KPipeline
+
+    installed = importlib.metadata.version("kokoro")
+    if installed != KOKORO_PACKAGE_VERSION:
+        raise RuntimeError(f"Expected kokoro {KOKORO_PACKAGE_VERSION}, found {installed}")
+    misaki_version = importlib.metadata.version("misaki")
+    if misaki_version != MISAKI_PACKAGE_VERSION:
+        raise RuntimeError(f"Expected misaki {MISAKI_PACKAGE_VERSION}, found {misaki_version}")
+
+    sources = load_sources()["kokoro_english"]
+    model_path = hf_download(KOKORO_REPO, KOKORO_MODEL_FILE, KOKORO_MODEL_REVISION)
+    config_path = hf_download(KOKORO_REPO, "config.json", KOKORO_MODEL_REVISION)
+    voices_doc_path = hf_download(KOKORO_REPO, "VOICES.md", KOKORO_VOICES_REVISION)
+    model_sha256 = sha256_file(model_path)
+    if model_sha256 != KOKORO_MODEL_SHA256:
+        raise RuntimeError(
+            "Kokoro checkpoint SHA-256 changed; re-review the upstream model revision "
+            f"(expected {KOKORO_MODEL_SHA256}, got {model_sha256})"
+        )
+    # The source registry pins the metadata revision and the reviewed voice
+    # checksum prefixes. Do not parse markdown layout at runtime: each
+    # selected embedding is checked against the independently reviewed prefix.
+    selected = sources["selected_voices"]
+    voice_tensors: dict[str, Any] = {}
+    voice_file_hashes: dict[str, str] = {}
+    for item in selected:
+        voice_id = str(item["id"])
+        if voice_id not in KOKORO_VOICE_IDS:
+            raise RuntimeError(f"Unreviewed Kokoro voice ID in source registry: {voice_id}")
+        
+        voice_path = hf_download(KOKORO_REPO, f"voices/{voice_id}.pt", KOKORO_MODEL_REVISION)
+        voice_sha256 = sha256_file(voice_path)
+        if not voice_sha256.startswith(str(item["voice_sha256_prefix"])):
+            raise RuntimeError(f"Kokoro voice embedding checksum mismatch for {voice_id}")
+        tensor = torch.load(voice_path, map_location="cpu", weights_only=True)
+        if not isinstance(tensor, torch.Tensor) or tensor.dtype != torch.float32:
+            raise RuntimeError(f"Kokoro voice embedding has an unexpected tensor type: {voice_id}")
+        if not torch.isfinite(tensor).all():
+            raise RuntimeError(f"Kokoro voice embedding contains invalid values: {voice_id}")
+        voice_tensors[voice_id] = tensor
+        voice_file_hashes[voice_id] = voice_sha256
+
+    model = KModel(
+        repo_id=KOKORO_REPO,
+        config=str(config_path),
+        model=str(model_path),
+    ).to("cpu").eval()
+    # American and British English need distinct G2P pipelines, but the
+    # exact same immutable model weights are shared between both pipelines.
+    pipelines = {
+        "a": KPipeline(lang_code="a", repo_id=KOKORO_REPO, model=model, device="cpu"),
+        "b": KPipeline(lang_code="b", repo_id=KOKORO_REPO, model=model, device="cpu"),
+    }
+    prepared = {"pipelines": pipelines, "voice_tensors": voice_tensors}
+    revision = {
+        "repo": KOKORO_REPO,
+        "model_revision": KOKORO_MODEL_REVISION,
+        "model_file": KOKORO_MODEL_FILE,
+        "model_sha256": model_sha256,
+        "config_sha256": sha256_file(config_path),
+        "voices_metadata_revision": KOKORO_VOICES_REVISION,
+        "voices_metadata_sha256": sha256_file(voices_doc_path),
+        "package": installed,
+        "misaki": misaki_version,
+        "sample_rate": KOKORO_SAMPLE_RATE,
+        "device": "cpu",
+        "selected_voices": [
+            {
+                "id": item["id"],
+                "quality_grade": item["quality_grade"],
+                "voice_sha256": voice_file_hashes[item["id"]],
+            }
+            for item in selected
+        ],
+    }
+    log(f"Kokoro loaded: {len(selected)} curated English presets, {KOKORO_SAMPLE_RATE} Hz")
+    return prepared, selected, revision
+
+
 def run_ffmpeg_normalize(source: Path, target: Path, sample_rate: int, bits: int) -> None:
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
@@ -558,6 +658,48 @@ def render_vieneu_wav(tts: Any, voice_id: str, text: str, output: Path) -> None:
     sf.write(str(output), samples, int(tts.sample_rate), subtype="FLOAT", format="WAV")
 
 
+def render_kokoro_wav(
+    prepared: dict,
+    voice_id: str,
+    text: str,
+    output: Path,
+) -> None:
+    """Render one English sample with the pinned Kokoro voice embedding."""
+    import numpy as np
+    import soundfile as sf
+
+    if voice_id not in prepared["voice_tensors"]:
+        raise ValueError(f"Unknown or unverified Kokoro voice: {voice_id}")
+    language_code = voice_id[0]
+    pipeline = prepared["pipelines"].get(language_code)
+    if pipeline is None:
+        raise ValueError(f"Unsupported Kokoro language prefix: {voice_id}")
+    voice_tensor = prepared["voice_tensors"][voice_id]
+    generated = pipeline(text, voice=voice_tensor, speed=1.0, split_pattern=r"\n+")
+    chunks: list[np.ndarray] = []
+    for result in generated:
+        audio = getattr(result, "audio", None)
+        if audio is None:
+            continue
+        samples = audio.detach().cpu().numpy().astype(np.float32, copy=False)
+        samples = np.squeeze(samples)
+        if samples.ndim != 1 or not np.isfinite(samples).all():
+            raise RuntimeError(f"Kokoro returned an invalid waveform for {voice_id}")
+        if samples.size:
+            chunks.append(samples)
+    if not chunks:
+        raise RuntimeError(f"Kokoro generated no audio for {voice_id}")
+    silence = np.zeros(round(KOKORO_SAMPLE_RATE * 0.18), dtype=np.float32)
+    joined: list[np.ndarray] = []
+    for index, chunk in enumerate(chunks):
+        if index:
+            joined.append(silence)
+        joined.append(chunk)
+    waveform = np.concatenate(joined)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    sf.write(str(output), waveform, KOKORO_SAMPLE_RATE, subtype="FLOAT", format="WAV")
+
+
 def render_one(
     *,
     voice_id: str,
@@ -573,6 +715,7 @@ def render_one(
     render: Callable[[Path], None],
     rights: dict,
     source_voice_id: str | None = None,
+    source_quality_grade: str | None = None,
 ) -> dict:
     destination = output_dir / language / f"{voice_id}.wav"
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -595,6 +738,8 @@ def render_one(
             "display_name": display_name,
             "voice_identity_id": identity_id,
             "source_voice_id": source_voice_id,
+            "upstream_quality_grade": source_quality_grade,
+            "quality_grade_source": "Kokoro upstream VOICES.md" if source_quality_grade else None,
             "engine": engine,
             "model": model,
             "audio_file": f"voices/{voice_id}.wav",
@@ -693,6 +838,7 @@ def build(args: argparse.Namespace) -> int:
     source_revisions: dict = {}
     piper_expected = 0
     vieneu_expected = 0
+    kokoro_expected = 0
 
     if args.language in ("all", "en"):
         piper, piper_info = prepare_piper()
@@ -744,6 +890,53 @@ def build(args: argparse.Namespace) -> int:
                     "stage": "piper", "completed": index, "target": len(selected),
                     "accepted": len(voices), "rejected": len(rejected),
                 })
+
+    if args.language in ("all", "en"):
+        kokoro, kokoro_voices, kokoro_info = prepare_kokoro()
+        source_revisions["kokoro"] = kokoro_info
+        chosen_kokoro = kokoro_voices[: args.limit] if args.limit else kokoro_voices
+        kokoro_expected = len(chosen_kokoro)
+        kokoro_rights = {
+            "source_license": "Apache-2.0 model and packaged voice-embedding assets",
+            "rights_status": "upstream-apache-2.0-model-voice-assets",
+            "commercial_use": "apache-2.0-model-and-voice-assets",
+            "attribution_required": True,
+            "source_url": f"https://huggingface.co/{KOKORO_REPO}",
+            "notice": (
+                "The upstream model repository marks its model and packaged voice assets Apache-2.0 "
+                "and describes the training audio as permissive or non-copyrighted. Its voice-grade "
+                "labels are subjective upstream estimates, not independent MOS measurements. This "
+                "does not grant real-person publicity, endorsement, or identity rights; do not impersonate."
+            ),
+        }
+        for index, item in enumerate(chosen_kokoro, 1):
+            source_id = str(item["id"])
+            voice_id = f"en-kokoro-v1-{source_id}"
+            add_with_rejection(
+                voices, rejected,
+                voice_id=voice_id,
+                display_name=f"{item['display_name']} · Upstream grade {item['quality_grade']}",
+                language="en",
+                render_kwargs={
+                    "identity_id": f"kokoro-v1-{source_id}",
+                    "engine": f"Kokoro-82M {KOKORO_PACKAGE_VERSION}",
+                    "model": KOKORO_REPO,
+                    "sample_text": EN_TEXT,
+                    "sample_rate": KOKORO_SAMPLE_RATE,
+                    "bits": int(load_sources()["kokoro_english"]["bits_per_sample"]),
+                    "output_dir": audio_root,
+                    "render": lambda raw, vid=source_id: render_kokoro_wav(kokoro, vid, EN_TEXT, raw),
+                    "rights": kokoro_rights,
+                    "source_voice_id": source_id,
+                    "source_quality_grade": str(item["quality_grade"]),
+                },
+            )
+            if index % 2 == 0 or index == len(chosen_kokoro):
+                write_json(output / "progress.json", {
+                    "stage": "kokoro", "completed": index, "target": len(chosen_kokoro),
+                    "accepted": len(voices), "rejected": len(rejected),
+                })
+        log(f"Kokoro progress: {len(chosen_kokoro)}/{len(chosen_kokoro)} curated English voices")
 
     if args.language in ("all", "vi", "en"):
         tts, presets, vieneu_info = prepare_vieneu()
@@ -818,7 +1011,7 @@ def build(args: argparse.Namespace) -> int:
 
     en_count = sum(voice["language"] == "en" for voice in voices)
     vi_count = sum(voice["language"] == "vi" for voice in voices)
-    expected_en = piper_expected + (vieneu_expected if args.language in ("all", "en") else 0)
+    expected_en = piper_expected + kokoro_expected + (vieneu_expected if args.language in ("all", "en") else 0)
     expected_vi = vieneu_expected if args.language in ("all", "vi") else 0
     minimum_en = expected_en if args.limit else max(760, math.ceil(expected_en * 0.85))
     minimum_vi = expected_vi if args.limit else max(20, math.ceil(expected_vi * 0.80))
