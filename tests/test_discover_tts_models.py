@@ -81,6 +81,7 @@ def test_discovery_uses_hub_language_filter_and_trending_sort():
     assert query["sort"] == ["trendingScore"]
     assert query["filter"] == ["language:vi"]
     assert query["limit"] == ["12"]
+    assert {"downloads", "likes", "tags", "trendingScore", "createdAt", "lastModified"} <= set(query["expand"])
 
 
 def test_discovery_rejects_invalid_limits_and_does_not_infer_commercial_rights():
