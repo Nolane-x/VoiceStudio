@@ -30,6 +30,29 @@
   },
   "production_candidates": [
     {
+      "id": "elevenlabs-eleven-v4",
+      "provider": "ElevenLabs",
+      "model_id": "eleven_v4",
+      "model_family": [
+        "eleven_v4",
+        "eleven_v4_turbo"
+      ],
+      "kind": "managed_cloud_speech_synthesis",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": ">90",
+      "recommended_api": "POST /v1/text-to-dialogue",
+      "access": "ElevenLabs API key; commercial audio use requires an eligible paid plan",
+      "public_redistribution": "voice identity and marketplace assets are not independently redistributable",
+      "status": "highest_priority_paid_quality_benchmark_candidate",
+      "source": "https://elevenlabs.io/docs/overview/models",
+      "changelog": "https://elevenlabs.io/docs/changelog/2026/9/28",
+      "endpoint_reference": "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert",
+      "note": "Eleven v4 is the current flagship quality/expressive generation target for creator narration, audiobooks and multi-speaker dialogue. The model family documents Vietnamese and English among 90+ languages. Use the Text-to-Dialogue API for eleven_v4; current endpoint guidance recommends keeping all input text at or below 2,000 characters per request for reliable generation. Benchmark actual voice IDs in both languages; voice-design blueprints are not model voice IDs."
+    },
+    {
       "id": "google-gemini-3-8-tts",
       "provider": "Google",
       "model_ids": [
@@ -54,6 +77,34 @@
       "status": "high_priority_provider_benchmark_candidate",
       "source": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash-tts",
       "note": "Google documents Vietnamese and English support, 30 prebuilt voices and a separate Extended Voice Library exceeding 2,000 curated voices in Gemini Enterprise. Managed provider voices are not assets to bundle or redistribute."
+    },
+    {
+      "id": "elevenlabs-shared-voice-marketplace",
+      "provider": "ElevenLabs",
+      "kind": "provider_hosted_public_voice_marketplace",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "catalog_scale": "10,000+ community-shared voices documented by provider",
+      "discovery_endpoint": "GET /v1/shared-voices",
+      "supported_filters": [
+        "language",
+        "locale",
+        "category",
+        "accent",
+        "use_case"
+      ],
+      "documented_sort_signals": [
+        "trending",
+        "usage_character_count_1y",
+        "cloned_by_count"
+      ],
+      "access": "Provider marketplace and account/plan permissions",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_voice_discovery_source",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "note": "VoiceStudio's discovery workflow retrieves only high_quality and professional marketplace categories for Vietnamese and English, sorted by provider-reported adoption signals. The famous category is intentionally excluded. Marketplace voice IDs and preview URLs remain provider-hosted; no audio is rehosted or bundled."
     },
     {
       "id": "mistral-voxtral-mini-tts-3-0",
@@ -459,6 +510,21 @@
       "id": "google-cloud-chirp3-hd",
       "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
       "fact": "Google lists 30 Chirp 3 HD styles and Vietnamese/English locale voice IDs."
+    },
+    {
+      "id": "elevenlabs-eleven-v4",
+      "source": "https://elevenlabs.io/docs/overview/models",
+      "fact": "Eleven v4 is the high-fidelity, expressive flagship model; 90+ languages including Vietnamese and English; accessible via Text to Dialogue API."
+    },
+    {
+      "id": "elevenlabs-text-to-dialogue",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert",
+      "fact": "POST /v1/text-to-dialogue accepts text/voice_id inputs; language_code and pronunciation dictionary locators are supported; endpoint guidance recommends <=2,000 total input characters per request for reliable generation."
+    },
+    {
+      "id": "elevenlabs-shared-voice-library",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "fact": "GET /v1/shared-voices supports high_quality/professional/famous categories, language/accent/locale filters, and trending, usage_character_count_1y, or cloned_by_count sorting. VoiceStudio intentionally excludes the famous category."
     }
   ],
   "market_signal_sources": [
@@ -502,6 +568,123 @@
       "scope": "managed-provider model and native-voice listening preferences",
       "refresh": "review at each VoiceStudio market-pulse run",
       "interpretation": "Crowdsourced preference is more direct than repository popularity, but it is not proof of adoption by YouTube channels or of per-voice rights."
+    },
+    {
+      "id": "elevenlabs-public-shared-voice-marketplace",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "signal_types": [
+        "usage_character_count_1y",
+        "usage_character_count_7d",
+        "cloned_by_count",
+        "trending_position",
+        "featured"
+      ],
+      "scope": "provider-hosted public shared voice adoption/discovery",
+      "refresh": "weekly GitHub Actions snapshot and manual dispatch",
+      "interpretation": "Provider-reported usage and cloning counts are adoption signals within the marketplace; they are not blind listener preference, external creator/channel adoption proof, or voice-quality ratings."
     }
-  ]
+  ],
+  "market_snapshots": {
+    "as_of": "2026-11-01",
+    "source": "https://artificialanalysis.ai/text-to-speech/leaderboard/provider-voice",
+    "metric": "Vietnamese Voice Arena Elo from blind pairwise listener comparisons",
+    "interpretation": "Crowdsourced preference snapshot for model/voice output, not a guaranteed universal quality result or proof of market usage. Sample count and confidence interval must remain visible.",
+    "overall_vietnamese_top_models": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1141,
+        "confidence_interval": 17,
+        "samples": 681
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1122,
+        "confidence_interval": 14,
+        "samples": 790
+      },
+      {
+        "rank": 3,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1091,
+        "confidence_interval": 10,
+        "samples": 2369
+      },
+      {
+        "rank": 4,
+        "model": "Eleven v4",
+        "elo": 1083,
+        "confidence_interval": 15,
+        "samples": 619
+      },
+      {
+        "rank": 5,
+        "model": "Eleven v3",
+        "elo": 1033,
+        "confidence_interval": 10,
+        "samples": 2378
+      }
+    ],
+    "media_entertainment_vietnamese": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1129,
+        "confidence_interval": 36,
+        "samples": 154
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1104,
+        "confidence_interval": 30,
+        "samples": 180
+      },
+      {
+        "rank": 3,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1091,
+        "confidence_interval": 20,
+        "samples": 549
+      },
+      {
+        "rank": 4,
+        "model": "Eleven v4",
+        "elo": 1074,
+        "confidence_interval": 32,
+        "samples": 143
+      }
+    ],
+    "creator_education_vietnamese": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1117,
+        "confidence_interval": 35,
+        "samples": 158
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1104,
+        "confidence_interval": 34,
+        "samples": 154
+      },
+      {
+        "rank": 3,
+        "model": "Eleven v4",
+        "elo": 1096,
+        "confidence_interval": 36,
+        "samples": 142
+      },
+      {
+        "rank": 4,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1086,
+        "confidence_interval": 20,
+        "samples": 546
+      }
+    ]
+  }
 }
