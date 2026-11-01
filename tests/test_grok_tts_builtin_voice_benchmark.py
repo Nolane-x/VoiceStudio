@@ -143,8 +143,8 @@ def test_static_official_builtin_voice_catalog_has_25_distinct_profiles():
     import json
 
     catalog = json.loads((ROOT / "voice-library" / "grok-builtin-studio-voices.json").read_text(encoding="utf-8"))
-    assert catalog["count"] == 25
-    assert len(catalog["voices"]) == 25
-    assert len({voice["voice_id"] for voice in catalog["voices"]}) == 25
+    assert catalog["count"] == 26
+    assert len(catalog["voices"]) == 26
+    assert len({voice["voice_id"] for voice in catalog["voices"]}) == 26
     assert all(voice["language_scope"] == ["vi", "en"] for voice in catalog["voices"])
     assert "not a popularity" in catalog["usage_note"].lower()
