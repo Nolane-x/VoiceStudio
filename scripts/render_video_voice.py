@@ -63,6 +63,8 @@ def validate_job_payload(payload: Any) -> dict:
 
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     jsonschema.validate(payload, schema)
+    if payload["engine"] in {"piper", "kokoro"} and payload["language"] != "en":
+        raise ValueError(f"{payload['engine']} is only supported for English narration jobs")
     total_chars = sum(len(segment["text"].strip()) for segment in payload["segments"])
     if total_chars > MAX_TOTAL_CHARS:
         raise ValueError(f"Narration is too long ({total_chars} characters; limit {MAX_TOTAL_CHARS})")
