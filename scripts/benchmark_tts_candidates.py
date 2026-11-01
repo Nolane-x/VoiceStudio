@@ -330,14 +330,16 @@ button{{padding:8px 12px;border:1px solid #8888;border-radius:8px;background:tra
 </style></head><body><header><div>VoiceStudio · Human listening study</div>
 <h1>Blind voice review</h1><p>{len(rows)} samples · {html.escape(', '.join(manifest['languages']))}</p>
 <div class="notice"><b>Blind review:</b> this package contains neutral sample filenames and reference scripts only. It does not include model identities, ASR transcripts, speed scores or quality metrics. Listen before rating naturalness, pronunciation, prosody and emotional fit. Review Vietnamese tones, names, number reading, pacing and sentence endings.</div>
+<label>Reviewer code <input id="reviewer-id" maxlength="32" value="reviewer-1"></label>
 <p><button id="export">Export listening scores as CSV</button></p>
 <small>Use the neutral sample ID to join scores to the separate benchmark manifest after listening.</small>
 </header><div class="grid">{''.join(cards)}</div>
 <script>
 document.getElementById('export').addEventListener('click',()=>{{
- const all=[['blind_sample_id','language','scenario','naturalness','pronunciation','prosody','emotion','notes']];
+ const reviewer=(document.getElementById('reviewer-id').value||'reviewer-1').trim().slice(0,32);
+ const all=[['blind_sample_id','language','scenario','reviewer_id','naturalness','pronunciation','prosody','emotion','notes']];
  document.querySelectorAll('.sample').forEach(card=>all.push([
-  card.dataset.sampleFile,card.dataset.language,card.dataset.scenario,
+  card.dataset.sampleFile,card.dataset.language,card.dataset.scenario,reviewer,
   ...['naturalness','pronunciation','prosody','emotion','notes'].map(n=>card.querySelector('[data-field="'+n+'"]').value)
  ]));
  const csv=all.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\\n');
@@ -470,9 +472,9 @@ def run(args) -> int:
     )
     with (output / "human-review.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["blind_sample_id", "language", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
+        writer.writerow(["blind_sample_id", "language", "scenario", "reviewer_id", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
         for row in results:
-            writer.writerow([row["blind_sample_id"], row["language"], row["scenario_id"], "", "", "", "", ""])
+            writer.writerow([row["blind_sample_id"], row["language"], row["scenario_id"], "reviewer-1", "", "", "", "", ""])
     create_blind_review_archive(output)
     print(f"[tts-benchmark] COMPLETE {len(results)}/{expected} samples; {len(failures)} failures", flush=True)
     return 0 if results and not failures else 1
