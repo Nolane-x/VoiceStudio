@@ -137,3 +137,15 @@ def test_discovery_report_preserves_provider_total_count():
     assert len(queries) == 6
     assert all(query["provider_total_count"] == 247 for query in queries)
     assert all(query["has_more_after_page_cap"] for query in queries)
+
+
+def test_missing_provider_total_count_is_reported_as_unknown_not_zero():
+    def fake_fetcher(*, language, category, sort, page, api_key=None):
+        return {
+            "voices": [sample_voice("known-voice", "Known Voice", language)],
+            "has_more": False,
+            "total_count": 0,
+        }
+
+    _, queries = MODULE.collect_catalog(["vi"], 1, fetcher=fake_fetcher)
+    assert all(query["provider_total_count"] is None for query in queries)
