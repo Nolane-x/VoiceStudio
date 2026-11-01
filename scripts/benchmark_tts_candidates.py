@@ -248,9 +248,10 @@ def transcribe(path: Path, language: str, model_name: str, state: dict) -> dict:
         return {"status": "unavailable", "error": f"{type(exc).__name__}: {exc}", "transcript": ""}
 
 
-def make_gallery(rows: list[dict], manifest: dict) -> str:
-    # Stable but shuffled order inside each language/scenario pair. Engine and
-    # voice identity stay hidden until the listener explicitly reveals them.
+def anonymize_samples(rows: list[dict], output: Path) -> None:
+    """Move rendered WAVs to neutral filenames and keep the mapping in the manifest only."""
+    blind_dir = output / "blind-samples"
+    blind_dir.mkdir(parents=True, exist_ok=True)
     ordered = sorted(
         rows,
         key=lambda row: (
@@ -259,73 +260,92 @@ def make_gallery(rows: list[dict], manifest: dict) -> str:
             hashlib.sha256(row["audio_file"].encode("utf-8")).hexdigest(),
         ),
     )
+    for index, row in enumerate(ordered, 1):
+        source = output / row["audio_file"]
+        if not source.is_file():
+            raise FileNotFoundError(f"Benchmark audio is missing: {row['audio_file']}")
+        sample_id = f"sample-{index:03d}"
+        destination = blind_dir / f"{sample_id}.wav"
+        os.replace(source, destination)
+        row["blind_sample_id"] = sample_id
+        row["audio_file"] = destination.relative_to(output).as_posix()
+
+
+def make_gallery(rows: list[dict], manifest: dict) -> str:
+    # This page intentionally contains no model mapping, ASR transcript,
+    # objective score or reveal button. The separate full manifest retains
+    # the mapping for post-review analysis.
+    ordered = sorted(
+        rows,
+        key=lambda row: (
+            row["language"],
+            row["scenario_id"],
+            hashlib.sha256(row["blind_sample_id"].encode("utf-8")).hexdigest(),
+        ),
+    )
     cards = []
     for index, row in enumerate(ordered, 1):
-        metrics = row.get("asr_metrics", {})
-        token_name = "WER" if row["language"] == "en" else "Vietnamese syllable error"
-        identity = f"{row['engine_label']} · {row.get('voice_label', row['voice_id'])}"
         cards.append(f"""
-<article class="sample" data-sample-file="{html.escape(row['audio_file'], quote=True)}"
+<article class="sample" data-sample-file="{html.escape(row['blind_sample_id'], quote=True)}"
  data-language="{html.escape(row['language'], quote=True)}"
- data-scenario="{html.escape(row['scenario_id'], quote=True)}"
- data-identity="{html.escape(identity, quote=True)}">
-<div class="meta">{html.escape(row['language'].upper())} · BLIND SAMPLE {index:02d}</div>
+ data-scenario="{html.escape(row['scenario_id'], quote=True)}">
+<div class="meta">{html.escape(row['language'].upper())} · BLIND LISTENING SAMPLE {index:02d}</div>
 <h2>Sample {index:02d}</h2>
-<div class="identity" hidden></div>
 <p class="scenario">{html.escape(row['scenario_title'])}</p>
 <audio controls preload="none" src="{html.escape(row['audio_file'], quote=True)}"></audio>
-<p><b>Reference</b><br>{html.escape(row['reference_text'])}</p>
-<p class="asr objective"><b>ASR</b><br>{html.escape(row.get('asr', {}).get('transcript', ''))}</p>
-<div class="metrics objective"><span>{token_name}: {metrics.get('token_error_rate', 'n/a')}</span>
-<span>CER: {metrics.get('character_error_rate', 'n/a')}</span><span>RTFx: {row['rtfx']:.2f}</span></div>
+<p><b>Reference script</b><br>{html.escape(row['reference_text'])}</p>
 <div class="ratings">
 <label>Naturalness <input type="number" min="1" max="5" data-field="naturalness"></label>
 <label>Pronunciation <input type="number" min="1" max="5" data-field="pronunciation"></label>
 <label>Prosody <input type="number" min="1" max="5" data-field="prosody"></label>
 <label>Emotion <input type="number" min="1" max="5" data-field="emotion"></label>
-</div><label>Notes<textarea data-field="notes" rows="2"></textarea></label>
+</div><label>Listening notes<textarea data-field="notes" rows="2"></textarea></label>
 </article>""")
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>VoiceStudio Blind TTS Listening Benchmark</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Blind Voice Listening Review</title>
 <style>
 :root{{color-scheme:light dark;font:15px/1.55 system-ui,sans-serif}}body{{max-width:1160px;margin:auto;padding:28px 20px}}
 header{{border-bottom:1px solid #8886;padding-bottom:18px}}.notice{{border:1px solid #8888;border-radius:12px;padding:12px}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:20px}}
 .sample{{border:1px solid #8888;border-radius:14px;padding:16px;min-width:0}}.meta{{font-size:.75rem;opacity:.7;letter-spacing:.08em}}
-.identity{{border:1px dashed #8888;border-radius:8px;padding:6px 9px;margin:8px 0;font-size:.85rem}}
-.objective{{display:none}}body.revealed .objective{{display:flex}}.asr.objective{{display:none}}body.revealed .asr.objective{{display:block}}
-audio{{width:100%;margin:10px 0}}.metrics{{display:flex;flex-wrap:wrap;gap:8px}}.metrics span{{border:1px solid #8888;border-radius:20px;padding:3px 9px;font-size:.8rem}}
-.ratings{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}label{{display:block;font-size:.85rem}}
-input,textarea{{box-sizing:border-box;width:100%;padding:7px;margin-top:4px;background:transparent;color:inherit;border:1px solid #8888;border-radius:7px}}
+audio{{width:100%;margin:10px 0}}.ratings{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+label{{display:block;font-size:.85rem}}input,textarea{{box-sizing:border-box;width:100%;padding:7px;margin-top:4px;background:transparent;color:inherit;border:1px solid #8888;border-radius:7px}}
 button{{padding:8px 12px;border:1px solid #8888;border-radius:8px;background:transparent;color:inherit;cursor:pointer}}
-</style></head><body><header><div>VoiceStudio · GitHub Actions benchmark</div>
-<h1>Blind listening review</h1><p>Built {html.escape(manifest['built_at'])} · {len(rows)} samples</p>
-<div class="notice"><b>Blind mode:</b> engine and voice identities are hidden by default and sample order is shuffled within each language/scenario. Record listening scores before revealing model identities. RTFx and ASR error are diagnostics, not measures of naturalness. Review Vietnamese tones, names, pacing, emotion and sentence endings. Supertonic OpenRAIL-M and Piper are not automatically commercially cleared.</div>
-<p><button id="reveal">Reveal model identities</button> <button id="export">Export human ratings CSV</button></p>
-<small>Exported rows include the sample file key so ratings can be joined to benchmark.json after listening.</small>
+</style></head><body><header><div>VoiceStudio · Human listening study</div>
+<h1>Blind voice review</h1><p>{len(rows)} samples · {html.escape(', '.join(manifest['languages']))}</p>
+<div class="notice"><b>Blind review:</b> this package contains neutral sample filenames and reference scripts only. It does not include model identities, ASR transcripts, speed scores or quality metrics. Listen before rating naturalness, pronunciation, prosody and emotional fit. Review Vietnamese tones, names, number reading, pacing and sentence endings.</div>
+<p><button id="export">Export listening scores as CSV</button></p>
+<small>Use the neutral sample ID to join scores to the separate benchmark manifest after listening.</small>
 </header><div class="grid">{''.join(cards)}</div>
 <script>
-let revealed=false;
-document.getElementById('reveal').addEventListener('click',()=>{{
- revealed=!revealed;
- document.body.classList.toggle('revealed',revealed);
- document.querySelectorAll('.sample').forEach(card=>{{
-  const identity=card.querySelector('.identity');
-  identity.hidden=!revealed;
-  identity.textContent=revealed?card.dataset.identity:'';
- }});
- document.getElementById('reveal').textContent=revealed?'Hide model identities':'Reveal model identities';
-}});
 document.getElementById('export').addEventListener('click',()=>{{
- const all=[['sample_file','language','scenario','naturalness','pronunciation','prosody','emotion','notes']];
+ const all=[['blind_sample_id','language','scenario','naturalness','pronunciation','prosody','emotion','notes']];
  document.querySelectorAll('.sample').forEach(card=>all.push([
   card.dataset.sampleFile,card.dataset.language,card.dataset.scenario,
   ...['naturalness','pronunciation','prosody','emotion','notes'].map(n=>card.querySelector('[data-field="'+n+'"]').value)
  ]));
  const csv=all.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\\n');
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{{type:'text/csv'}}));a.download='human-review-blind.csv';a.click();URL.revokeObjectURL(a.href);
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{{type:'text/csv'}}));a.download='blind-human-review.csv';a.click();URL.revokeObjectURL(a.href);
 }});
 </script></body></html>"""
+
+
+def create_blind_review_archive(output: Path) -> Path:
+    """Create a shareable blind package that contains no model/voice mapping."""
+    archive = output / "blind-listening-review.zip"
+    allowed = [output / "index.html", output / "human-review.csv", output / "BLIND-REVIEW.md"]
+    allowed.extend(sorted((output / "blind-samples").glob("*.wav")))
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4) as bundle:
+        for path in allowed:
+            if not path.is_file():
+                raise FileNotFoundError(f"Blind review package input is missing: {path}")
+            info = zipfile.ZipInfo(path.relative_to(output).as_posix())
+            info.date_time = (2020, 1, 1, 0, 0, 0)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o100644 << 16
+            with path.open("rb") as source, bundle.open(info, "w") as target:
+                shutil.copyfileobj(source, target, length=1024 * 1024)
+    return archive
 
 
 def run(args) -> int:
@@ -403,6 +423,7 @@ def run(args) -> int:
             finally:
                 raw.unlink(missing_ok=True)
 
+    anonymize_samples(results, output)
     manifest = {
         "schema_version": 1, "benchmark": "VoiceStudio TTS candidate benchmark",
         "built_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
@@ -416,6 +437,13 @@ def run(args) -> int:
     }
     (output / "benchmark.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (output / "index.html").write_text(make_gallery(results, manifest), encoding="utf-8")
+    (output / "BLIND-REVIEW.md").write_text(
+        "# Blind voice listening review\\n\\n"
+        "This shareable package contains only anonymized WAVs, reference scripts and a score sheet. "
+        "It deliberately excludes model identities, model revisions, ASR transcripts and benchmark metrics. "
+        "After ratings are complete, join the CSV's blind_sample_id to benchmark.json in the separate analyst package.\\n",
+        encoding="utf-8",
+    )
     (output / "README.md").write_text(
         "# VoiceStudio TTS candidate benchmark\n\n"
         "Open index.html and listen to matched voice samples. The page exports human listening ratings as CSV.\n\n"
@@ -428,6 +456,7 @@ def run(args) -> int:
         writer.writerow(["sample_file", "language", "scenario", "naturalness", "pronunciation", "prosody", "emotion", "notes"])
         for row in results:
             writer.writerow([row["audio_file"], row["language"], row["scenario_id"], "", "", "", "", ""])
+    create_blind_review_archive(output)
     archive = output / "tts-candidate-benchmark.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4) as bundle:
         for path in sorted(output.rglob("*")):
