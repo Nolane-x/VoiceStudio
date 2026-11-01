@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "job_id": "video-vi-demo",
+  "title": "Vietnamese video narration",
+  "language": "vi",
+  "engine": "vieneu",
+  "voice_id": "vi-vieneu-v3turbo-adam-bua-87e364",
+  "segments": [
+    {
+      "id": "intro",
+      "text": "Xin chào! Hôm nay chúng ta sẽ cùng khám phá một câu chuyện thú vị.",
+      "pause_ms_after": 350
+    },
+    {
+      "id": "main",
+      "text": "Hãy lắng nghe thật kỹ, bởi mỗi chi tiết đều giúp chúng ta hiểu rõ hơn về thế giới xung quanh.",
+      "pause_ms_after": 500
+    },
+    {
+      "id": "outro",
+      "text": "Cảm ơn các bạn đã theo dõi. Hẹn gặp lại trong video tiếp theo!",
+      "pause_ms_after": 0
+    }
+  ]
+}
