@@ -119,6 +119,7 @@ jobs:
   voiceover:
     uses: Nolane-x/VoiceStudio/.github/workflows/voice-library.yml@main
     with:
+      downstream_call: true
       job_json: ${{ inputs.job_json }}
 ```
 
