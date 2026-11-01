@@ -54,3 +54,45 @@ CUDA peak, blank on MPS/CPU. **App version** — from `Settings → About`.
 Numbers from different machines aren't directly comparable — that's fine.
 The point is honest expectations ("this engine on this class of GPU ≈ this
 fast"), not a leaderboard.
+# GitHub Actions TTS candidate benchmark
+
+VoiceStudio's local application benchmark above measures engines on a user's
+hardware. The separate GitHub-hosted narration service has an opt-in benchmark
+for comparing the voices used by the Nolane video-production pipeline.
+
+Run **Actions → Benchmark TTS candidates** and choose English, Vietnamese or
+both. The workflow also runs for pull requests that change its benchmark,
+model-pin, watermark or shared voice-builder inputs. Inference happens on
+GitHub-hosted CPU runners; no local model installation, Electron build or
+self-hosted GPU is required.
+
+The artifact `tts-candidate-benchmark-<run_id>` contains:
+
+- `index.html` — a browser listening gallery with reference scripts, ASR
+  transcripts, timing diagnostics and editable human-rating fields.
+- `samples/*.wav` — matched samples normalized to mono 48 kHz PCM-24,
+  VoiceStudio-watermarked and verified after saving.
+- `benchmark.json` — model revisions, checksums, audio measurements,
+  ASR diagnostics, rights notices and per-sample failures.
+- `human-review.csv` — a blank scoring sheet; the gallery can export the
+  scores and listening notes entered during review.
+- `tts-candidate-benchmark.zip` — a deterministic bundle of the report.
+
+The current comparison includes Piper LibriTTS High (English baseline),
+VieNeu-TTS v3 Turbo (English/Vietnamese), Kokoro-82M (English), and
+Supertonic 3 (English/Vietnamese comparison candidate). Each engine uses
+matched text scenarios and a warm-up call before inference timing.
+
+Metrics have limits: RTFx is generated audio duration divided by synthesis
+wall time; English token error is a whitespace-token WER; Vietnamese token
+error counts whitespace-delimited syllables, not lexical words; CER is
+character error rate. These measures do not establish naturalness, emotion,
+speaker similarity or editorial suitability. Listen to each complete sample
+and score naturalness, pronunciation, prosody and emotion before selecting
+a production narrator.
+
+Supertonic 3 remains comparison-only. Its OpenRAIL-M model terms require
+separate review; this benchmark does not grant commercial-use clearance.
+Piper's source evidence also does not establish blanket commercial or
+publicity rights. VieNeu and Kokoro retain their own upstream rights and
+attribution notices in the result manifest.
