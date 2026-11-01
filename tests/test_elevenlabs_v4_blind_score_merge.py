@@ -213,4 +213,6 @@ def test_human_rankings_separate_models_even_when_voice_ids_match(tmp_path):
     assert by_model["eleven_v4"][0]["average_overall"] == 4
     assert by_model["gemini-3.8-flash-tts"][0]["voice_id"] == "Kore"
     assert by_model["gemini-3.8-flash-tts"][0]["average_overall"] == 5
-    assert all(row["rank"] == 1 for rows in by_model.values() for row in rows)
+    assert by_model["eleven_v4"][0]["rank"] == 1
+    assert by_model["gemini-3.8-flash-tts"][0]["rank"] == 1
+    assert by_model["eleven_v4"][1]["rank"] == 2
