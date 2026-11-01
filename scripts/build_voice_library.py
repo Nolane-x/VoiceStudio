@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.metadata
 import json
 import math
 import os
@@ -22,7 +21,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -243,7 +241,7 @@ def prepare_piper() -> tuple[Any, dict, dict, str]:
         "license_note": "LibriTTS dataset is identified as CC BY 4.0; this is not blanket speaker/publicity/commercial clearance.",
     }
     log(f"Piper loaded: {len(speaker_pairs)} speaker IDs, {voice.config.sample_rate} Hz")
-    return voice, entry, {"speaker_pairs": speaker_pairs, "revision": revision}, revision["model_sha256"]
+    return voice, {"speaker_pairs": speaker_pairs, "revision": revision}
 
 
 def prepare_vieneu() -> tuple[Any, list[tuple[str, str]], dict]:
@@ -582,7 +580,7 @@ def build(args: argparse.Namespace) -> int:
     vieneu_expected = 0
 
     if args.language in ("all", "en"):
-        piper, piper_entry, piper_info, piper_sha = prepare_piper()
+        piper, piper_info = prepare_piper()
         speaker_pairs = piper_info["speaker_pairs"]
         piper_revision = piper_info["revision"]
         source_revisions["piper"] = piper_revision
@@ -655,12 +653,7 @@ def build(args: argparse.Namespace) -> int:
             preset = tts.get_preset_voice(voice_id)
             description = str(preset.get("description") or label).strip()
             try:
-                preset_json = json.dumps(preset, ensure_ascii=False, default=str)
-            except Exception:
-                preset_json = ""
-            if len(preset_json) > 20_000:
-                preset_json = preset_json[:20_000]
-            if args.language in ("all", "vi"):
+                            if args.language in ("all", "vi"):
                 vi_id = f"vi-{identity}"
                 add_with_rejection(
                     voices, rejected,
@@ -729,7 +722,7 @@ def build(args: argparse.Namespace) -> int:
             "file": archive_path.name,
             "sha256": sha256_file(archive_path),
             "bytes": archive_path.stat().st_size,
-            "url": None,
+            "url": f"https://github.com/Nolane-x/VoiceStudio/releases/download/voice-library-latest/{archive_path.name}",
             "voice_count": sum(voice["language"] == language for voice in voices),
         }
 
