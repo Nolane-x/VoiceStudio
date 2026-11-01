@@ -96,3 +96,32 @@ The blind review CSV includes an `approve` field. After a human listener has app
 ### Duplicate-safe voice promotion
 
 The create-from-preview endpoint does not document an idempotency-key header. VoiceStudio therefore tags each created account voice with the original `generated_voice_id` and searches the account through the List Voices API before every create request. If a POST times out or returns an ambiguous server error, the script searches again and records an `unknown` outcome unless it can find the matching voice. A later run can reconcile that ID through the same label. If the voice is still not visible, another POST is blocked unless an operator explicitly sets `confirm_retry_unknown=true` after checking My Voices. The optional `previous_ledger_run_id` also preserves completed IDs and retries only failed/unprocessed entries. This is deliberately fail-closed to avoid creating duplicate account voices.
+
+
+## Current flagship quality target: Eleven v4
+
+The current premium parity target is ElevenLabs Eleven v4, not the older Voice Design model ID. Provider documentation lists Eleven v4 as the flagship expressive synthesis model for more than 90 languages, including Vietnamese and English, and routes it through the Text-to-Dialogue API. The model ID is eleven_v4; it is separate from eleven_ttv_v3, which is a voice-design model used to create prompt-based previews. Do not route normal synthesis jobs to a voice-design model.
+
+- Use Eleven v4 as the premium quality reference for creator narration, audiobooks, dialogue and emotionally directed reads.
+- Use a stable, authorized provider voice ID. Never assume a Voice Design profile ID, generated_voice_id, voice-library preview ID and a persistent account voice ID are interchangeable.
+- The Text-to-Dialogue endpoint recommends keeping combined input text at or below 2,000 characters per request for reliable generation. Chunk longer scripts at sentence boundaries, keep the same voice ID and language code, then run continuity/listening checks across chunk seams.
+- The provider states that v4 supports Vietnamese (vi) and English (en). Still score those languages separately: a multilingual flag does not guarantee native-level pronunciation or preferred delivery for every voice.
+- V4 generation is a paid-provider path. VoiceStudio never makes paid requests from CI automatically; a manual workflow requires an explicit confirmation input and a secret. Marketplace voice IDs and generated audio remain subject to provider plan, owner, commercial-use and sharing terms.
+
+### Public shared-voice marketplace discovery
+
+The provider exposes GET /v1/shared-voices with language, accent, locale, quality category and use-case filters. It can sort by trending, usage_character_count_1y and cloned_by_count. VoiceStudio now has a metadata-only discovery script and a weekly/manual Actions workflow that:
+
+- Searches Vietnamese and English separately.
+- Includes high_quality and professional categories; deliberately excludes famous.
+- Collects trending, 1-year usage and clone-count rankings with bounded pagination.
+- Creates a searchable HTML audition gallery with provider-supplied preview URLs and a JSON metadata snapshot.
+- Does not synthesize audio, clone anyone, copy or rehost preview audio, or grant rights to redistribute marketplace voices.
+
+The provider's usage counters indicate activity in that marketplace. They are not proof that a voice is loved by listeners, used by YouTube channels, or suitable for the user's particular narration. High usage only prioritizes which voices should receive blind native-language auditions.
+
+### Vietnamese listener-preference snapshot (1 November 2026)
+
+The current Vietnamese Voice Arena snapshot places Gemini 3.8 Flash-Lite, Gemini 3.8 Flash and Gemini 3.1 Flash at ranks 1–3 overall, followed by Eleven v4 at rank 4. In media/entertainment, Eleven v4 is rank 4; in creator/education, it is rank 3. These rankings are based on blind pairwise listener votes and should be read together with their sample counts and confidence intervals. They are a market screening signal, not a promise of equal results across all accents, use cases or voice IDs.
+
+This is why the production strategy is now multi-engine: test Eleven v4 as the paid premium reference, Gemini 3.8 Flash as the high-fidelity expressive challenger, Gemini 3.8 Flash-Lite as the volume workhorse, and the best rights-cleared open models as free/self-hosted options. Select a specific voice only after the Vietnamese and English blind-review tracks pass separately.
