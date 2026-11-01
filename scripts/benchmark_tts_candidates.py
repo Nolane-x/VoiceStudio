@@ -25,6 +25,7 @@ if str(BACKEND) not in sys.path:
 
 TARGET_RATE = 48_000
 TARGET_BITS = 24
+LONGFORM_MAX_DURATION_S = 75.0
 
 SCRIPTS = {
     "en": [
@@ -97,6 +98,14 @@ def error_metrics(reference: str, hypothesis: str, language: str) -> dict:
         "reference_token_count": len(ref_tokens),
         "hypothesis_token_count": len(hyp_tokens),
     }
+
+
+def validate_benchmark_audio(builder, path: Path, scenario_id: str) -> dict:
+    """Use the library's strict audio checks with a longer cap for long-form speech."""
+    max_duration = LONGFORM_MAX_DURATION_S if scenario_id == "longform" else None
+    return builder.validate_audio(
+        path, TARGET_RATE, TARGET_BITS, max_duration_s=max_duration,
+    )
 
 
 def safe_slug(value: str) -> str:
@@ -401,7 +410,7 @@ def run(args) -> int:
                     final, TARGET_BITS,
                     context=f"tts-benchmark.{candidate['engine']}.{candidate['voice_id']}.{candidate['language']}.{scenario_id}",
                 )
-                audio = builder.validate_audio(final, TARGET_RATE, TARGET_BITS)
+                audio = validate_benchmark_audio(builder, final, scenario_id)
                 asr = transcribe(final, candidate["language"], args.asr_model, asr_state)
                 metrics = (
                     error_metrics(reference, asr["transcript"], candidate["language"])
