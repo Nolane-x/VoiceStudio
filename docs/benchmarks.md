@@ -66,26 +66,23 @@ model-pin, watermark or shared voice-builder inputs. Inference happens on
 GitHub-hosted CPU runners; no local model installation, Electron build or
 self-hosted GPU is required.
 
-The artifact `tts-candidate-benchmark-<run_id>` contains:
+The workflow publishes two separate GitHub Actions artifacts to avoid
+duplicating the same WAV payload and to keep the identity mapping separate:
 
-- `blind-listening-review.zip` — a **shareable blind-review package**
-  with neutral `sample-001.wav` filenames, reference scripts, browser gallery
-  and blank score sheet. It contains no engine/voice mapping, ASR output or
-  objective benchmark metrics.
-- `index.html` and `blind-samples/*.wav` — the same blind gallery and
-  neutral-name audio inside the full artifact. The page itself contains no
-  engine identity, ASR transcript, objective score or reveal control.
-- `human-review.csv` — ratings keyed by neutral `blind_sample_id`.
-- `benchmark.json` — the separate analyst mapping from blind sample IDs to
-  model/voice, with revisions, checksums, audio measurements, ASR diagnostics,
-  rights notices and per-sample failures.
-- `tts-candidate-benchmark.zip` — the full deterministic analyst bundle.
+- `blind-listening-review-<run_id>` contains only
+  `blind-listening-review.zip`: neutral `sample-001.wav` filenames,
+  reference scripts, browser gallery and blank score sheet. It contains no
+  engine/voice mapping, ASR output or objective benchmark metrics.
+- `tts-candidate-benchmark-analysis-<run_id>` contains `benchmark.json`
+  and `README.md`: model/voice mapping, revisions, checksums, audio
+  measurements, ASR diagnostics, rights notices and per-sample failures.
 
-Share only `blind-listening-review.zip` with listeners. The WAV filenames
-and HTML contain only neutral sample IDs; the ZIP does not include the mapping.
-After collecting scores, join `blind_sample_id` to the separate
-`benchmark.json` in the analyst package to reveal which engine produced each
-voice. Do not share the full analyst bundle before the blind review is complete.
+The WAV payload exists only inside the blind-review ZIP. The analyst artifact
+does not duplicate those audio files. Share only the blind-review ZIP with
+listeners. The ZIP's HTML has no engine identity, ASR transcript, objective
+score or reveal control. After collecting scores, join `blind_sample_id` to
+the separate `benchmark.json` in the analyst artifact. Do not share the
+analyst artifact before the blind review is complete.
 
 
 The current comparison includes Piper LibriTTS High (English baseline),
