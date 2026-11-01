@@ -80,3 +80,10 @@ def test_piper_benchmark_uses_the_same_supplied_reference_text():
     assert "_voice.synthesize_wav(" in source
     assert "text, wav_file" in source
     assert "builder.render_piper_wav(voice, _id, path)" not in source
+
+
+def test_benchmark_render_loop_uses_the_declared_script_corpus():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert 'expected = sum(len(SCRIPTS[c["language"]]) for c in candidates)' in source
+    assert 'for scenario_id, scenario_title, reference in SCRIPTS[candidate["language"]]:' in source
+    assert "TEXTS" not in source
