@@ -57,7 +57,8 @@ def test_html_gallery_escapes_narration_text_and_has_audio_controls():
         "voice_label": "Voice",
         "scenario_id": "story",
         "scenario_title": "Story",
-        "audio_file": "samples/test.wav",
+        "blind_sample_id": "sample-001",
+        "audio_file": "blind-samples/sample-001.wav",
         "reference_text": "<script>alert(1)</script>",
         "asr": {"transcript": "A transcript"},
         "asr_metrics": {"token_error_rate": 0.0, "character_error_rate": 0.0},
@@ -67,7 +68,7 @@ def test_html_gallery_escapes_narration_text_and_has_audio_controls():
     assert "<audio controls" in page
     assert "&lt;script&gt;" in page
     assert "<script>alert(1)</script>" not in page
-    assert "Export human ratings CSV" in page
+    assert "Export listening scores as CSV" in page
 
 
 def test_supertonic_renderer_captures_its_model_instance_before_vieneu_loads():
