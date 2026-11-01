@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nolane-x/VoiceStudio/blob/main/voice-library/video-job.schema.json",
+  "title": "VoiceStudio video narration job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "language",
+    "engine",
+    "voice_id",
+    "segments"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "language": {
+      "enum": [
+        "en",
+        "vi"
+      ]
+    },
+    "engine": {
+      "enum": [
+        "piper",
+        "vieneu"
+      ]
+    },
+    "voice_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "acknowledge_piper_restrictions": {
+      "type": "boolean",
+      "default": false
+    },
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          },
+          "pause_ms_after": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3000
+          }
+        }
+      }
+    }
+  }
+}
