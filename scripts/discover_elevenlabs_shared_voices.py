@@ -176,6 +176,7 @@ def collect_catalog(
             for sort in SORTS:
                 pages_fetched = 0
                 has_more = False
+                reported_total_count = 0
                 for page in range(pages_per_query):
                     payload = fetcher(
                         language=language, category=category, sort=sort, page=page, api_key=api_key,
@@ -184,6 +185,9 @@ def collect_catalog(
                     if not isinstance(records, list):
                         raise RuntimeError("ElevenLabs shared-voices response has no voices array")
                     pages_fetched += 1
+                    total_count = payload.get("total_count")
+                    if isinstance(total_count, int) and not isinstance(total_count, bool) and total_count >= 0:
+                        reported_total_count = max(reported_total_count, total_count)
                     for rank_on_page, raw in enumerate(records, 1):
                         if not isinstance(raw, dict):
                             continue
@@ -218,6 +222,7 @@ def collect_catalog(
                     "category": category,
                     "sort": sort,
                     "pages_fetched": pages_fetched,
+                    "provider_total_count": reported_total_count,
                     "has_more_after_page_cap": has_more and pages_fetched >= pages_per_query,
                 })
 
