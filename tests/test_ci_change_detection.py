@@ -316,6 +316,7 @@ def test_docker_main_pushes_skip_docs_and_tests_but_keep_runtime_changes():
     # Editing trigger policy changes orchestration, not the container payload;
     # the new workflow version must not rebuild its own multi-arch image.
     assert ".github/workflows/docker.yml" in ignored
+    assert ".github/scripts/ci_scope.py" in ignored
     assert "paths-ignore" not in (DOCKER[True].get("release") or {})
 
 
