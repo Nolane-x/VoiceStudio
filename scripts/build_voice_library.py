@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -404,9 +405,10 @@ def validate_audio(path: Path, expected_sample_rate: int) -> dict:
 
 
 def slugify(value: str, max_length: int = 48) -> str:
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
-    return (value[:max_length].strip("-") or "voice")
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    ascii_value = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_value).strip("-").lower()
+    return (ascii_value[:max_length].strip("-") or "voice")
 
 
 def render_piper_wav(voice: Any, speaker_id: int, output: Path) -> None:
@@ -457,6 +459,7 @@ def render_one(
     output_dir: Path,
     render: Callable[[Path], None],
     rights: dict,
+    source_voice_id: str | None = None,
 ) -> dict:
     destination = output_dir / language / f"{voice_id}.wav"
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -478,9 +481,10 @@ def render_one(
             "language": language,
             "display_name": display_name,
             "voice_identity_id": identity_id,
+            "source_voice_id": source_voice_id,
             "engine": engine,
             "model": model,
-            "audio_file": f"{language}/{voice_id}.wav",
+            "audio_file": f"voices/{voice_id}.wav",
             "audio_sha256": audio["sha256"],
             "sample_rate": audio["sample_rate"],
             "channels": audio["channels"],
@@ -549,8 +553,8 @@ def deterministic_zip(base: Path, language: str, archive_path: Path, voices: lis
         archive_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4
     ) as archive:
         for voice in language_voices:
-            path = base / voice["audio_file"]
-            info = zipfile.ZipInfo(f"voices/{path.name}")
+            path = base / language / f"{voice['id']}.wav"
+            info = zipfile.ZipInfo(voice["audio_file"])
             info.date_time = (2020, 1, 1, 0, 0, 0)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
@@ -617,6 +621,7 @@ def build(args: argparse.Namespace) -> int:
                     "output_dir": audio_root,
                     "render": lambda raw, sid=speaker_id: render_piper_wav(piper, sid, raw),
                     "rights": rights,
+                    "source_voice_id": speaker_name,
                 },
             )
             if index % 25 == 0 or index == len(selected):
@@ -647,7 +652,8 @@ def build(args: argparse.Namespace) -> int:
         }
         for index, (label, voice_id) in enumerate(chosen, 1):
             safe_id = slugify(voice_id)
-            identity = f"vieneu-v3turbo-{safe_id}"
+            identity_hash = hashlib.sha256(voice_id.encode("utf-8")).hexdigest()[:6]
+            identity = f"vieneu-v3turbo-{safe_id}-{identity_hash}"
             tts.get_preset_voice(voice_id)
             if args.language in ("all", "vi"):
                 vi_id = f"vi-{identity}"
@@ -666,6 +672,7 @@ def build(args: argparse.Namespace) -> int:
                         "output_dir": audio_root,
                         "render": lambda raw, vid=voice_id: render_vieneu_wav(tts, vid, VI_TEXT, raw),
                         "rights": rights,
+                        "source_voice_id": voice_id,
                     },
                 )
             if args.language in ("all", "en"):
@@ -685,6 +692,7 @@ def build(args: argparse.Namespace) -> int:
                         "output_dir": audio_root,
                         "render": lambda raw, vid=voice_id: render_vieneu_wav(tts, vid, EN_TEXT, raw),
                         "rights": rights,
+                        "source_voice_id": voice_id,
                     },
                 )
             if index % 5 == 0 or index == len(chosen):
