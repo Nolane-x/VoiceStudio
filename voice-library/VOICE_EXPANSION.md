@@ -135,3 +135,21 @@ The manual workflow, ElevenLabs Eleven v4 marketplace quality benchmark, selects
 The workflow runs only when the repository is private, ELEVENLABS_API_KEY exists, and confirm_paid_api_usage=true is explicitly selected. It uploads a blind listening archive separately from the private analysis mapping. Human reviewers score naturalness, pronunciation, prosody, emotional fit, accent fit and overall preference. The discovery counters determine which voices are auditioned first; they never count as quality scores. An ambiguous POST timeout is not retried automatically because provider-side acceptance and billing may already have occurred.
 
 Run it from Actions → ElevenLabs Eleven v4 marketplace quality benchmark. Start with the default two voices per language; review the blind package before increasing the offset for later batches. This workflow is disabled on public repositories and is never run automatically by CI.
+
+
+
+### Turning blind listening into a ranked voice set
+
+After listeners complete `blind-review.html` and export the CSV, keep the matching `analysis.json` artifact private and merge the two files:
+
+```bash
+python scripts/merge_elevenlabs_v4_blind_scores.py \
+  --analysis dist/elevenlabs-v4-benchmark/analysis.json \
+  --scores eleven-v4-blind-review.csv \
+  --output dist/elevenlabs-v4-benchmark/scored-analysis.json \
+  --summary-csv dist/elevenlabs-v4-benchmark/voice-rankings.csv
+```
+
+The merger supports multiple reviewers per blind sample, rejects duplicate reviewer/sample pairs, unknown IDs, language mismatches, incomplete score rows, and values outside the 1–5 scale. It returns separate VI and EN rankings with average naturalness, pronunciation, prosody, emotion, accent-fit and overall preference. Blank template rows are ignored. These cohort-specific human ratings are not standardized MOS and should never be interpreted without review counts; they do not clear voice rights or prove universal listener preference.
+
+Blind audio and private voice mapping must remain in separate artifacts until scores have been submitted. Do not upload the mapping to a public issue, discussion, or public artifact.
