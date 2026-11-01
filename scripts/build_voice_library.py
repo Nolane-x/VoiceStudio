@@ -566,7 +566,13 @@ def watermark_and_verify(path: Path, bits: int, context: str) -> dict:
     }
 
 
-def validate_audio(path: Path, expected_sample_rate: int, expected_bits: int) -> dict:
+def validate_audio(
+    path: Path,
+    expected_sample_rate: int,
+    expected_bits: int,
+    *,
+    max_duration_s: float | None = None,
+) -> dict:
     import numpy as np
     import soundfile as sf
 
@@ -595,8 +601,14 @@ def validate_audio(path: Path, expected_sample_rate: int, expected_bits: int) ->
     duration = float(len(audio) / sample_rate)
     silence_ratio = float(np.mean(np.abs(audio[:, 0]) < 0.002))
     clipped_ratio = float(np.mean(np.abs(audio[:, 0]) >= 0.999))
-    if not QUALITY["min_duration_s"] <= duration <= QUALITY["max_duration_s"]:
-        raise RuntimeError(f"Duration out of range: {duration:.2f}s")
+    duration_limit = QUALITY["max_duration_s"] if max_duration_s is None else float(max_duration_s)
+    if not math.isfinite(duration_limit) or duration_limit < QUALITY["min_duration_s"]:
+        raise ValueError("max_duration_s must be finite and at least the configured minimum duration")
+    if not QUALITY["min_duration_s"] <= duration <= duration_limit:
+        raise RuntimeError(
+            f"Duration out of range: {duration:.2f}s "
+            f"(expected {QUALITY['min_duration_s']:.2f}-{duration_limit:.2f}s)"
+        )
     if rms < QUALITY["min_rms"]:
         raise RuntimeError(f"Audio RMS too low: {rms:.6f}")
     if silence_ratio > QUALITY["max_silence_ratio"]:
