@@ -75,7 +75,10 @@ jobs:
       - name: Validate static contracts
         run: |
           python scripts/build_voice_library.py --check
+          python scripts/render_video_voice.py --check
           python tests/test_voice_library_contract.py
+          python tests/test_video_voice_contract.py
+          python tests/test_voice_library_ci_scope.py
 
   smoke:
     name: Real-model smoke build (two voices per source)
