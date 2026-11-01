@@ -137,6 +137,9 @@ def test_listening_gallery_contains_no_model_identity_or_objective_diagnostics()
     assert "Reveal model identities" not in page
     assert "blind-human-review.csv" in page
     assert "blind_sample_id" in page
+    assert "reviewer-id" in page
+    assert "reviewer_id" in page
+    assert "card.dataset.sampleFile" in page
 
 
 def test_audio_samples_are_moved_to_neutral_blind_filenames(tmp_path):
@@ -206,3 +209,21 @@ def test_library_audio_validator_keeps_its_default_duration_cap():
     parameter = inspect.signature(builder.validate_audio).parameters["max_duration_s"]
     assert parameter.default is None
     assert builder.QUALITY["max_duration_s"] == 35.0
+
+
+
+def test_benchmark_template_csv_includes_reviewer_identity_column():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert '["blind_sample_id", "language", "scenario", "reviewer_id"' in source
+    assert '["reviewer-id"]' in source
+
+
+def test_score_merger_is_wired_as_a_standalone_post_review_tool():
+    from pathlib import Path
+
+    merger = ROOT / "scripts" / "merge_tts_blind_scores.py"
+    assert merger.is_file()
+    source = merger.read_text(encoding="utf-8")
+    assert "voice_rankings_by_language" in source
+    assert "voice_rankings_by_language_and_scenario" in source
+    assert "commercial-use" in source
