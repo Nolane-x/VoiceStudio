@@ -49,6 +49,12 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertIn('"audio_file": f"voices/{voice_id}.wav"', script)
         self.assertIn('base / language / f"{voice[\'id\']}.wav"', script)
 
+    def test_audio_validator_accepts_extensible_pcm_wav_and_checks_subtype(self):
+        script = BUILDER.read_text(encoding="utf-8")
+        self.assertIn('info.format not in {"WAV", "WAVEX"}', script)
+        self.assertIn('expected_subtype = {16: "PCM_16", 24: "PCM_24"}', script)
+        self.assertIn("validate_audio(normalized, sample_rate, bits)", script)
+
     def test_manifest_requires_audio_hash_and_watermark(self):
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
         self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
