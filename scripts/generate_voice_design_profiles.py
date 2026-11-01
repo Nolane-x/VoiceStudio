@@ -97,6 +97,40 @@ DIMENSIONS = {
     ],
 }
 
+MARKET_ARCHETYPES = {
+    "documentary": [
+        ("cinematic-documentary", "Cinematic documentary narrator", "Use composed authority, vivid but restrained storytelling, and patient sentence endings."),
+        ("warm-history-storyteller", "Warm history storyteller", "Sound inviting and knowledgeable, with a warm narrative arc and measured emphasis."),
+    ],
+    "educational": [
+        ("friendly-educator", "Friendly educator", "Explain ideas clearly and patiently, with encouraging emphasis and accessible phrasing."),
+        ("expert-explainer", "Clear expert explainer", "Sound precise and confident without becoming stiff, rushed, or overly academic."),
+    ],
+    "audiobook": [
+        ("immersive-audiobook", "Immersive audiobook performer", "Use expressive but controlled storytelling, character-neutral dialogue, and consistent long-form pacing."),
+        ("reflective-storyteller", "Reflective long-form storyteller", "Create an intimate, attentive narrative flow with natural pauses and emotional restraint."),
+    ],
+    "podcast": [
+        ("conversational-host", "Conversational podcast host", "Sound engaging and spontaneous while maintaining clean articulation and stable loudness."),
+        ("curious-interviewer", "Curious interview host", "Use attentive, warm phrasing and natural conversational turns without impersonating a real host."),
+    ],
+    "short-form": [
+        ("creator-hook", "High-retention short-form creator narrator", "Open with a crisp, natural hook; keep energy lively while preserving intelligibility."),
+        ("energetic-social", "Energetic social-video narrator", "Use upbeat rhythm, clear phrase boundaries, and a memorable but non-theatrical finish."),
+    ],
+    "corporate": [
+        ("professional-presenter", "Polished professional presenter", "Sound trustworthy, concise, and confident, with neutral emphasis and clear transitions."),
+        ("premium-brand", "Premium brand storyteller", "Use smooth, refined delivery and understated confidence rather than exaggerated luxury styling."),
+    ],
+    "news": [
+        ("credible-news-anchor", "Credible news anchor", "Use controlled authority, clean diction, balanced pace, and neutral factual delivery."),
+        ("journalistic-explainer", "Journalistic explainer", "Make complex information approachable with clear stress and carefully placed pauses."),
+    ],
+    "wellness": [
+        ("calm-wellness-guide", "Calm wellness guide", "Use gentle pacing, reassuring warmth, and natural breathing without whispering or sounding sleepy."),
+        ("mindful-reflection", "Mindful reflection narrator", "Use quiet confidence, soft phrase endings, and thoughtful pauses without artificial sentimentality."),
+    ],
+}
 
 def _stable_seed(profile_id: str, dimensions: dict[str, str], used: set[int]) -> int:
     canonical = json.dumps(dimensions, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -110,7 +144,7 @@ def _stable_seed(profile_id: str, dimensions: dict[str, str], used: set[int]) ->
         salt += 1
 
 
-def _voice_description(language: str, accent: tuple[str, str, str], dimensions: dict[str, str]) -> str:
+def _voice_description(language: str, accent: tuple[str, str, str], dimensions: dict[str, str], archetype: tuple[str, str, str]) -> str:
     language_rule = (
         "Speak Vietnamese fluently and preserve all six Vietnamese tones, final consonants, "
         "natural sentence melody, and regional vowel/consonant distinctions."
@@ -128,6 +162,7 @@ def _voice_description(language: str, accent: tuple[str, str, str], dimensions: 
         f"timbre: {dimensions['timbre'].replace('-', ' ')}; "
         f"pitch: {dimensions['pitch'].replace('-', ' ')}. "
         f"Intended role: {role}. "
+        f"Market archetype: {archetype[1]}. {archetype[2]} "
         f"Delivery: {dimensions['delivery'].replace('-', ' ')}; "
         f"pacing: {dimensions['pace'].replace('-', ' ')}. "
         f"{language_rule} Keep the speaker identity stable across sentences, with natural "
@@ -177,8 +212,13 @@ def build_profiles(language: str, per_language: int = 1000) -> list[dict[str, An
         "canadian-general": "en-CA",
         "indian-urban": "en-IN",
     }
+    archetype_counts = {use_case: 0 for use_case in MARKET_ARCHETYPES}
     for index, (accent, dimensions) in enumerate(combinations[:per_language], start=1):
         profile_id = f"{language}-{accent[0]}-{index:04d}"
+        archetype_rows = MARKET_ARCHETYPES[dimensions["use_case"]]
+        archetype_index = archetype_counts[dimensions["use_case"]] % len(archetype_rows)
+        archetype_counts[dimensions["use_case"]] += 1
+        archetype = archetype_rows[archetype_index]
         expanded = dict(dimensions)
         profiles.append({
             "profile_id": profile_id,
@@ -189,8 +229,10 @@ def build_profiles(language: str, per_language: int = 1000) -> list[dict[str, An
             "accent_id": accent[0],
             "accent_label": accent[1],
             "intended_use_case": dimensions["use_case"],
+            "market_archetype_id": archetype[0],
+            "market_archetype_label": archetype[1],
             "dimensions": expanded,
-            "voice_description": _voice_description(language, accent, dimensions),
+            "voice_description": _voice_description(language, accent, dimensions, archetype),
             "preview_text": SAMPLE_TEXT[language],
             "seed": _stable_seed(profile_id, expanded, used_seeds),
             "provider": "elevenlabs_voice_design",
