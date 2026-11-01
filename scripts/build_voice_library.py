@@ -161,11 +161,10 @@ def hf_revision(repo_id: str) -> str:
     return sha
 
 
-def prepare_piper() -> tuple[Any, dict, dict, str]:
+def prepare_piper() -> tuple[Any, dict]:
     """Download and verify the exact Piper voice/model files, then load once."""
     from piper import PiperVoice
 
-    sources = load_sources()["english"]
     voices_path = hf_download(PIPER_REPO, "voices.json", PIPER_REVISION)
     voices = json.loads(voices_path.read_text(encoding="utf-8"))
     entry = voices.get(PIPER_KEY)
@@ -567,7 +566,6 @@ def build(args: argparse.Namespace) -> int:
     import torch
 
     torch.set_num_threads(max(1, min(4, os.cpu_count() or 1)))
-    sources = load_sources()
     output = Path(args.output).resolve()
     audio_root = output / "audio"
     output.mkdir(parents=True, exist_ok=True)
@@ -650,10 +648,8 @@ def build(args: argparse.Namespace) -> int:
         for index, (label, voice_id) in enumerate(chosen, 1):
             safe_id = slugify(voice_id)
             identity = f"vieneu-v3turbo-{safe_id}"
-            preset = tts.get_preset_voice(voice_id)
-            description = str(preset.get("description") or label).strip()
-            try:
-                            if args.language in ("all", "vi"):
+            tts.get_preset_voice(voice_id)
+            if args.language in ("all", "vi"):
                 vi_id = f"vi-{identity}"
                 add_with_rejection(
                     voices, rejected,
