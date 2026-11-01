@@ -23,6 +23,9 @@ BACKEND = ROOT / "backend"
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
+TARGET_RATE = 48_000
+TARGET_BITS = 24
+
 SCRIPTS = {
     "en": [
         ("story", "Narrative prose",
