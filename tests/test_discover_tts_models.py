@@ -127,3 +127,11 @@ def test_report_writes_json_and_human_readable_market_summary(tmp_path):
     assert json.loads(report.read_text(encoding="utf-8"))["models"][0]["model_id"] == "publisher/model"
     assert "publisher/model" in readme.read_text(encoding="utf-8")
     assert "not a quality ranking" in readme.read_text(encoding="utf-8")
+
+
+
+def test_language_tags_accept_hub_short_codes_and_language_names():
+    assert MODULE._language_tags(["vi", "english", "license:apache-2.0"]) == ["en", "vi"]
+    assert MODULE._language_tags(["language:vi", "language:en"]) == ["en", "vi"]
+    assert MODULE._language_tags(["text-to-speech", "Vietnamese"]) == ["vi"]
+    assert MODULE._language_tags(["license:mit", "audio"]) == []
