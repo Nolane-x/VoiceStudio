@@ -55,6 +55,7 @@ def test_html_gallery_escapes_narration_text_and_has_audio_controls():
         "engine_label": "Test engine",
         "voice_id": "voice-1",
         "voice_label": "Voice",
+        "scenario_id": "story",
         "scenario_title": "Story",
         "audio_file": "samples/test.wav",
         "reference_text": "<script>alert(1)</script>",
