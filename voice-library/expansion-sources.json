@@ -586,7 +586,7 @@
   ],
   "market_snapshots": {
     "as_of": "2026-11-01",
-    "source": "https://artificialanalysis.ai/text-to-speech/leaderboard/provider-voice",
+    "source": "https://voicearena.com/tts-leaderboard/vietnamese",
     "metric": "Vietnamese Voice Arena Elo from blind pairwise listener comparisons",
     "interpretation": "Crowdsourced preference snapshot for model/voice output, not a guaranteed universal quality result or proof of market usage. Sample count and confidence interval must remain visible.",
     "overall_vietnamese_top_models": [
@@ -681,6 +681,8 @@
         "elo": 1086,
         "confidence_interval": 20
       }
-    ]
+    ],
+    "media_entertainment_source": "https://voicearena.com/tts-leaderboard/vietnamese/media-and-entertainment",
+    "creator_education_source": "https://voicearena.com/tts-leaderboard/vietnamese/content-creation-and-edu"
   }
 }
