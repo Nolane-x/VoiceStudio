@@ -48,7 +48,7 @@ def test_kokoro_and_piper_are_kept_language_scoped():
 
 
 def test_html_gallery_escapes_narration_text_and_has_audio_controls():
-    manifest = {"built_at": "2026-11-01T00:00:00+00:00"}
+    manifest = {"built_at": "2026-11-01T00:00:00+00:00", "languages": ["en"]}
     rows = [{
         "language": "en",
         "engine": "test",
