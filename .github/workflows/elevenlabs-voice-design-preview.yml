@@ -45,10 +45,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
       - name: Verify credentials and bounded request count
@@ -86,14 +86,14 @@ jobs:
             --output dist/elevenlabs-voice-design \
             --confirm-paid-api-usage
       - name: Upload blind listening package to private repository artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elevenlabs-voice-design-blind-${{ github.run_id }}
           path: dist/elevenlabs-voice-design/blind-review.zip
           if-no-files-found: error
           retention-days: 14
       - name: Upload private analysis mapping
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elevenlabs-voice-design-analysis-${{ github.run_id }}
           path: |

@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import importlib.util
 import json
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,7 +107,7 @@ def test_design_request_uses_api_key_header_and_returns_preview_metadata():
 
     result = MODULE.request_design(
         _profile(),
-        "eleven_multilingual_ttv2",
+        "eleven_multilingual_ttv_v2",
         "not-a-real-secret",
         opener=fake_open,
     )
