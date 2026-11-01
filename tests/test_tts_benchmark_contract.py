@@ -116,4 +116,7 @@ def test_listening_gallery_hides_engine_identity_until_revealed():
     assert 'data-identity="Supertonic 3 · Female 3"' in page
     assert "Reveal model identities" in page
     assert "human-review-blind.csv" in page
+    assert 'class="metrics objective"' in page
+    assert 'class="asr objective"' in page
+    assert "body.revealed .objective" in page
     assert "sample_file" in page
