@@ -95,8 +95,8 @@ def test_benchmark_master_format_constants_are_explicit():
     assert MODULE.TARGET_BITS == 24
 
 
-def test_listening_gallery_hides_engine_identity_until_revealed():
-    manifest = {"built_at": "2026-11-01T00:00:00+00:00"}
+def test_listening_gallery_contains_no_model_identity_or_objective_diagnostics():
+    manifest = {"built_at": "2026-11-01T00:00:00+00:00", "languages": ["vi"]}
     rows = [{
         "engine": "supertonic",
         "engine_label": "Supertonic 3",
@@ -105,19 +105,64 @@ def test_listening_gallery_hides_engine_identity_until_revealed():
         "language": "vi",
         "scenario_id": "story",
         "scenario_title": "Văn kể chuyện",
-        "audio_file": "samples/blind-001.wav",
+        "blind_sample_id": "sample-001",
+        "audio_file": "blind-samples/sample-001.wav",
         "reference_text": "Đôi khi, một lựa chọn nhỏ.",
         "asr": {"transcript": "Đôi khi một lựa chọn nhỏ"},
         "asr_metrics": {"token_error_rate": 0.0, "character_error_rate": 0.0},
         "rtfx": 4.2,
     }]
     page = MODULE.make_gallery(rows, manifest)
-    assert "Blind listening review" in page
-    assert 'class="identity" hidden' in page
-    assert 'data-identity="Supertonic 3 · Female 3"' in page
-    assert "Reveal model identities" in page
-    assert "human-review-blind.csv" in page
-    assert 'class="metrics objective"' in page
-    assert 'class="asr objective"' in page
-    assert "body.revealed .objective" in page
-    assert "sample_file" in page
+    assert "<audio controls" in page
+    assert "Blind voice review" in page
+    assert "sample-001" in page
+    assert "Đôi khi" in page
+    assert "Supertonic" not in page
+    assert "Female 3" not in page
+    assert "F3" not in page
+    assert "Đôi khi một lựa chọn nhỏ" not in page
+    assert "RTFx" not in page
+    assert "CER" not in page
+    assert "Reveal model identities" not in page
+    assert "blind-human-review.csv" in page
+    assert "blind_sample_id" in page
+
+
+def test_audio_samples_are_moved_to_neutral_blind_filenames(tmp_path):
+    source_dir = tmp_path / "samples"
+    source_dir.mkdir()
+    source = source_dir / "supertonic-F3-vi-story.wav"
+    source.write_bytes(b"test-audio-bytes")
+    rows = [{
+        "language": "vi",
+        "scenario_id": "story",
+        "audio_file": "samples/supertonic-F3-vi-story.wav",
+        "engine": "supertonic",
+        "voice_id": "F3",
+    }]
+    MODULE.anonymize_samples(rows, tmp_path)
+    assert rows[0]["blind_sample_id"] == "sample-001"
+    assert rows[0]["audio_file"] == "blind-samples/sample-001.wav"
+    assert (tmp_path / rows[0]["audio_file"]).read_bytes() == b"test-audio-bytes"
+    assert not source.exists()
+
+
+def test_shareable_blind_archive_excludes_the_engine_mapping(tmp_path):
+    import zipfile
+
+    (tmp_path / "index.html").write_text("<html>Blind listening</html>", encoding="utf-8")
+    (tmp_path / "human-review.csv").write_text("blind_sample_id,score\\nsample-001,5\\n", encoding="utf-8")
+    (tmp_path / "BLIND-REVIEW.md").write_text("Blind review only.", encoding="utf-8")
+    (tmp_path / "benchmark.json").write_text('{"engine":"supertonic"}', encoding="utf-8")
+    audio_dir = tmp_path / "blind-samples"
+    audio_dir.mkdir()
+    (audio_dir / "sample-001.wav").write_bytes(b"neutral-audio")
+    archive = MODULE.create_blind_review_archive(tmp_path)
+    with zipfile.ZipFile(archive) as bundle:
+        names = set(bundle.namelist())
+        assert "index.html" in names
+        assert "human-review.csv" in names
+        assert "BLIND-REVIEW.md" in names
+        assert "blind-samples/sample-001.wav" in names
+        assert "benchmark.json" not in names
+        assert all("supertonic" not in name.casefold() for name in names)
