@@ -52,13 +52,14 @@ def test_catalog_deduplicates_voices_and_keeps_language_specific_market_signals(
             rows = [sample_voice("shared-en", "English Voice", "en", usage=500)]
         else:
             rows = [sample_voice("shared-vi", "Vietnamese Voice", "vi", usage=900)]
-        return {"voices": rows, "has_more": False}
+        return {"voices": rows, "has_more": False, "total_count": 73}
 
     voices, queries = MODULE.collect_catalog(["vi", "en"], 1, fetcher=fake_fetcher)
     by_id = {voice["voice_id"]: voice for voice in voices}
 
     assert set(by_id) == {"shared-en", "shared-vi"}
     assert len(queries) == 12
+    assert all(query["provider_total_count"] == 73 for query in queries)
     assert len(by_id["shared-en"]["discovery_ranks"]) == 6
     assert len(by_id["shared-vi"]["discovery_ranks"]) == 6
     assert by_id["shared-vi"]["usage_character_count_1y"] == 900
@@ -125,3 +126,14 @@ def test_request_uses_documented_shared_voice_filters(monkeypatch):
         "page=2", "page_size=100", "include_live_moderated=false",
     ):
         assert fragment in captured["url"]
+
+
+
+def test_discovery_report_preserves_provider_total_count():
+    def fake_fetcher(*, language, category, sort, page, api_key=None):
+        return {"voices": [], "has_more": page == 0, "total_count": 247}
+
+    _, queries = MODULE.collect_catalog(["vi"], 2, fetcher=fake_fetcher)
+    assert len(queries) == 6
+    assert all(query["provider_total_count"] == 247 for query in queries)
+    assert all(query["has_more_after_page_cap"] for query in queries)
