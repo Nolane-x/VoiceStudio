@@ -95,7 +95,7 @@ def summarize(analysis: dict, reviews: dict[str, list[dict]]) -> dict:
 
     # Attach already-validated reviews to their anonymous sample IDs.
     attached = reviews
-    voice_buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    voice_buckets: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     for sample in samples:
         sample_reviews = attached.get(sample["blind_sample_id"], [])
         sample["human_reviews"] = sample_reviews
@@ -107,24 +107,28 @@ def summarize(analysis: dict, reviews: dict[str, list[dict]]) -> dict:
                     for field in RATING_FIELDS
                 },
             }
-            voice_buckets[(sample.get("language", ""), sample.get("voice_id", ""))].append(
+            model_id = sample.get("model_id") or analysis.get("model_id") or "unknown"
+            voice_buckets[(sample.get("language", ""), model_id, sample.get("voice_id", ""))].append(
                 sample["human_review_summary"]
             )
         else:
             sample["human_review_summary"] = {"review_count": 0, "status": "pending"}
 
     rankings = []
-    for (language, voice_id), rows in voice_buckets.items():
+    for (language, model_id, voice_id), rows in voice_buckets.items():
         if not voice_id:
             continue
         count = sum(row["review_count"] for row in rows)
         summary = {
             "language": language,
+            "model_id": model_id,
             "voice_id": voice_id,
             "voice_name": next(
                 sample.get("voice_name", voice_id)
                 for sample in samples
-                if sample.get("language") == language and sample.get("voice_id") == voice_id
+                if sample.get("language") == language
+                and (sample.get("model_id") or analysis.get("model_id") or "unknown") == model_id
+                and sample.get("voice_id") == voice_id
             ),
             "sample_count": len(rows),
             "review_count": count,
@@ -133,17 +137,18 @@ def summarize(analysis: dict, reviews: dict[str, list[dict]]) -> dict:
             weighted = sum(row[field] * row["review_count"] for row in rows)
             summary[f"average_{field}"] = round(weighted / count, 4)
         rankings.append(summary)
-    rankings.sort(key=lambda row: (row["language"], -row["average_overall"], row["voice_name"].casefold()))
+    rankings.sort(key=lambda row: (row["language"], row["model_id"], -row["average_overall"], row["voice_name"].casefold()))
 
     by_language: dict[str, list[dict]] = defaultdict(list)
     for row in rankings:
         by_language[row["language"]].append(row)
     language_rankings = {}
     for language, rows in by_language.items():
-        language_rankings[language] = [
-            {**row, "rank": rank}
-            for rank, row in enumerate(rows, start=1)
-        ]
+        language_rankings[language] = []
+        model_ranks: dict[str, int] = defaultdict(int)
+        for row in rows:
+            model_ranks[row["model_id"]] += 1
+            language_rankings[language].append({**row, "rank": model_ranks[row["model_id"]]})
 
     output = dict(analysis)
     output["human_review_status"] = "scored" if all(
@@ -190,7 +195,7 @@ def merge(analysis_path: Path, scores_path: Path, output_path: Path, csv_path: P
             for row in result["human_voice_rankings_by_language"][language]
         ]
         fields = [
-            "language", "rank", "voice_name", "voice_id", "sample_count", "review_count",
+            "language", "model_id", "rank", "voice_name", "voice_id", "sample_count", "review_count",
             *[f"average_{field}" for field in RATING_FIELDS],
         ]
         with csv_path.open("w", encoding="utf-8", newline="") as handle:
