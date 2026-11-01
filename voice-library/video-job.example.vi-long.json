@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "job_id": "video-vi-longform-smoke",
+  "title": "Long-form Vietnamese narration and chunk-boundary smoke",
+  "language": "vi",
+  "engine": "vieneu",
+  "voice_id": "vi-vieneu-v3turbo-adam-bua-87e364",
+  "segments": [
+    {
+      "id": "intro",
+      "text": "Bạn có bao giờ nhìn lên bầu trời vào một ngày nắng và tự hỏi vì sao nó có màu xanh, trong khi ánh sáng Mặt Trời nhìn từ Trái Đất lại gần như màu trắng?",
+      "pause_ms_after": 300
+    },
+    {
+      "id": "main",
+      "text": "Câu trả lời nằm trong cách ánh sáng tương tác với không khí. Ánh sáng Mặt Trời là hỗn hợp nhiều màu, mỗi màu tương ứng với một bước sóng khác nhau. Khi đi vào khí quyển, ánh sáng gặp các phân tử khí rất nhỏ như nitơ và ôxy. Những phân tử này làm ánh sáng đổi hướng, một hiện tượng gọi là tán xạ Rayleigh.\n\nĐiểm quan trọng là các bước sóng ngắn bị tán xạ mạnh hơn các bước sóng dài. Ánh sáng xanh lam có bước sóng ngắn hơn ánh sáng đỏ, nên bị tán xạ ra nhiều hướng hơn khi đi qua khí quyển. Vì vậy, khi chúng ta nhìn về một vùng trời không nằm ngay hướng Mặt Trời, ánh sáng xanh từ nhiều phía đi vào mắt và khiến bầu trời trông có màu xanh. Ánh sáng tím còn có bước sóng ngắn hơn và cũng bị tán xạ mạnh, nhưng Mặt Trời phát ra ít ánh sáng tím hơn, một phần bị hấp thụ trong khí quyển, và mắt người cũng nhạy với màu xanh lam hơn. Tổng hợp các yếu tố đó tạo nên màu xanh quen thuộc mà chúng ta nhìn thấy.\n\nVậy tại sao lúc bình minh hoặc hoàng hôn, bầu trời gần Mặt Trời thường chuyển sang màu cam và đỏ? Khi Mặt Trời ở thấp sát đường chân trời, ánh sáng phải đi qua một quãng khí quyển dài hơn trước khi đến mắt. Phần lớn ánh sáng xanh và tím đã bị tán xạ ra khỏi đường truyền trực tiếp, còn nhiều ánh sáng có bước sóng dài như đỏ và cam tiếp tục đi tới chúng ta. Bởi vậy, Mặt Trời và vùng trời xung quanh có thể chuyển sang sắc vàng, cam hoặc đỏ. Màu sắc cụ thể còn phụ thuộc vào bụi, hơi nước và các hạt nhỏ lơ lửng trong không khí.\n\nMây lại thường có màu trắng hoặc xám vì các giọt nước trong mây lớn hơn rất nhiều so với phân tử khí. Chúng tán xạ nhiều bước sóng nhìn thấy theo cách gần giống nhau, khiến các màu trộn lại thành ánh sáng trắng. Khi mây dày, ít ánh sáng xuyên qua tới mắt, phần bên dưới trông tối hơn và ta thấy mây có màu xám. Như vậy, màu sắc bầu trời không phải do không khí tự mang màu xanh, mà là kết quả của ánh sáng, kích thước các hạt trong khí quyển và cách mắt người cảm nhận màu sắc. Chỉ một hiện tượng tán xạ rất nhỏ cũng đủ tạo nên khung cảnh thay đổi suốt cả ngày.",
+      "pause_ms_after": 500
+    },
+    {
+      "id": "outro",
+      "text": "Lần tới khi ngắm một buổi hoàng hôn, hãy nhớ rằng màu sắc ấy là dấu vết của hành trình mà ánh sáng đã đi qua bầu khí quyển.",
+      "pause_ms_after": 0
+    }
+  ]
+}

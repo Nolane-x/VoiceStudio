@@ -168,3 +168,17 @@ The [voice library smoke workflow run #46](https://github.com/Nolane-x/VoiceStud
 also passed the English Kokoro and Vietnamese VieNeu end-to-end narration paths.
 Human listening has not yet been completed; the manifest continues to mark it
 as required.
+
+
+## Latest benchmark artifact verification
+
+The latest rerun on commit `b5b25e1423f2c715f0077c2bed391d085412df00`
+completed successfully in [Actions run #27](https://github.com/Nolane-x/VoiceStudio/actions/runs/41289705921):
+
+- 24/24 matched samples rendered; zero failures.
+- 24/24 WAVs are mono 48 kHz PCM-24 and match their manifest SHA-256.
+- 24/24 saved WAVs passed AudioSeal verification and 24/24 ASR diagnostics completed.
+- Blind gallery, CSV and analyst manifest have the same 24 anonymous sample IDs.
+- The blind ZIP contains no engine/voice mapping or objective/ASR metrics; the separate analyst artifact contains only `benchmark.json` and `README.md`.
+
+Blind ZIP SHA-256: `5aebf157a5e219b09bd92f23ad7eb8d0214ebe51cf761bb932268d5775a0a541`.

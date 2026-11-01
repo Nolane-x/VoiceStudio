@@ -109,11 +109,14 @@ segments. See the validated contract and examples:
 - [Job JSON Schema](video-job.schema.json)
 - [Vietnamese example](video-job.example.vi.json)
 - [English VieNeu example](video-job.example.en.json)
+- [Long-form Vietnamese narration smoke](video-job.example.vi-long.json)
 - [English Kokoro example](video-job.example.en-kokoro.json)
 
 The AI should choose a canonical `voice_id` from the generated
 `manifest.json`. The VieNeu examples are safe starting references; exact
-voice IDs are checked against the pinned preset list at runtime. Piper is
+voice IDs are checked against the pinned preset list at runtime. The long-form
+Vietnamese sample exercises multi-chunk rendering, text preservation, captions
+and streaming watermark verification over multiple 30-second audio blocks. Piper is
 English-only and its rights are not blanket commercially cleared, so a
 Piper job is rejected unless `acknowledge_piper_restrictions` is explicitly
 set after reviewing the recorded rights warning.
