@@ -24,6 +24,7 @@ def non_runtime(path: str) -> bool:
             "scripts/build_voice_library.py",
             "scripts/render_video_voice.py",
             ".github/workflows/voice-library.yml",
+            ".github/workflows/render-video-narration.yml",
             ".github/scripts/ci_scope.py",
         }
     ):
