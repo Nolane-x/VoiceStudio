@@ -96,3 +96,32 @@ separate review; this benchmark does not grant commercial-use clearance.
 Piper's source evidence also does not establish blanket commercial or
 publicity rights. VieNeu and Kokoro retain their own upstream rights and
 attribution notices in the result manifest.
+
+
+## First verified GitHub Actions voice-service baseline
+
+The first full matched-sample run completed successfully:
+
+- Workflow run: [#6](https://github.com/Nolane-x/VoiceStudio/actions/runs/41285695971)
+- Benchmark source commit: `9c43ebba543bbb9e4b63092e6f1ffb491038fba4`
+- Built: 2026-11-01 07:47 UTC
+- Runner: GitHub-hosted Ubuntu 24.04 CPU
+- Samples: **24/24 rendered**, 0 candidate/sample failures.
+- Output: all WAVs are mono 48 kHz PCM-24; all SHA-256 values match the manifest; all 24 saved samples passed VoiceStudio watermark detection; all 24 ASR runs completed.
+- ASR: faster-whisper small, CPU int8.
+- Artifact SHA-256: `b776e66460b7f1bd3f62517f0236eaa3571adaf3f7d17290f753161f5eafd6aa`.
+
+| Engine | Language | Samples | Mean RTFx | Mean CER | Mean token error |
+|---|---:|---:|---:|---:|---:|
+| Supertonic 3 | English | 4 | 5.031 | 2.47% | 4.84% WER |
+| Supertonic 3 | Vietnamese | 4 | 5.362 | 21.35% | 25.83% syllable error |
+| VieNeu v3 Turbo | English | 4 | 1.301 | 6.21% | 10.74% WER |
+| VieNeu v3 Turbo | Vietnamese | 4 | 1.327 | 6.02% | 12.18% syllable error |
+| Kokoro-82M | English | 4 | 2.979 | 2.62% | 4.84% WER |
+| Piper LibriTTS High | English | 4 | 4.165 | 3.10% | 5.73% WER |
+
+RTFx is audio duration divided by warmed TTS synthesis time; higher means faster than real time. It excludes ASR, watermarking and mastering. Vietnamese token error counts whitespace-delimited syllables, not lexical words. These numbers are diagnostics from two short prompts per voice, not a controlled MOS study, and should not be used as an automatic quality leaderboard.
+
+**Current engineering decision:** retain VieNeu as the Vietnamese production default. Its mean ASR diagnostics were better than the Supertonic aggregate in this small sample; Supertonic F3 was much closer than M1, but the engine remains comparison-only because its OpenRAIL-M terms need separate review. For English, Kokoro and Supertonic showed similar ASR diagnostics, with Supertonic faster on this CPU runner; retain Kokoro as the existing production candidate until a blind human listening review is complete. Piper remains a baseline with restricted/uncleared rights evidence.
+
+The benchmark's listening gallery currently displays engine labels. Record subjective naturalness, pronunciation, prosody and emotion ratings before changing any production voice. **No engine has been promoted or replaced by this run.**
