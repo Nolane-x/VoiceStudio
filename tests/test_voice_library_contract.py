@@ -17,7 +17,7 @@ class VoiceLibraryContractTests(unittest.TestCase):
     def test_only_english_and_vietnamese_are_in_scope(self):
         sources = json.loads(SOURCES.read_text(encoding="utf-8"))
         self.assertEqual(sources["language_scope"], ["en", "vi"])
-        self.assertEqual(set(sources["shared"]["formats"]), {"piper", "vieneu"})
+        self.assertEqual(set(sources["shared"]["formats"]), {"piper", "vieneu", "kokoro"})
 
     def test_piper_source_is_immutable_and_high_quality(self):
         sources = json.loads(SOURCES.read_text(encoding="utf-8"))
@@ -36,6 +36,21 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertEqual(vietnamese["sample_rate"], 48_000)
         self.assertGreaterEqual(vietnamese["minimum_preset_voices"], 20)
         self.assertIn("list_preset_voices", BUILDER.read_text(encoding="utf-8"))
+
+
+    def test_kokoro_english_preset_set_is_pinned_and_curated(self):
+        sources = json.loads(SOURCES.read_text(encoding="utf-8"))
+        kokoro = sources["kokoro_english"]
+        self.assertEqual(kokoro["model_repo"], "hexgrad/Kokoro-82M")
+        self.assertEqual(kokoro["model_revision"], "f3ff3571791e39611d31c381e3a41a3af07b4987")
+        self.assertEqual(kokoro["voices_metadata_revision"], "c3327e9bac3dbe55779397bfa82de0f8806fb3bc")
+        self.assertEqual(kokoro["model_file_sha256"], "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4")
+        self.assertEqual(
+            {voice["id"] for voice in kokoro["selected_voices"]},
+            {"af_heart", "af_bella", "af_nicole", "bf_emma"},
+        )
+        self.assertTrue(all(voice["quality_grade"] in {"A", "A-", "B-"} for voice in kokoro["selected_voices"]))
+        self.assertIn("prepare_kokoro", BUILDER.read_text(encoding="utf-8"))
 
     def test_voice_ids_are_slugged_without_losing_vietnamese_diacritics(self):
         spec = importlib.util.spec_from_file_location("voice_library_builder", BUILDER)
