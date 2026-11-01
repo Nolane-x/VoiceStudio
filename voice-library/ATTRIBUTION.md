@@ -38,6 +38,27 @@ build pins the SDK package version separately and stores the actual preset
 list returned by that version, because the roster can change between
 releases.
 
+## Curated English: Kokoro-82M
+
+- Model repository: https://huggingface.co/hexgrad/Kokoro-82M
+- Source code: https://github.com/hexgrad/kokoro
+- Model and packaged voice embeddings are marked Apache-2.0 by the upstream
+  repository. Model weights are pinned at
+  `f3ff3571791e39611d31c381e3a41a3af07b4987`; source voice-grade metadata
+  is pinned at
+  `c3327e9bac3dbe55779397bfa82de0f8806fb3bc`.
+- Selected presets: `af_heart` (A), `af_bella` (A-), `af_nicole` (B-),
+  and `bf_emma` (B-). These letter grades are the upstream author's
+  subjective estimates of reference target quality and training duration,
+  not an independent MOS test or a guarantee for every generated sentence.
+- Attribution: “Generated with Kokoro-82M by hexgrad, using Apache-2.0
+  model and voice assets. Changes: new English synthetic speech generated,
+  loudness-normalized, and watermarked by VoiceStudio.”
+- The model card describes training data as permissive or non-copyrighted
+  audio. This record does not grant publicity, endorsement, or identity
+  rights to imitate any identifiable person; do not use these preset voices
+  to impersonate a real person.
+
 ## VoiceStudio provenance
 
 All generated WAVs are sent through
