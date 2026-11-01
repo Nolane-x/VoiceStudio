@@ -101,11 +101,22 @@ jobs:
             --asr-model "$BENCHMARK_ASR_MODEL" \
             --output dist/tts-candidate-benchmark
 
-      - name: Upload listening gallery and benchmark results
+      - name: Upload anonymized blind listening package
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: tts-candidate-benchmark-${{ github.run_id }}
-          path: dist/tts-candidate-benchmark/
+          name: blind-listening-review-${{ github.run_id }}
+          path: dist/tts-candidate-benchmark/blind-listening-review.zip
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload analyst manifest and provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tts-candidate-benchmark-analysis-${{ github.run_id }}
+          path: |
+            dist/tts-candidate-benchmark/benchmark.json
+            dist/tts-candidate-benchmark/README.md
           if-no-files-found: warn
           retention-days: 30
