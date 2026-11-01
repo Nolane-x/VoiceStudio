@@ -95,11 +95,22 @@ def _request_models(
 
 
 def _language_tags(tags: list[Any]) -> list[str]:
-    return sorted({
-        str(item).split(":", 1)[1].lower()
-        for item in tags
-        if str(item).startswith("language:")
-    })
+    languages: set[str] = set()
+    aliases = {
+        "vi": "vi",
+        "vietnamese": "vi",
+        "en": "en",
+        "english": "en",
+    }
+    for item in tags:
+        tag = str(item).strip().lower()
+        if tag.startswith("language:"):
+            value = tag.split(":", 1)[1].strip()
+            if value in {"vi", "en"}:
+                languages.add(value)
+        elif tag in aliases:
+            languages.add(aliases[tag])
+    return sorted(languages)
 
 
 def _license(tags: list[Any], row: dict[str, Any]) -> str | None:
