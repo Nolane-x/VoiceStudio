@@ -180,3 +180,6 @@ voiceover before publishing a video.
 ### ElevenLabs marketplace and Eleven v4
 
 VoiceStudio includes an optional marketplace-discovery workflow for public ElevenLabs shared voices and a separate manually confirmed Eleven v4 benchmark. Discovery captures language-tagged, high-quality/professional shared-voice metadata and provider adoption signals; it does not download or rehost marketplace audio. The premium benchmark uses the current Eleven v4 Text-to-Dialogue API, with up to eight paid synthesis requests per manual run, and produces separate blind-listening and private analysis artifacts. It is disabled on public repositories and cannot run without explicit paid-usage confirmation. See VOICE_EXPANSION.md for the voice-rights, language-routing and evaluation rules.
+
+
+Human review of Eleven v4 blind auditions can be merged back into a ranked Vietnamese/English voice report with `scripts/merge_elevenlabs_v4_blind_scores.py`; see `VOICE_EXPANSION.md` for validation rules and the command.
