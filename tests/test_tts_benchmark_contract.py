@@ -67,3 +67,9 @@ def test_html_gallery_escapes_narration_text_and_has_audio_controls():
     assert "&lt;script&gt;" in page
     assert "<script>alert(1)</script>" not in page
     assert "Export human ratings CSV" in page
+
+
+def test_supertonic_renderer_captures_its_model_instance_before_vieneu_loads():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "*, _tts=tts, _style=style, _lang=language" in source
+    assert "waveform, _ = _tts.synthesize(" in source
