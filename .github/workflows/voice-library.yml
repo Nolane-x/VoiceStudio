@@ -20,7 +20,11 @@ on:
     paths:
       - "voice-library/**"
       - "scripts/build_voice_library.py"
+      - "scripts/render_video_voice.py"
       - "tests/test_voice_library_contract.py"
+      - "tests/test_video_voice_contract.py"
+      - "tests/test_voice_library_ci_scope.py"
+      - ".github/scripts/ci_scope.py"
       - ".github/workflows/voice-library.yml"
       - "backend/services/watermark.py"
       - "backend/core/prefs.py"
