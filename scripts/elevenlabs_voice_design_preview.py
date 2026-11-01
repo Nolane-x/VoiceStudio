@@ -20,7 +20,15 @@ from pathlib import Path
 from typing import Any
 
 DESIGN_URL = "https://api.elevenlabs.io/v1/text-to-voice/design"
-ALLOWED_MODELS = {"eleven_multilingual_ttv_v2", "eleven_ttv3"}
+ALLOWED_MODELS = {"eleven_multilingual_ttv_v2", "eleven_ttv_v3"}
+MODEL_LANGUAGES = {
+    "eleven_multilingual_ttv_v2": frozenset({"en"}),
+    "eleven_ttv_v3": frozenset({"en", "vi"}),
+}
+AUTO_MODEL_BY_LANGUAGE = {
+    "en": "eleven_multilingual_ttv_v2",
+    "vi": "eleven_ttv_v3",
+}
 MAX_BATCH = 8
 
 
@@ -48,9 +56,33 @@ def load_profiles(path: Path, language: str, offset: int, limit: int) -> list[di
     return selected
 
 
-def build_request_body(profile: dict[str, Any], model_id: str) -> dict[str, Any]:
+def resolve_model_id(profile: dict[str, Any], requested_model_id: str = "auto") -> str:
+    """Resolve a provider model per language and reject unsupported language/model pairs."""
+    language = str(profile.get("language", "")).strip().lower()
+    if language not in AUTO_MODEL_BY_LANGUAGE:
+        raise ValueError(f"Unsupported Voice Design language: {language!r}")
+
+    if requested_model_id == "auto":
+        model_id = str(profile.get("model_id_default") or AUTO_MODEL_BY_LANGUAGE[language])
+        if language not in MODEL_LANGUAGES.get(model_id, frozenset()):
+            # Older profile catalogs assigned multilingual-v2 to every language.
+            # Correct stale Vietnamese defaults rather than sending unsupported text.
+            model_id = AUTO_MODEL_BY_LANGUAGE[language]
+    else:
+        model_id = requested_model_id
+
     if model_id not in ALLOWED_MODELS:
         raise ValueError(f"Unsupported ElevenLabs model: {model_id}")
+    if language not in MODEL_LANGUAGES[model_id]:
+        raise ValueError(
+            f"ElevenLabs model {model_id} does not support language {language}; "
+            f"supported languages for this workflow: {', '.join(sorted(MODEL_LANGUAGES[model_id]))}"
+        )
+    return model_id
+
+
+def build_request_body(profile: dict[str, Any], model_id: str = "auto") -> dict[str, Any]:
+    model_id = resolve_model_id(profile, model_id)
     description = profile.get("voice_description", "")
     text = profile.get("preview_text", "")
     if not 20 <= len(description) <= 1000:
@@ -200,8 +232,11 @@ def run(args: argparse.Namespace) -> int:
     analysis_rows = []
     blind_rows = []
     candidate_index = 0
+    model_ids_used: dict[str, int] = {}
     for profile in profiles:
-        response = request_design(profile, args.model_id, api_key)
+        selected_model_id = resolve_model_id(profile, args.model_id)
+        response = request_design(profile, selected_model_id, api_key)
+        model_ids_used[selected_model_id] = model_ids_used.get(selected_model_id, 0) + 1
         for preview_index, item in enumerate(response["previews"], start=1):
             candidate_index += 1
             blind_id = f"candidate-{candidate_index:03d}"
@@ -231,7 +266,7 @@ def run(args: argparse.Namespace) -> int:
                 "dimensions": profile["dimensions"],
                 "voice_description": profile["voice_description"],
                 "seed": profile["seed"],
-                "model_id": args.model_id,
+                "model_id": selected_model_id,
                 "generated_voice_id": item["generated_voice_id"],
                 "duration_seconds": item.get("duration_secs"),
                 "media_type": item.get("media_type", "audio/mpeg"),
@@ -246,7 +281,8 @@ def run(args: argparse.Namespace) -> int:
         json.dumps({
             "schema_version": 1,
             "provider": "ElevenLabs Voice Design",
-            "model_id": args.model_id,
+            "model_selection": "per-profile-language-safe-routing",
+            "model_ids_used": model_ids_used,
             "profiles_selected": len(profiles),
             "preview_candidates": len(analysis_rows),
             "persistent_voices_created": 0,
@@ -283,7 +319,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--language", choices=("vi", "en", "both"), default="both")
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--limit", type=int, default=2)
-    parser.add_argument("--model-id", choices=sorted(ALLOWED_MODELS), default="eleven_multilingual_ttv_v2")
+    parser.add_argument(
+        "--model-id",
+        choices=("auto", *sorted(ALLOWED_MODELS)),
+        default="auto",
+        help="auto selects a language-compatible model for each profile",
+    )
     parser.add_argument("--output", default="dist/elevenlabs-voice-design")
     parser.add_argument("--confirm-paid-api-usage", action="store_true")
     args = parser.parse_args()

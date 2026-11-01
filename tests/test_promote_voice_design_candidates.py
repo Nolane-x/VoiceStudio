@@ -310,3 +310,8 @@ def test_promotion_batch_is_hard_capped_at_eight():
         assert "between 1 and 8" in str(exc)
     else:
         raise AssertionError("Promotion batch must be limited to eight")
+
+
+def test_default_retry_sleep_dependency_is_importable():
+    # create_voice binds time.sleep as a default argument during module import.
+    assert callable(MODULE.time.sleep)

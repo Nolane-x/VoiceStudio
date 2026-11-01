@@ -13,6 +13,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+DEFAULT_MODEL_BY_LANGUAGE = {
+    "vi": "eleven_ttv_v3",
+    "en": "eleven_multilingual_ttv_v2",
+}
+
 SAMPLE_TEXT = {
     "vi": (
         "Xin chào, hôm nay chúng ta sẽ cùng khám phá một câu chuyện mới. "
@@ -227,7 +232,7 @@ def build_profiles(language: str, per_language: int = 1000) -> list[dict[str, An
             "preview_text": SAMPLE_TEXT[language],
             "seed": _stable_seed(profile_id, expanded, used_seeds),
             "provider": "elevenlabs_voice_design",
-            "model_id_default": "eleven_multilingual_ttv_v2",
+            "model_id_default": DEFAULT_MODEL_BY_LANGUAGE[language],
             "identity_class": "original_synthetic_persona",
             "identity_rights": "no_real_person_reference_or_impersonation",
             "shareability": "not_shareable_to_public_elevenlabs_voice_library",
@@ -269,7 +274,7 @@ def write_catalog(output: Path, language: str, per_language: int) -> dict[str, A
             for archetype in rows
         },
         "provider": "ElevenLabs Voice Design API",
-        "default_model": "eleven_multilingual_ttv_v2",
+        "default_models_by_language": DEFAULT_MODEL_BY_LANGUAGE,
         "profiles_file": jsonl_path.name,
         "profiles_sha256": hashlib.sha256(payload).hexdigest(),
         "profile_limit_per_language": per_language,

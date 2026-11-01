@@ -78,3 +78,11 @@ def test_accent_families_are_present_in_large_catalog():
     assert {row["accent_id"] for row in en} == {row[0] for row in MODULE.ACCENTS["en"]}
     assert len({row["dimensions"]["use_case"] for row in vi}) == len(MODULE.DIMENSIONS["use_case"])
     assert len({row["dimensions"]["timbre"] for row in en}) == len(MODULE.DIMENSIONS["timbre"])
+
+
+
+def test_voice_design_profile_defaults_match_supported_language_models():
+    vi = MODULE.build_profiles("vi", 64)
+    en = MODULE.build_profiles("en", 64)
+    assert {row["model_id_default"] for row in vi} == {"eleven_ttv_v3"}
+    assert {row["model_id_default"] for row in en} == {"eleven_multilingual_ttv_v2"}

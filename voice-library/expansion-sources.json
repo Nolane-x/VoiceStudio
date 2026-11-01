@@ -30,6 +30,57 @@
   },
   "production_candidates": [
     {
+      "id": "google-gemini-3-8-tts",
+      "provider": "Google",
+      "model_ids": [
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts"
+      ],
+      "kind": "managed_cloud_tts_and_voice_design",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": {
+        "flash": 130,
+        "flash_lite": 101
+      },
+      "voice_catalog": {
+        "prebuilt_voices": 30,
+        "extended_voice_library": "more_than_2000"
+      },
+      "access": "Google Gemini API or Gemini Enterprise; pay_as_you_go",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_benchmark_candidate",
+      "source": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash-tts",
+      "note": "Google documents Vietnamese and English support, 30 prebuilt voices and a separate Extended Voice Library exceeding 2,000 curated voices in Gemini Enterprise. Managed provider voices are not assets to bundle or redistribute."
+    },
+    {
+      "id": "mistral-voxtral-mini-tts-3-0",
+      "provider": "Mistral AI",
+      "model_id": "voxtral-mini-tts-3-0",
+      "kind": "managed_cloud_tts_and_voice_cloning",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": {
+        "languages": 35,
+        "regional_dialects": "50+"
+      },
+      "preset_voice_counts": {
+        "vi": 1,
+        "en_GB": 6,
+        "en_US": 4
+      },
+      "access": "Mistral API; paid provider usage",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_benchmark_candidate",
+      "source": "https://docs.mistral.ai/models/voxtral-mini-tts-3-0",
+      "language_source": "https://docs.mistral.ai/studio/audio/specs-and-limits/languages",
+      "note": "Published language documentation lists Vietnamese and English, with one Vietnamese preset and multiple UK/US English presets. Voice cloning is restricted to recordings with explicit authorization."
+    },
+    {
       "id": "google-cloud-chirp3-hd",
       "provider": "Google Cloud Text-to-Speech",
       "kind": "managed_cloud_voice_catalog",
@@ -59,7 +110,17 @@
       "shareability": "voice_design_previews_not_shareable_to_public_voice_library",
       "access": "api_key_and_paid_account_usage_may_apply",
       "status": "optional_private_account_expansion",
-      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design"
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design",
+      "model_ids": [
+        "eleven_ttv_v3",
+        "eleven_multilingual_ttv_v2"
+      ],
+      "model_id_defaults_by_language": {
+        "vi": "eleven_ttv_v3",
+        "en": "eleven_multilingual_ttv_v2"
+      },
+      "language_source": "https://elevenlabs.io/docs/overview/models",
+      "note": "Text-to-Voice v3 supports Vietnamese and English. Multilingual v2 does not list Vietnamese, so VoiceStudio routes VI to eleven_ttv_v3 and EN to eleven_multilingual_ttv_v2 by default. Voice Design previews are account-scoped and are not public Voice Library assets."
     },
     {
       "id": "fpt-ai-tts",
@@ -197,7 +258,9 @@
     "No celebrity, public-figure, creator, or identifiable person's voice may be imitated without explicit authorization.",
     "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities.",
     "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals.",
-    "A create-from-preview POST has no documented idempotency-key contract. VoiceStudio tags each created voice with the source generated_voice_id and reconciles through List Voices before retries; ambiguous outcomes require manual confirmation."
+    "A create-from-preview POST has no documented idempotency-key contract. VoiceStudio tags each created voice with the source generated_voice_id and reconciles through List Voices before retries; ambiguous outcomes require manual confirmation.",
+    "Market discovery must keep adoption signals (downloads, likes, trends), listener preference (blind votes/MOS), technical benchmarks (WER/RTFx/SIM), creator deployment evidence, and legal rights as separate signal families.",
+    "Popular commercial voices may inspire broad delivery archetypes only. Do not copy, clone, imitate or publish a named creator's or identifiable person's voice without explicit authorization; create original synthetic personas or use consented voice actors."
   ],
   "research_data_sources": [
     {
@@ -339,6 +402,49 @@
       "id": "google-cloud-chirp3-hd",
       "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
       "fact": "Google lists 30 Chirp 3 HD styles and Vietnamese/English locale voice IDs."
+    }
+  ],
+  "market_signal_sources": [
+    {
+      "id": "huggingface-hub-trending-tts",
+      "source": "https://huggingface.co/models?pipeline_tag=text-to-speech&sort=trending",
+      "signal_types": [
+        "trending_position",
+        "downloads",
+        "likes",
+        "last_modified",
+        "language_tags",
+        "model_license_tags"
+      ],
+      "scope": "open-model discovery and repository adoption",
+      "refresh": "weekly GitHub Actions snapshot",
+      "interpretation": "Discovery/adoption signals only; downloads and likes do not measure listening preference, proof of use by creators/channels, generated voice quality, or commercial rights."
+    },
+    {
+      "id": "huggingface-open-tts-leaderboard",
+      "source": "https://huggingface.co/blog/open-tts-leaderboard",
+      "published": "2026-09-30",
+      "signal_types": [
+        "intelligibility",
+        "speaker_similarity",
+        "RTFx",
+        "time_to_first_audio"
+      ],
+      "scope": "open-model benchmark comparisons",
+      "interpretation": "Useful technical screening; objective metrics do not replace MOS, MUSHRA or direct listener preference."
+    },
+    {
+      "id": "artificial-analysis-speech-arena",
+      "source": "https://artificialanalysis.ai/text-to-speech/leaderboard/provider-voice",
+      "signal_types": [
+        "blind_pairwise_listener_votes",
+        "elo",
+        "sample_count",
+        "provider_voice_comparisons"
+      ],
+      "scope": "managed-provider model and native-voice listening preferences",
+      "refresh": "review at each VoiceStudio market-pulse run",
+      "interpretation": "Crowdsourced preference is more direct than repository popularity, but it is not proof of adoption by YouTube channels or of per-voice rights."
     }
   ]
 }

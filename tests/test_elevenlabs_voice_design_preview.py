@@ -35,7 +35,7 @@ def test_paid_calls_require_explicit_confirmation_and_api_key():
         "language": "vi",
         "offset": 0,
         "limit": 1,
-        "model_id": "eleven_multilingual_ttv_v2",
+        "model_id": "auto",
         "output": "unused",
     })()
     try:
@@ -47,7 +47,8 @@ def test_paid_calls_require_explicit_confirmation_and_api_key():
 
 
 def test_design_request_uses_supported_model_and_original_profile_constraints():
-    body = MODULE.build_request_body(_profile(), "eleven_multilingual_ttv_v2")
+    body = MODULE.build_request_body(_profile(), "auto")
+    assert body["model_id"] == "eleven_ttv_v3"
     assert body["seed"] == 123456
     assert body["stream_previews"] is False
     assert body["auto_generate_text"] is False
@@ -107,13 +108,14 @@ def test_design_request_uses_api_key_header_and_returns_preview_metadata():
 
     result = MODULE.request_design(
         _profile(),
-        "eleven_multilingual_ttv_v2",
+        "auto",
         "not-a-real-secret",
         opener=fake_open,
     )
     assert captured["url"] == MODULE.DESIGN_URL
     assert captured["headers"]["xi-api-key"] == "not-a-real-secret"
     assert captured["body"]["seed"] == 123456
+    assert captured["body"]["model_id"] == "eleven_ttv_v3"
     assert result["previews"][0]["generated_voice_id"] == "generated-test-id"
 
 
@@ -148,3 +150,22 @@ def test_blind_archive_excludes_profile_and_provider_mapping(tmp_path):
         page = bundle.read("index.html").decode("utf-8")
         assert "vi-north-hanoi-0001" not in page
         assert "generated_voice_id" not in page
+
+
+def test_model_routing_is_language_aware_and_rejects_unsupported_pairs():
+    vietnamese = _profile()
+    english = {**_profile(), "language": "en", "locale": "en-US", "profile_id": "en-us-0001"}
+    assert MODULE.resolve_model_id(vietnamese, "auto") == "eleven_ttv_v3"
+    assert MODULE.resolve_model_id(english, "auto") == "eleven_multilingual_ttv_v2"
+    assert MODULE.resolve_model_id(english, "eleven_ttv_v3") == "eleven_ttv_v3"
+    try:
+        MODULE.resolve_model_id(vietnamese, "eleven_multilingual_ttv_v2")
+    except ValueError as exc:
+        assert "does not support language vi" in str(exc)
+    else:
+        raise AssertionError("Vietnamese must never route to Eleven Multilingual v2")
+
+
+def test_old_vietnamese_profiles_with_stale_v2_default_are_safely_rerouted():
+    old_profile = {**_profile(), "model_id_default": "eleven_multilingual_ttv_v2"}
+    assert MODULE.resolve_model_id(old_profile, "auto") == "eleven_ttv_v3"
