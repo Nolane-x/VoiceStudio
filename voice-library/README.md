@@ -12,6 +12,11 @@ The build creates independent, auditionable WAV previews for:
   `en_US-libritts-high` multi-speaker model. Its per-voice card identifies
   the model quality as **high**, the rate as 22.05 kHz, and the LibriTTS
   `train-clean-360` source dataset as CC BY 4.0.
+- **Curated English (US/UK):** four Kokoro-82M preset voices whose upstream
+  `VOICES.md` assigns subjective overall grades A, A-, or B-:
+  `af_heart`, `af_bella`, `af_nicole`, and `bf_emma`. The model and voice
+  assets are Apache-2.0; the model is pinned by repository revision and the
+  voice-grade metadata is pinned independently.
 - **Vietnamese:** every preset returned by the pinned VieNeu-TTS SDK at build
   time. The upstream v3 Turbo model card currently documents 23 presets
   covering North, Central and South, with 48 kHz output. The build records
@@ -21,9 +26,10 @@ The build creates independent, auditionable WAV previews for:
   bilingual capability. They remain labelled as bilingual voices, not as
   native-English speakers.
 
-This yields hundreds of distinct English voice choices plus Vietnamese
-presets. The generated manifest distinguishes unique speaker identities from
-language-specific voice variants.
+This yields hundreds of English choices from Piper, four curated higher-grade
+Kokoro voices, bilingual English variants from VieNeu, and Vietnamese VieNeu
+presets. The manifest distinguishes identities from language variants and
+retains each source's own rights evidence and upstream quality label.
 
 ## Build and storage
 
