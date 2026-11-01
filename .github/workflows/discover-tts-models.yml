@@ -1,6 +1,13 @@
 name: Discover trending TTS models
 
 on:
+  push:
+    branches: [feat/tts-quality-benchmark]
+    paths:
+      - "scripts/discover_tts_models.py"
+      - "tests/test_discover_tts_models.py"
+      - "voice-library/expansion-sources.json"
+      - ".github/workflows/discover-tts-models.yml"
   schedule:
     - cron: "17 5 * * 1"
   workflow_dispatch:
