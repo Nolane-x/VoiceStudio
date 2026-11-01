@@ -186,3 +186,6 @@ Human review of Eleven v4 blind auditions can be merged back into a ranked Vietn
 
 
 Google Gemini prebuilt Vietnamese and English voice metadata can be indexed with the read-only `Discover Gemini prebuilt Vietnamese and English voices` Actions workflow. It filters private prompted/replicated voices, does not synthesize audio, and does not grant redistribution rights. See `VOICE_EXPANSION.md` for scope and plan requirements.
+
+
+The official Gemini prebuilt studio voice names are indexed in `gemini-prebuilt-studio-voices.json`. The manually dispatched Gemini 3.8 Flash/Flash-Lite audition workflow produces matched, blind VI/EN samples under explicit paid-use gates. See `VOICE_EXPANSION.md` for limits and review commands.
