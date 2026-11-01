@@ -454,18 +454,22 @@ def prepare_kokoro() -> tuple[dict, list[dict], dict]:
         voice_id = str(item["id"])
         if voice_id not in KOKORO_VOICE_IDS:
             raise RuntimeError(f"Unreviewed Kokoro voice ID in source registry: {voice_id}")
-        row = next(
-            (
-                line for line in voices_doc.splitlines()
-                if re.match(rf"^\\s*\\|\\s*{re.escape(voice_id)}\\s*\\|", line)
-            ),
-            None,
-        )
-        if row is None:
+        row_cells = None
+        for line in voices_doc.splitlines():
+            if "|" not in line:
+                continue
+            cells_candidate = [
+                re.sub(r"[*`]", "", cell).strip()
+                for cell in line.strip().strip("|").split("|")
+            ]
+            if cells_candidate and cells_candidate[0] == voice_id:
+                row_cells = cells_candidate
+                break
+        if row_cells is None:
             raise RuntimeError(f"Kokoro VOICES.md does not contain {voice_id}")
-        cells = [cell.strip().strip("`") for cell in row.strip().strip("|").split("|")]
+        cells = row_cells
         if len(cells) < 6 or cells[0] != voice_id:
-            raise RuntimeError(f"Unexpected Kokoro voice-grade row for {voice_id}: {row}")
+            raise RuntimeError(f"Unexpected Kokoro voice-grade row for {voice_id}: {cells}")
         if cells[4] != str(item["quality_grade"]):
             raise RuntimeError(f"Kokoro upstream grade changed for {voice_id}: {cells[4]}")
         if cells[5] != str(item["voice_sha256_prefix"]):
@@ -689,7 +693,7 @@ def render_kokoro_wav(
     if pipeline is None:
         raise ValueError(f"Unsupported Kokoro language prefix: {voice_id}")
     voice_tensor = prepared["voice_tensors"][voice_id]
-    generated = pipeline(text, voice=voice_tensor, speed=1.0, split_pattern=r"\\n+")
+    generated = pipeline(text, voice=voice_tensor, speed=1.0, split_pattern=r"\n+")
     chunks: list[np.ndarray] = []
     for result in generated:
         audio = getattr(result, "audio", None)
