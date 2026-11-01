@@ -73,3 +73,10 @@ def test_supertonic_renderer_captures_its_model_instance_before_vieneu_loads():
     source = SCRIPT.read_text(encoding="utf-8")
     assert "*, _tts=tts, _style=style, _lang=language" in source
     assert "waveform, _ = _tts.synthesize(" in source
+
+
+def test_piper_benchmark_uses_the_same_supplied_reference_text():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "_voice.synthesize_wav(" in source
+    assert "text, wav_file" in source
+    assert "builder.render_piper_wav(voice, _id, path)" not in source
