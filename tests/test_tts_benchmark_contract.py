@@ -92,3 +92,28 @@ def test_benchmark_render_loop_uses_the_declared_script_corpus():
 def test_benchmark_master_format_constants_are_explicit():
     assert MODULE.TARGET_RATE == 48_000
     assert MODULE.TARGET_BITS == 24
+
+
+def test_listening_gallery_hides_engine_identity_until_revealed():
+    manifest = {"built_at": "2026-11-01T00:00:00+00:00"}
+    rows = [{
+        "engine": "supertonic",
+        "engine_label": "Supertonic 3",
+        "voice_id": "F3",
+        "voice_label": "Female 3",
+        "language": "vi",
+        "scenario_id": "story",
+        "scenario_title": "Văn kể chuyện",
+        "audio_file": "samples/blind-001.wav",
+        "reference_text": "Đôi khi, một lựa chọn nhỏ.",
+        "asr": {"transcript": "Đôi khi một lựa chọn nhỏ"},
+        "asr_metrics": {"token_error_rate": 0.0, "character_error_rate": 0.0},
+        "rtfx": 4.2,
+    }]
+    page = MODULE.make_gallery(rows, manifest)
+    assert "Blind listening review" in page
+    assert 'class="identity" hidden' in page
+    assert 'data-identity="Supertonic 3 · Female 3"' in page
+    assert "Reveal model identities" in page
+    assert "human-review-blind.csv" in page
+    assert "sample_file" in page
