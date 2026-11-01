@@ -356,6 +356,12 @@ def main() -> int:
         raise SystemExit(f"--pages-per-query must be between 1 and {MAX_PAGES}")
     languages = list(LANGUAGES) if args.language == "both" else [args.language]
     api_key = os.environ.get("ELEVENLABS_API_KEY") or None
+    if not api_key:
+        print(
+            "[elevenlabs-discovery] ERROR ELEVENLABS_API_KEY is required for filtered marketplace discovery",
+            file=sys.stderr,
+        )
+        return 1
     try:
         catalog = write_catalog(Path(args.output), languages, args.pages_per_query, api_key)
     except Exception as exc:
