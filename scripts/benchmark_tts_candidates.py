@@ -321,9 +321,9 @@ def run(args) -> int:
 
     asr_state: dict = {}
     results: list[dict] = []
-    expected = sum(len(TEXTS[c["language"]]) for c in candidates)
+    expected = sum(len(SCRIPTS[c["language"]]) for c in candidates)
     for index, candidate in enumerate(candidates, 1):
-        for scenario_id, scenario_title, reference in TEXTS[candidate["language"]]:
+        for scenario_id, scenario_title, reference in SCRIPTS[candidate["language"]]:
             slug = safe_slug(f"{index}-{candidate['engine']}-{candidate['voice_id']}-{candidate['language']}-{scenario_id}")
             raw = output / f".{slug}.raw.wav"
             final = sample_dir / f"{slug}.wav"
