@@ -244,6 +244,107 @@ def prepare_piper() -> tuple[Any, dict]:
     return voice, {"speaker_pairs": speaker_pairs, "revision": revision}
 
 
+def _download_vieneu_local_assets(
+    model_revision: str,
+    codec_revision: str,
+) -> tuple[Path, Path]:
+    """Materialize ONNX graphs and external-data tensors into ordinary local dirs.
+
+    HF Hub's immutable cache paths are per-file blobs. ONNX external-data
+    validation requires the graph and its shared .data tensor to resolve
+    inside one directory, so opening cache symlinks directly is rejected by
+    ONNX Runtime. local_dir downloads preserve the repository-relative layout
+    with real files; every file remains pinned to the exact model/codec SHA.
+    """
+    import huggingface_hub
+
+    original_download = huggingface_hub.hf_hub_download
+    base = Path(tempfile.gettempdir()) / "voice-library-vieneu"
+    model_root = base / "vieneu-model"
+    codec_root = base / "moss-codec"
+    model_root.mkdir(parents=True, exist_ok=True)
+    codec_root.mkdir(parents=True, exist_ok=True)
+
+    def download_local(
+        repo_id: str,
+        relative_name: str,
+        revision: str,
+        destination: Path,
+    ) -> Path:
+        target = destination / relative_name
+        if target.is_file() and target.stat().st_size > 0:
+            return target
+        target.parent.mkdir(parents=True, exist_ok=True)
+        downloaded = original_download(
+            repo_id=repo_id,
+            filename=relative_name,
+            revision=revision,
+            repo_type="model",
+            local_dir=str(destination),
+        )
+        result = Path(downloaded)
+        if not result.is_file() or result.stat().st_size <= 0:
+            raise RuntimeError(f"Missing VieNeu asset after download: {repo_id}/{relative_name}")
+        return result
+
+    model_files = [
+        "voices_v3_turbo.json",
+        "onnx_update/vieneu_prefill.onnx",
+        "onnx_update/vieneu_decode_step.onnx",
+        "onnx_update/vieneu_acoustic_cached.onnx",
+        "onnx_update/vieneu_backbone_shared.data",
+        "onnx_update/vieneu_v3_heads.npz",
+        "onnx_update/config.json",
+        "onnx_update/tokenizer.json",
+    ]
+    codec_files = [
+        "moss_audio_tokenizer_decode_full.onnx",
+        "moss_audio_tokenizer_decode_shared.data",
+        "moss_audio_tokenizer_decode_step.onnx",
+        "codec_browser_onnx_meta.json",
+        "moss_audio_tokenizer_encode.onnx",
+        "moss_audio_tokenizer_encode.data",
+    ]
+    for relative_name in model_files:
+        download_local(VIENEU_REPO, relative_name, model_revision, model_root)
+    for relative_name in codec_files:
+        download_local(VIENEU_CODEC_REPO, relative_name, codec_revision, codec_root)
+
+    repo_locations = {
+        VIENEU_REPO: (model_root, model_revision),
+        VIENEU_CODEC_REPO: (codec_root, codec_revision),
+    }
+
+    def local_hf_hub_download(repo_id, filename, *args, **kwargs):
+        location = repo_locations.get(str(repo_id))
+        if location is None:
+            return original_download(repo_id, filename, *args, **kwargs)
+        destination, pinned_revision = location
+        subfolder = kwargs.pop("subfolder", None)
+        relative_name = f"{subfolder}/{filename}" if subfolder else str(filename)
+        target = destination / relative_name
+        if target.is_file() and target.stat().st_size > 0:
+            return str(target)
+        revision = kwargs.pop("revision", None) or pinned_revision
+        repo_type = kwargs.pop("repo_type", "model")
+        downloaded = original_download(
+            repo_id=repo_id,
+            filename=relative_name,
+            revision=revision,
+            repo_type=repo_type,
+            local_dir=str(destination),
+            **kwargs,
+        )
+        return str(downloaded)
+
+    # VieNeu 3.8.3 imports hf_hub_download lazily from the package root for
+    # its model/codec helpers. Route only these two known model repos to the
+    # local, SHA-pinned materialization; all unrelated Hub downloads retain
+    # the upstream implementation.
+    huggingface_hub.hf_hub_download = local_hf_hub_download
+    return model_root, codec_root
+
+
 def prepare_vieneu() -> tuple[Any, list[tuple[str, str]], dict]:
     """Load VieNeu's public, CPU/ONNX, FP32 path and enumerate its actual presets."""
     import importlib.metadata
@@ -256,10 +357,13 @@ def prepare_vieneu() -> tuple[Any, list[tuple[str, str]], dict]:
 
     model_revision = hf_revision(VIENEU_REPO)
     codec_revision = hf_revision(VIENEU_CODEC_REPO)
+    model_root, codec_root = _download_vieneu_local_assets(model_revision, codec_revision)
     tts = Vieneu(
         mode="v3turbo",
         backbone_repo=VIENEU_REPO,
         moss_tokenizer=VIENEU_CODEC_REPO,
+        onnx_repo=VIENEU_REPO,
+        onnx_dir=str(model_root / "onnx_update"),
         device="cpu",
         backend="onnx",
         precision="fp32",
