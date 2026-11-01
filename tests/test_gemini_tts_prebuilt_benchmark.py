@@ -4,6 +4,8 @@ import base64
 import importlib.util
 import json
 import urllib.error
+import io
+import wave
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,9 +16,15 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
-def wav_bytes():
-    # Sufficient signature/size fixture for response parser; no decoder is run here.
-    return b"RIFF" + (b"\x00" * 4) + b"WAVE" + (b"\x00" * 4096)
+def wav_bytes(frame_count: int = 2048, value: int = 0):
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as writer:
+        writer.setnchannels(1)
+        writer.setsampwidth(2)
+        writer.setframerate(24_000)
+        sample = int(value).to_bytes(2, "little", signed=True)
+        writer.writeframes(sample * frame_count)
+    return buffer.getvalue()
 
 
 def test_request_uses_supported_gemini_interactions_tts_contract():
@@ -55,6 +63,49 @@ def test_extract_audio_supports_interactions_steps_response():
     })
     assert audio[:4] == b"RIFF"
     assert audio[8:12] == b"WAVE"
+
+
+def test_extract_audio_concatenates_all_distinct_wav_blocks_in_order():
+    first = wav_bytes(frame_count=1500, value=111)
+    second = wav_bytes(frame_count=2200, value=222)
+    encoded_first = base64.b64encode(first).decode("ascii")
+    encoded_second = base64.b64encode(second).decode("ascii")
+    # API may repeat output_audio data in steps; duplicate copies are deduped.
+    result = MODULE.extract_audio_bytes({
+        "output_audio": {"data": encoded_first},
+        "steps": [{
+            "content": [
+                {"type": "audio", "data": encoded_first},
+                {"type": "audio", "data": encoded_second},
+            ]
+        }],
+    })
+    with wave.open(io.BytesIO(result), "rb") as merged:
+        assert merged.getframerate() == 24_000
+        assert merged.getnchannels() == 1
+        assert merged.getnframes() == 1500 + 2200
+
+
+def test_extract_audio_rejects_incompatible_wav_segments_instead_of_dropping_one():
+    first = wav_bytes(frame_count=1500)
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as writer:
+        writer.setnchannels(1)
+        writer.setsampwidth(2)
+        writer.setframerate(16_000)
+        writer.writeframes(b"\\x00\\x00" * 1600)
+    encoded = [
+        base64.b64encode(first).decode("ascii"),
+        base64.b64encode(buffer.getvalue()).decode("ascii"),
+    ]
+    try:
+        MODULE.extract_audio_bytes({
+            "steps": [{"content": [{"type": "audio", "data": item} for item in encoded]}]
+        })
+    except RuntimeError as exc:
+        assert "incompatible WAV formats" in str(exc)
+    else:
+        raise AssertionError("incompatible WAV segments were silently mixed")
 
 
 def test_extract_audio_rejects_missing_or_non_wav_output():
