@@ -80,3 +80,72 @@ is a genuine statement by a real speaker.
 
 See [ATTRIBUTION.md](ATTRIBUTION.md) and [sources.json](sources.json) for
 the exact source records.
+
+## Video narration jobs (the production interface)
+
+The library workflow is also a **reusable GitHub Actions TTS service**. A
+video-production workflow can call it directly; no Electron app, local model,
+desktop service, or API key is required on the video runner.
+
+A job contains a language, engine, canonical voice ID and ordered narration
+segments. See the validated contract and examples:
+
+- [Job JSON Schema](video-job.schema.json)
+- [Vietnamese example](video-job.example.vi.json)
+- [English example](video-job.example.en.json)
+
+The AI should choose a canonical `voice_id` from the generated
+`manifest.json`. The VieNeu examples are safe starting references; exact
+voice IDs are checked against the pinned preset list at runtime. Piper is
+English-only and its rights are not blanket commercially cleared, so a
+Piper job is rejected unless `acknowledge_piper_restrictions` is explicitly
+set after reviewing the recorded rights warning.
+
+### Call from a downstream video repository
+
+A workflow in the video repository can invoke this public reusable workflow:
+
+```yaml
+name: Render video narration
+on:
+  workflow_dispatch:
+    inputs:
+      job_json:
+        description: Voice job JSON conforming to voice-library/video-job.schema.json
+        required: true
+        type: string
+
+jobs:
+  voiceover:
+    uses: Nolane-x/VoiceStudio/.github/workflows/voice-library.yml@main
+    with:
+      job_json: ${{ inputs.job_json }}
+```
+
+The job JSON can be composed by the video AI agent and passed as the
+`job_json` input (maximum 65,535 characters). The called workflow downloads
+the pinned CPU/ONNX TTS assets, renders narration, applies EBU R128 loudness
+mastering, produces a mono 48 kHz PCM-24 master, embeds and re-detects the
+VoiceStudio AudioSeal mark in bounded 30-second blocks, and uploads an
+artifact to the same Actions run.
+
+The returned artifact contains:
+
+- `narration.wav` — master voiceover ready for video editing
+- `captions.srt` and `captions.vtt` — sentence/chunk captions aligned to the rendered audio
+- `transcript.txt` — narration text
+- `manifest.json` — voice/model revisions, timing, loudness target, watermark verification and SHA-256
+- `video-voice-assets.zip` — deterministic bundle of the above
+
+You can also run the workflow directly from the Actions tab on the
+VoiceStudio repository: choose `Render video narration`, set `task` to
+`render`, and paste the JSON into `job_json`. The default `catalog` task
+continues to build and publish the full voice packs.
+
+The renderer splits long passages at sentence/word boundaries without
+dropping narration text, preserves requested pauses, emits exact timing
+metadata and caps a single job at 30,000 characters / 180 chunks / two hours.
+The final audio is checked in a streaming pass for finite samples, RMS,
+clipping, 48 kHz mono PCM-24 format and post-save watermark verification.
+These are machine checks, not a substitute for listening to the finished
+voiceover before publishing a video.
