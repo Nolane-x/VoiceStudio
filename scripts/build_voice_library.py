@@ -288,7 +288,6 @@ def _download_vieneu_local_assets(
         return result
 
     model_files = [
-        "voices_v3_turbo.json",
         "onnx_update/vieneu_prefill.onnx",
         "onnx_update/vieneu_decode_step.onnx",
         "onnx_update/vieneu_acoustic_cached.onnx",
@@ -360,7 +359,9 @@ def prepare_vieneu() -> tuple[Any, list[tuple[str, str]], dict]:
     model_root, codec_root = _download_vieneu_local_assets(model_revision, codec_revision)
     tts = Vieneu(
         mode="v3turbo",
-        backbone_repo=VIENEU_REPO,
+        # The package ships its reviewed built-in preset roster. A repo-root
+        # voices_v3_turbo.json is optional and absent from this model revision.
+        backbone_repo=str(model_root),
         moss_tokenizer=VIENEU_CODEC_REPO,
         onnx_repo=VIENEU_REPO,
         onnx_dir=str(model_root / "onnx_update"),
