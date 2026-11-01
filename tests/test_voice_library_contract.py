@@ -38,6 +38,26 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertIn("list_preset_voices", BUILDER.read_text(encoding="utf-8"))
 
 
+    def test_kokoro_vietnamese_candidate_is_quarantined_until_voice_rights_are_verified(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(
+            row for row in registry["research_only_or_blocked"]
+            if row["id"] == "kokoro-vietnamese-community"
+        )
+        self.assertEqual(candidate["listed_voicepack_count"], 14)
+        self.assertEqual(candidate["repository_license"], "Apache-2.0")
+        self.assertFalse(candidate["production_eligible"])
+        self.assertEqual(candidate["status"], "research_only_blocked_pending_speaker_consent_and_dataset_provenance")
+
+    def test_noncommercial_vietnamese_f5_model_is_not_a_monetized_production_candidate(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(
+            row for row in registry["research_only_or_blocked"]
+            if row["id"] == "f5tts-vietnamese-vivoice"
+        )
+        self.assertEqual(candidate["model_card_license"], "CC-BY-NC-SA-4.0")
+        self.assertFalse(candidate["production_eligible"])
+
     def test_kokoro_english_preset_set_is_pinned_and_curated(self):
         sources = json.loads(SOURCES.read_text(encoding="utf-8"))
         kokoro = sources["kokoro_english"]
