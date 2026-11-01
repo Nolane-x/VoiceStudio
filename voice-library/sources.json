@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "language_scope": [
+    "en",
+    "vi"
+  ],
+  "english": {
+    "engine": "Piper TTS",
+    "engine_package": "piper-tts==1.8.0",
+    "engine_source": "https://github.com/OHF-Voice/piper1-gpl",
+    "engine_license": "GPL-3.0-or-later",
+    "model_repo": "rhasspy/piper-voices",
+    "model_revision": "49a0d23f04e055f1766e5ad15ea2d121a90fa17a",
+    "model_key": "en_US-libritts-high",
+    "model_quality": "high",
+    "expected_speakers": 904,
+    "sample_rate": 22050,
+    "model_file": "en/en_US/libritts/high/en_US-libritts-high.onnx",
+    "model_file_size_bytes": 136673811,
+    "model_file_md5": "61d7845257f8abdc27476f606151ef8d",
+    "model_card": "https://huggingface.co/rhasspy/piper-voices/blob/49a0d23f04e055f1766e5ad15ea2d121a90fa17a/en/en_US/libritts/high/MODEL_CARD",
+    "dataset": "LibriTTS train-clean-360",
+    "dataset_license": "CC-BY-4.0",
+    "attribution_required": true,
+    "rights_note": "The per-voice card identifies the LibriTTS dataset as CC BY 4.0. Piper's project documentation says voice licences vary and frames the engine for personal use and TTS research. The library records this provenance and does not claim additional publicity, endorsement, or identifiable-speaker rights."
+  },
+  "vietnamese": {
+    "engine": "VieNeu-TTS v3 Turbo",
+    "sdk_package": "vieneu==3.8.3",
+    "sdk_source": "https://github.com/pnnbao97/VieNeu-TTS",
+    "sdk_license": "Apache-2.0",
+    "model_repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+    "codec_repo": "OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX",
+    "sample_rate": 48000,
+    "precision": "fp32",
+    "minimum_preset_voices": 20,
+    "source_model_card": "https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo",
+    "rights_note": "The upstream model card states that bundled preset assets are Apache-2.0, the speakers or rightsholders granted consent for their use in synthetic speech, and generated audio may be used commercially. Model and codec revisions are recorded by the build."
+  },
+  "shared": {
+    "watermark": "VoiceStudio services.watermark.mark_synthetic(force=True)",
+    "watermark_required": true,
+    "verification": "VoiceStudio services.watermark.detect_watermark",
+    "normalization": "EBU R128 loudnorm; -18 LUFS target; -1.5 dBTP ceiling",
+    "formats": {
+      "piper": "WAV PCM 16-bit mono, 22050 Hz",
+      "vieneu": "WAV PCM 24-bit mono, 48000 Hz"
+    },
+    "usage_note": "Audio previews are generated synthetic speech, not original speaker recordings or identity claims."
+  }
+}

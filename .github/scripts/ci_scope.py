@@ -14,6 +14,20 @@ def non_runtime(path: str) -> bool:
     parts = PurePosixPath(path).parts
     if not parts or any(part in {".", ".."} for part in parts):
         return False
+    # These files feed a dedicated, non-app GitHub Actions TTS service. Its
+    # own voice-library workflow validates and builds them; changing them does
+    # not require rebuilding or testing the Electron product.
+    if (
+        path.startswith("voice-library/")
+        or path.startswith("voice-jobs/")
+        or path in {
+            "scripts/build_voice_library.py",
+            "scripts/render_video_voice.py",
+            ".github/workflows/voice-library.yml",
+            ".github/scripts/ci_scope.py",
+        }
+    ):
+        return True
     # These documentation-tree assets are inputs to the installed phone apps.
     if path in {"docs/logo.svg", "docs/logo.png"}:
         return False

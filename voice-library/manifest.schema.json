@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nolane-x/VoiceStudio/blob/main/voice-library/manifest.schema.json",
+  "title": "Nolane English and Vietnamese Voice Library Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "library",
+    "built_at",
+    "release_tag",
+    "counts",
+    "source_revisions",
+    "archives",
+    "voices",
+    "rejected"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "library": {
+      "type": "string"
+    },
+    "built_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "release_tag": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "en",
+        "vi",
+        "total_language_variants",
+        "unique_voice_identities"
+      ],
+      "properties": {
+        "en": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vi": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_language_variants": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unique_voice_identities": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "source_revisions": {
+      "type": "object"
+    },
+    "archives": {
+      "type": "object",
+      "required": [
+        "en",
+        "vi"
+      ],
+      "properties": {
+        "en": {
+          "type": "object",
+          "required": [
+            "file",
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "vi": {
+          "type": "object",
+          "required": [
+            "file",
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "voices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "language",
+          "display_name",
+          "voice_identity_id",
+          "engine",
+          "model",
+          "audio_file",
+          "audio_sha256",
+          "sample_rate",
+          "duration_seconds",
+          "watermark"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "en",
+              "vi"
+            ]
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "voice_identity_id": {
+            "type": "string"
+          },
+          "engine": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "audio_file": {
+            "type": "string"
+          },
+          "audio_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sample_rate": {
+            "type": "integer",
+            "minimum": 8000
+          },
+          "duration_seconds": {
+            "type": "number",
+            "minimum": 1
+          },
+          "watermark": {
+            "const": "verified"
+          },
+          "source_voice_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rejected": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "quality_policy": {
+      "type": "object"
+    }
+  }
+}
