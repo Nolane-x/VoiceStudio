@@ -149,3 +149,15 @@ def test_missing_provider_total_count_is_reported_as_unknown_not_zero():
 
     _, queries = MODULE.collect_catalog(["vi"], 1, fetcher=fake_fetcher)
     assert all(query["provider_total_count"] is None for query in queries)
+
+
+def test_cli_fails_clearly_without_api_key_before_network_calls(monkeypatch, capsys):
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    monkeypatch.setattr(
+        MODULE.argparse.ArgumentParser,
+        "parse_args",
+        lambda self: MODULE.argparse.Namespace(language="both", pages_per_query=1, output="unused"),
+    )
+    assert MODULE.main() == 1
+    captured = capsys.readouterr()
+    assert "ELEVENLABS_API_KEY is required" in captured.err
