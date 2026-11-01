@@ -169,3 +169,18 @@ def test_approved_quality_state_requires_all_three_review_checks(tmp_path):
 
 def test_contribution_directory_can_be_empty_without_creating_a_fake_voice(tmp_path):
     assert MODULE.collect_paths(tmp_path) == []
+
+
+def test_malformed_nested_values_return_validation_errors_without_crashing(tmp_path):
+    manifest = valid_manifest()
+    manifest["consent"] = "not-an-object"
+    issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
+    assert issues
+    assert any("not of type 'object'" in issue for issue in issues)
+
+    manifest = valid_manifest()
+    manifest["rights_review"] = []
+    manifest["quality_review"] = "approved"
+    issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
+    assert issues
+    assert any("not of type 'object'" in issue for issue in issues)
