@@ -180,6 +180,9 @@
           },
           "watermark": {
             "const": "verified"
+          },
+          "source_voice_id": {
+            "type": "string"
           }
         }
       }
