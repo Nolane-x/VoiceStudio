@@ -112,6 +112,7 @@ def test_blind_package_contains_no_voice_ids_or_analysis_mapping(tmp_path):
 
 def test_blind_html_does_not_expose_marketplace_identity():
     row = {
+        "blind_sample_id": "sample-001",
         "language": "vi",
         "audio_file": "blind-samples/sample-001.wav",
         "reference_text_html": "<p>Xin chào.</p>",
@@ -121,3 +122,6 @@ def test_blind_html_does_not_expose_marketplace_identity():
     assert "voice_id" not in page
     assert "usage_character_count" not in page
     assert "voice_name" not in page
+    assert 'data-sample-id="sample-001"' in page
+    assert "card.dataset.sampleId" in page
+    assert "reviewer_id" in page
