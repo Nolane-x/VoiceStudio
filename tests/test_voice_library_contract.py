@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -35,6 +36,18 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertEqual(vietnamese["sample_rate"], 48_000)
         self.assertGreaterEqual(vietnamese["minimum_preset_voices"], 20)
         self.assertIn("list_preset_voices", BUILDER.read_text(encoding="utf-8"))
+
+    def test_voice_ids_are_slugged_without_losing_vietnamese_diacritics(self):
+        spec = importlib.util.spec_from_file_location("voice_library_builder", BUILDER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.slugify("Xuân Vĩnh"), "xuan-vinh")
+        self.assertEqual(module.slugify("Thùy Dung"), "thuy-dung")
+
+    def test_manifest_archive_paths_match_the_pack_layout(self):
+        script = BUILDER.read_text(encoding="utf-8")
+        self.assertIn('"audio_file": f"voices/{voice_id}.wav"', script)
+        self.assertIn('base / language / f"{voice[\'id\']}.wav"', script)
 
     def test_manifest_requires_audio_hash_and_watermark(self):
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
