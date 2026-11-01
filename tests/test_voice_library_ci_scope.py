@@ -19,6 +19,7 @@ def test_voice_library_service_changes_do_not_trigger_desktop_runtime_ci():
         "scripts/build_voice_library.py",
         "scripts/render_video_voice.py",
         ".github/workflows/voice-library.yml",
+        ".github/scripts/ci_scope.py",
     ]
     assert all(MODULE.non_runtime(path) for path in paths)
 
