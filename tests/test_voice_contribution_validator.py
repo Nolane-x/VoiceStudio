@@ -133,13 +133,20 @@ def test_rights_cannot_be_both_granted_and_denied(tmp_path):
 
 def test_production_ready_requires_explicit_commercial_and_replication_permissions(tmp_path):
     manifest = valid_manifest()
+    manifest["consent"]["rights_granted"] = ["tts_synthesis"]
     manifest["production_ready"] = True
-    manifest["rights_review"] = {"status": "approved"}
+    manifest["rights_review"] = {
+        "status": "approved",
+        "reviewer_ref": "reviewer_0123456789ab",
+        "reviewed_at": "2026-11-01T12:00:00Z",
+    }
     manifest["quality_review"] = {
         "status": "approved",
         "native_language_review": True,
         "pronunciation_review": True,
         "longform_stability_review": True,
+        "blind_review_id": "review_0123456789ab",
+        "reviewed_at": "2026-11-01T12:00:00Z",
     }
     issues = MODULE.validate_manifest(write_manifest(tmp_path, manifest), SCHEMA)
     assert any("commercial_use" in issue for issue in issues)
