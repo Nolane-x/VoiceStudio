@@ -122,6 +122,16 @@ The provider's usage counters indicate activity in that marketplace. They are no
 
 ### Vietnamese listener-preference snapshot (1 November 2026)
 
-The current Vietnamese Voice Arena snapshot places Gemini 3.8 Flash-Lite, Gemini 3.8 Flash and Gemini 3.1 Flash at ranks 1–3 overall, followed by Eleven v4 at rank 4. In media/entertainment, Eleven v4 is rank 4; in creator/education, it is rank 3. These rankings are based on blind pairwise listener votes and should be read together with their sample counts and confidence intervals. They are a market screening signal, not a promise of equal results across all accents, use cases or voice IDs.
+The current [Vietnamese Voice Arena snapshot](https://voicearena.com/tts-leaderboard/vietnamese) places Gemini 3.8 Flash-Lite, Gemini 3.8 Flash and Gemini 3.1 Flash at ranks 1–3 overall, followed by Eleven v4 at rank 4. In [media/entertainment](https://voicearena.com/tts-leaderboard/vietnamese/media-and-entertainment), Eleven v4 is rank 4; in [creator/education](https://voicearena.com/tts-leaderboard/vietnamese/content-creation-and-edu), it is rank 3. These rankings are based on blind pairwise listener votes and should be read together with their reported sample counts and uncertainty ranges. They are a market screening signal, not a promise of equal results across all accents, use cases or voice IDs.
 
 This is why the production strategy is now multi-engine: test Eleven v4 as the paid premium reference, Gemini 3.8 Flash as the high-fidelity expressive challenger, Gemini 3.8 Flash-Lite as the volume workhorse, and the best rights-cleared open models as free/self-hosted options. Select a specific voice only after the Vietnamese and English blind-review tracks pass separately.
+
+
+
+### Eleven v4 matched marketplace benchmark
+
+The manual workflow, ElevenLabs Eleven v4 marketplace quality benchmark, selects the most-used eligible high_quality/professional public shared voices for Vietnamese and/or English, then generates matched audition passages using the Eleven v4 model. It is capped at four voice IDs per language and eight synthesis requests per run. Every selected voice uses the same corpus in its language; the output is normalized, VoiceStudio-watermarked and machine-validated.
+
+The workflow runs only when the repository is private, ELEVENLABS_API_KEY exists, and confirm_paid_api_usage=true is explicitly selected. It uploads a blind listening archive separately from the private analysis mapping. Human reviewers score naturalness, pronunciation, prosody, emotional fit, accent fit and overall preference. The discovery counters determine which voices are auditioned first; they never count as quality scores. An ambiguous POST timeout is not retried automatically because provider-side acceptance and billing may already have occurred.
+
+Run it from Actions → ElevenLabs Eleven v4 marketplace quality benchmark. Start with the default two voices per language; review the blind package before increasing the offset for later batches. This workflow is disabled on public repositories and is never run automatically by CI.
