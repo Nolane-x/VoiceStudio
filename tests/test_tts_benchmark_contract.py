@@ -215,7 +215,7 @@ def test_library_audio_validator_keeps_its_default_duration_cap():
 def test_benchmark_template_csv_includes_reviewer_identity_column():
     source = SCRIPT.read_text(encoding="utf-8")
     assert '["blind_sample_id", "language", "scenario", "reviewer_id"' in source
-    assert '["reviewer-id"]' in source
+    assert "document.getElementById('reviewer-id')" in source
 
 
 def test_score_merger_is_wired_as_a_standalone_post_review_tool():
