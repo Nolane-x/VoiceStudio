@@ -87,3 +87,8 @@ def test_benchmark_render_loop_uses_the_declared_script_corpus():
     assert 'expected = sum(len(SCRIPTS[c["language"]]) for c in candidates)' in source
     assert 'for scenario_id, scenario_title, reference in SCRIPTS[candidate["language"]]:' in source
     assert "TEXTS" not in source
+
+
+def test_benchmark_master_format_constants_are_explicit():
+    assert MODULE.TARGET_RATE == 48_000
+    assert MODULE.TARGET_BITS == 24
