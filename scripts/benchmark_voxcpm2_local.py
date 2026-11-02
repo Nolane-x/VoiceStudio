@@ -2,7 +2,7 @@
 """CPU-only local VoxCPM2 voice-design benchmark; no hosted TTS API."""
 from __future__ import annotations
 import argparse, csv, gc, hashlib, importlib.metadata, importlib.util
-import json, os, platform, resource, shutil, sys, time
+import json, os, platform, random, resource, shutil, sys, time
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -59,6 +59,14 @@ def memory_mib():
  except (OSError,ValueError,IndexError): pass
  return None
 
+def seed_generation(torch, seed):
+ # voxcpm==2.0.3 exposes randomness through global RNGs rather than a
+ # seed= keyword accepted by VoxCPM.generate(). Reset before each take.
+ import numpy as np
+ random.seed(int(seed))
+ np.random.seed(int(seed) % (2**32))
+ torch.manual_seed(int(seed))
+
 def mono_float32(value):
  import numpy as np
  if hasattr(value,"detach"): value=value.detach().cpu().numpy()
@@ -111,8 +119,9 @@ def run(output):
    for text_no,utterance in enumerate(UTTERANCES[lang],1):
     n+=1; blind_id=f"sample_{n:02d}"; raw_path=raw/f"{blind_id}.wav"
     prompt=f'({identity["description"]}){utterance}'
+    seed_generation(torch, identity["seed"])
     t0=time.perf_counter()
-    waveform=model.generate(text=prompt,cfg_value=CFG_VALUE,inference_timesteps=INFERENCE_TIMESTEPS,normalize=True,retry_badcase=False,seed=identity["seed"])
+    waveform=model.generate(text=prompt,cfg_value=CFG_VALUE,inference_timesteps=INFERENCE_TIMESTEPS,normalize=True,retry_badcase=False)
     elapsed=time.perf_counter()-t0; total+=elapsed
     audio=mono_float32(waveform)
     sf.write(str(raw_path),audio,rate,format="WAV",subtype="PCM_24")
