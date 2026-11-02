@@ -33,7 +33,8 @@ class LocalVoxCPM2Tests(unittest.TestCase):
  def test_voice_design_does_not_clone_reference_audio(self):
   source=SCRIPT.read_text(encoding="utf-8")
   self.assertIn("model.generate(",source)
-  self.assertIn("seed=identity[",source)
+  self.assertIn("torch.manual_seed(int(seed))",source)
+  self.assertNotIn('seed=identity["seed"]',source)
   self.assertNotIn("reference_wav_path=",source)
   self.assertNotIn("prompt_wav_path=",source)
 
