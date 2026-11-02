@@ -30,6 +30,11 @@ class LocalVoxCPM2Tests(unittest.TestCase):
   for key in ("ELEVENLABS_API_KEY","GEMINI_API_KEY","XAI_API_KEY"):
    self.assertNotIn(key,source)
   self.assertNotIn("requests.post",source)
+ def test_voxcpm2_cpu_job_is_manual_opt_in(self):
+  workflow=(ROOT/".github"/"workflows"/"voice-library.yml").read_text(encoding="utf-8")
+  self.assertIn("if: ${{ github.event_name == 'workflow_dispatch' && inputs.voxcpm2_benchmark == true }}",workflow)
+  self.assertNotIn("github.event.pull_request.head.ref == 'feat/local-voxcpm2-cpu-design-benchmark'",workflow)
+
  def test_voice_design_does_not_clone_reference_audio(self):
   source=SCRIPT.read_text(encoding="utf-8")
   self.assertIn("model.generate(",source)
