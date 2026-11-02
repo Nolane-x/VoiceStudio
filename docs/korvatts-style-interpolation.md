@@ -46,3 +46,44 @@ speaker recordings are uploaded in this workflow.
 
 The workflow runs only when commits are pushed to the dedicated experiment
 branch. It does not touch the production voice-library build or release.
+
+
+## First measured CPU run — 2 November 2026
+
+GitHub Actions run 41447080039 completed successfully on Ubuntu 24.04.
+
+- Model revision: e5c8c218e93c1d8daa53bfe0e62b8fbc5a5e991d
+- Package: korvatts==0.1.3
+- Model load: 1.615 seconds
+- Peak process RSS: 1,398.8 MiB
+- Candidate matrix: 15 planned, 15 generated, 0 failed/collapsed
+- Total generated speech: 111.242 seconds
+- Total synthesis compute: 104.915 seconds
+- Overall speed factor (audio / compute): 1.0603x
+- Every candidate passed the current audio format, clipping, finite-signal,
+  normalization and AudioSeal verification checks.
+- The anonymous listening CSV is still blank; human review is not complete.
+
+### What the embedding measurements say
+
+Across the 15 interpolated samples, cosine similarity between the mixed
+embedding and its source A averaged 0.9554; similarity to source B averaged
+0.9598. Individual values ranged from 0.9013 to 0.9935 for source A and
+0.9082 to 0.9935 for source B.
+
+This is a useful warning: all mixtures remain numerically close to both
+source preset embeddings. It does not prove that the WAVs sound identical,
+but it also does not support a claim that they are 15 clearly distinct
+speaker identities. Cosine similarity in this concatenated tensor space is
+not a speaker-verification or perceptual-distance metric.
+
+The candidates are therefore experimental timbre blends only. They must not
+be added to the production voice count or distributed as independent
+identities until blind native-Vietnamese listening demonstrates naturalness
+and stable perceptual distinction, and the model/data/source-voice rights
+review is complete.
+
+Artifact: GitHub Actions run 41447080039, artifact
+korvatts-style-mix-41447080039. The artifact contains 15 blind samples and
+an empty human-review CSV; the mapping and similarity data are in
+analysis/benchmark.json.
