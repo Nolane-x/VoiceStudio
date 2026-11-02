@@ -10,9 +10,12 @@ endpoint, provider key or paid synthesis service is used.
 
 The generation call follows VoxCPM2's documented voice-design format:
 `(natural-language voice description)spoken text`. The same generic design
-prompt and seed are reused across Vietnamese and English passages. This tests
-whether one prompt can be used cross-lingually; it does not assume that the
-result will sound equally natural in both languages.
+prompt and deterministic Python/NumPy/PyTorch RNG seed are reused across
+Vietnamese and English passages. The pinned `voxcpm==2.0.3` implementation does
+not accept `seed` as a `generate()` keyword, so the benchmark seeds its RNGs
+before each call instead. This tests whether one prompt can be used
+cross-lingually; it does not assume that the result will sound equally natural
+in both languages.
 
 Official setup/API references:
 - [VoxCPM2 Quick Start](https://voxcpm.readthedocs.io/en/latest/quickstart.html)
