@@ -4,9 +4,27 @@
 
 This workflow evaluates the open openbmb/VoxCPM2 checkpoint on a CPU-only
 GitHub Actions runner. It downloads model weights from Hugging Face, resolves
-an immutable commit SHA for the run, and loads the local snapshot with CPU
-inference and torch.compile disabled. No hosted TTS endpoint, provider key or
-paid synthesis service is used.
+an immutable commit SHA for the run, and loads the local snapshot with
+`device="cpu"`, `optimize=False` and `local_files_only=True`. No hosted TTS
+endpoint, provider key or paid synthesis service is used.
+
+The generation call follows VoxCPM2's documented voice-design format:
+`(natural-language voice description)spoken text`. The same generic design
+prompt and seed are reused across Vietnamese and English passages. This tests
+whether one prompt can be used cross-lingually; it does not assume that the
+result will sound equally natural in both languages.
+
+Official setup/API references:
+- [VoxCPM2 Quick Start](https://voxcpm.readthedocs.io/en/latest/quickstart.html)
+- [VoxCPM2 CPU/low-memory FAQ](https://voxcpm.readthedocs.io/en/latest/faq.html)
+- [PyPI package release 2.0.3](https://pypi.org/project/voxcpm/2.0.3/)
+
+The official documentation states that CPU inference works but is slow.
+VoxCPM2 is around 2B parameters and the official model card reports about
+8 GB inference VRAM for the GPU path. A successful CPU import is therefore
+not evidence that large voice batches are economically or operationally
+feasible on a hosted runner. This benchmark measures actual load time,
+synthesis time and peak resident memory before deciding on scale.
 
 The Python package is pinned to version 2.0.3. Upstream declares Apache-2.0.
 This does not automatically clear every upstream training dataset, speaker
