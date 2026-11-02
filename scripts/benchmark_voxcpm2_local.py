@@ -56,7 +56,9 @@ def memory_mib():
  try:
   for line in Path("/proc/meminfo").read_text().splitlines():
    if line.startswith("MemTotal:"): return round(int(line.split()[1])/1024,1)
- except (OSError,ValueError,IndexError): pass
+ except (OSError,ValueError,IndexError):
+  # Memory reporting is best-effort; a restricted runner must not abort synthesis.
+  return None
  return None
 
 def seed_generation(torch, seed):
