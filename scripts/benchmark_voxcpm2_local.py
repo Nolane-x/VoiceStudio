@@ -61,6 +61,7 @@ def memory_mib():
 
 def mono_float32(value):
  import numpy as np
+ if hasattr(value,"detach"): value=value.detach().cpu().numpy()
  audio=np.squeeze(np.asarray(value,dtype=np.float32))
  if audio.ndim==2:
   if audio.shape[0] in (1,2) and audio.shape[1]>2: audio=audio.mean(axis=0)
@@ -124,7 +125,8 @@ def run(output):
  peak_rss_after_generation=rss_mib()
 
  # Release the 2B TTS model before loading AudioSeal on the CPU runner.
- del model; gc.collect(); torch.cuda.empty_cache()
+ del model; gc.collect()
+ if torch.cuda.is_available(): torch.cuda.empty_cache()
  builder=load_builder(); verification={}
  for row in samples:
   src=raw/f'{row["blind_id"]}.wav'; dst=normalized/row["file_name"]
