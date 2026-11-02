@@ -1,0 +1,75 @@
+name: KorvaTTS speaker-style interpolation experiment
+
+on:
+  push:
+    branches:
+      - experiment/korvatts-style-interpolation
+    paths:
+      - ".github/workflows/korvatts-style-mixing.yml"
+      - "scripts/benchmark_korvatts_style_mixing.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: korvatts-style-mix-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  HF_HOME: /tmp/korvatts-style-hf-home
+  HF_HUB_CACHE: /tmp/korvatts-style-hf-home/hub
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  HF_HUB_DOWNLOAD_TIMEOUT: "180"
+  AUDIOSEAL_CACHE_DIR: /tmp/korvatts-style-audioseal
+  TORCH_HOME: /tmp/korvatts-style-torch
+  OMP_NUM_THREADS: "4"
+  MKL_NUM_THREADS: "4"
+  TOKENIZERS_PARALLELISM: "false"
+
+jobs:
+  interpolate:
+    name: Generate 15 interpolated Vietnamese speaker-style candidates
+    if: ${{ github.ref == 'refs/heads/experiment/korvatts-style-interpolation' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Install FFmpeg and audio runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1
+      - name: Install CPU PyTorch and KorvaTTS
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            "torch==2.8.0" "torchaudio==2.8.0"
+          python -m pip install --disable-pip-version-check \
+            "korvatts==0.1.3" \
+            "onnxruntime==1.31.1" \
+            "numpy<3" \
+            "audioseal>=0.1.3" \
+            "soundfile>=0.12.1" \
+            "huggingface_hub>=1.7,<2"
+          python -m pip check
+      - name: Verify interpolation contracts
+        run: |
+          python scripts/benchmark_korvatts_style_mixing.py --check
+          python tests/test_korvatts_style_mixing.py
+      - name: Generate style interpolation candidates
+        run: python scripts/benchmark_korvatts_style_mixing.py --output dist/korvatts-style-mix
+      - name: Upload blind listening samples and technical mapping
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: korvatts-style-mix-${{ github.run_id }}
+          path: dist/korvatts-style-mix/
+          if-no-files-found: warn
+          retention-days: 14
