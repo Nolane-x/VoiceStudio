@@ -35,7 +35,6 @@ def validate_contract():
  ids=[x["id"] for x in IDENTITIES]
  if len(ids)!=len(set(ids)) or any(not x["description"] for x in IDENTITIES): raise ValueError("Identity IDs/prompts must be unique and non-empty.")
  if len(IDENTITIES)!=2 or any(len(v)!=2 for v in UTTERANCES.values()): raise ValueError("Expected two identities and two texts per language.")
- if importlib.metadata.version("voxcpm")!="2.0.3": raise ValueError("Install pinned voxcpm==2.0.3.")
 
 def load_builder():
  path=ROOT/"scripts"/"build_voice_library.py"
@@ -86,6 +85,7 @@ def run(output):
  from huggingface_hub import HfApi,snapshot_download
  from voxcpm import VoxCPM
  validate_contract()
+ if importlib.metadata.version("voxcpm") != PACKAGE_VERSION: raise RuntimeError("Install pinned voxcpm==2.0.3.")
  output.mkdir(parents=True,exist_ok=True)
  raw=output/"raw"; normalized=output/"normalized"; blind=output/"blind-review"; analysis_dir=output/"analysis"
  for p in (raw,normalized,blind,analysis_dir): p.mkdir(parents=True,exist_ok=True)
@@ -148,7 +148,7 @@ def run(output):
 def main():
  p=argparse.ArgumentParser(); p.add_argument("--check",action="store_true"); p.add_argument("--output",type=Path,default=Path("dist/voxcpm2-local")); a=p.parse_args()
  if a.check:
-  # Does not need the TTS wheel in normal CI.
+  validate_contract()
   print("VoxCPM2 local-only benchmark static checks: OK"); return 0
  run(a.output); return 0
 
