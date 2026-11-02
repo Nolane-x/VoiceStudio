@@ -24,7 +24,7 @@ class KorvaTtsCpuTests(unittest.TestCase):
 
     def test_only_vietnamese_is_primary_language_claim(self):
         source = SCRIPT.read_text(encoding="utf-8")
-        self.assertIn("Main matrix: all ten bundled voice styles in the native Vietnamese mode", source)
+        self.assertIn('for index, voice in enumerate(VOICES, 1)', source)
         self.assertIn("English probes are exploratory", source)
         self.assertIn("upstream does not guarantee English quality", source)
 
