@@ -70,3 +70,35 @@ The expensive benchmark is manually triggered with
 korvatts_benchmark=true in the Voice Library workflow. Ordinary pull requests
 run static contracts and smoke checks only; they do not start this CPU
 synthesis benchmark.
+
+
+## Measured GitHub-hosted CPU baseline — 2 November 2026
+
+First successful benchmark run: GitHub Actions run 41445415735.
+
+- Immutable model revision: e5c8c218e93c1d8daa53bfe0e62b8fbc5a5e991d
+- Python package: korvatts==0.1.3
+- Device: ONNX Runtime CPU, four-thread limit
+- Model load: 1.488 seconds
+- Peak process RSS: 1,517 MiB
+- Main Vietnamese preset matrix: 10 / 10 samples generated
+- Extra diagnostics: 2 Vietnamese/English code-switch probes and 2 plain-English probes
+- Total: 14 samples, 99.611 seconds of audio, 91.465 seconds of synthesis
+- Speed factor (audio duration / synthesis time): 1.089x overall; 1.095x for the ten primary Vietnamese presets
+- Conventional real-time factor (synthesis time / audio duration): 0.918 overall
+- AudioSeal: 14 / 14 verified, confidence 1.0 in the benchmark report
+- PCM validation: 14 / 14 mono, 48 kHz, PCM-24; no clipping
+
+This shows that the engine is light on memory and can run slightly faster than
+real time on this hosted CPU. It is not yet a high-throughput mass-rendering
+engine: one minute of speech requires about 55 seconds of synthesis, before
+accounting for orchestration and quality review. The English results are only
+two diagnostic probes and do not establish broad English quality.
+
+The ten bundled presets remain the only source identities in this benchmark.
+The extra diagnostic rows are not new voices. No human listening scores have
+been entered, and training-data / speaker-source rights remain unresolved.
+The artifact contains blind listening samples and an empty review CSV; it
+does not contain model weights or original source recordings.
+
+Artifact: GitHub Actions run 41445415735, artifact korvatts-local-cpu-41445415735.
