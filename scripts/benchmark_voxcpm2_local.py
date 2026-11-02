@@ -33,7 +33,8 @@ UTTERANCES={
 def validate_contract():
  if set(UTTERANCES)!={"en","vi"}: raise ValueError("Only EN and VI are in scope.")
  ids=[x["id"] for x in IDENTITIES]
- if len(ids)!=len(set(ids)) or any(not x["description"] for x in IDENTITIES): raise ValueError("Identity IDs/prompts must be unique and non-empty.")
+ seeds=[x["seed"] for x in IDENTITIES]
+ if len(ids)!=len(set(ids)) or len(seeds)!=len(set(seeds)) or any(not x["description"] for x in IDENTITIES): raise ValueError("Identity IDs, seeds and prompts must be unique/non-empty.")
  if len(IDENTITIES)!=2 or any(len(v)!=2 for v in UTTERANCES.values()): raise ValueError("Expected two identities and two texts per language.")
 
 def load_builder():
@@ -120,6 +121,7 @@ def run(output):
     samples.append(row)
     mapping.append({**row,"identity_id":identity["id"],"identity_label":identity["label"],"utterance_index":text_no,"text":utterance,"voice_design_prompt":identity["description"],"seed":identity["seed"],"raw_sha256":digest(raw_path)})
     print(f"[VoxCPM2] {blind_id} {lang}: {duration:.1f}s audio / {elapsed:.1f}s synthesis, RTFx={row['rtfx']:.3f}, peak RSS={rss_mib()} MiB",flush=True)
+ peak_rss_after_generation=rss_mib()
 
  # Release the 2B TTS model before loading AudioSeal on the CPU runner.
  del model; gc.collect(); torch.cuda.empty_cache()
@@ -135,10 +137,10 @@ def run(output):
  write_blind_review(blind,samples)
  for f in raw.glob("*.wav"): f.unlink()
 
- summary={"benchmark":"VoiceStudio local VoxCPM2 CPU design screening","status":"technically_validated_not_human_approved","generated_at_utc":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),"model_id":MODEL_ID,"model_revision":revision,"model_license":MODEL_LICENSE,"package_version":PACKAGE_VERSION,"device":"cpu","torch_version":str(torch.__version__),"python_version":platform.python_version(),"platform":platform.platform(),"logical_cpu_count":os.cpu_count(),"system_memory_mib":memory_mib(),"peak_rss_mib_before_watermarking":rss_mib(),"model_load_seconds":round(load_seconds,3),"total_synthesis_seconds":round(total,3),"identity_count":len(IDENTITIES),"sample_count":len(samples),"languages":["en","vi"],"native_sample_rate":rate,"cfg_value":CFG_VALUE,"inference_timesteps":INFERENCE_TIMESTEPS,"samples":samples,"human_review":"not_completed","production_promotion":"blocked_pending_rights_and_native_listener_review","limitations":["Voice-design prompts create synthetic voice styles, not real speaker identities.","Prompt and seed reuse do not alone prove perceived identity consistency.","Signal checks and watermark detection do not measure human preference or naturalness."]}
+ summary={"benchmark":"VoiceStudio local VoxCPM2 CPU design screening","status":"technically_validated_not_human_approved","generated_at_utc":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),"model_id":MODEL_ID,"model_revision":revision,"model_license":MODEL_LICENSE,"package_version":PACKAGE_VERSION,"device":"cpu","torch_version":str(torch.__version__),"python_version":platform.python_version(),"platform":platform.platform(),"logical_cpu_count":os.cpu_count(),"system_memory_mib":memory_mib(),"peak_rss_mib_during_tts":peak_rss_after_generation,"model_load_seconds":round(load_seconds,3),"total_synthesis_seconds":round(total,3),"identity_count":len(IDENTITIES),"sample_count":len(samples),"languages":["en","vi"],"native_sample_rate":rate,"cfg_value":CFG_VALUE,"inference_timesteps":INFERENCE_TIMESTEPS,"samples":samples,"human_review":"not_completed","production_promotion":"blocked_pending_rights_and_native_listener_review","limitations":["Voice-design prompts create synthetic voice styles, not real speaker identities.","Prompt and seed reuse do not alone prove perceived identity consistency.","Signal checks and watermark detection do not measure human preference or naturalness."]}
  (analysis_dir/"benchmark.json").write_text(json.dumps({"summary":summary,"identity_designs":IDENTITIES,"sample_mapping":mapping,"verification":verification},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
  (analysis_dir/"README.md").write_text("Analysis mapping, immutable model revision, synthesis times, hashes and watermark evidence. Human preference scores are not yet available.\n",encoding="utf-8")
- lines=["# VoxCPM2 local CPU benchmark","",f"- Model: {MODEL_ID}",f"- Revision: {revision}","- Device: CPU only",f"- Identities: {len(IDENTITIES)}",f"- Samples: {len(samples)}",f"- Model load: {load_seconds:.1f}s",f"- Total synthesis: {total:.1f}s",f"- Peak RSS before watermarking: {rss_mib():.1f} MiB","","| Sample | Language | Duration (s) | Synthesis (s) | RTFx |","|---|---|---:|---:|---:|"]
+ lines=["# VoxCPM2 local CPU benchmark","",f"- Model: {MODEL_ID}",f"- Revision: {revision}","- Device: CPU only",f"- Identities: {len(IDENTITIES)}",f"- Samples: {len(samples)}",f"- Model load: {load_seconds:.1f}s",f"- Total synthesis: {total:.1f}s",f"- Peak RSS during TTS: {peak_rss_after_generation:.1f} MiB","","| Sample | Language | Duration (s) | Synthesis (s) | RTFx |","|---|---|---:|---:|---:|"]
  lines += [f'| {r["blind_id"]} | {r["language"]} | {r["duration_seconds"]:.2f} | {r["generation_seconds"]:.2f} | {r["rtfx"]:.3f} |' for r in samples]
  lines += ["","Human listening is not complete; no production approval is implied."]
  (output/"SUMMARY.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
