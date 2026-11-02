@@ -44,6 +44,38 @@ review.
   saved-file verification.
 - Anonymous listening audio is separated from the prompt/identity mapping.
 
+## Measured CPU baseline — GitHub Actions run 41431236672
+
+The first completed run generated all eight samples on an Ubuntu 24.04 CPU runner
+with four logical CPUs and 15,983.9 MiB reported system memory:
+
+| Measurement | Result |
+|---|---:|
+| Model load | 18.099 s |
+| Total synthesis time | 2,553.844 s |
+| Total generated audio | 77.76 s |
+| Overall real-time factor (audio / synthesis) | 0.0304x |
+| Peak process RSS during TTS | 11,705.9 MiB |
+| Samples technically validated and watermarked | 8 / 8 |
+
+That is approximately 33 minutes of synthesis compute per one minute of produced
+audio. The model is therefore proven to run locally on a standard hosted CPU
+runner, but it is not a practical high-volume voice-library renderer on that
+hardware. Keep VoxCPM2 for carefully selected quality experiments until a
+faster local inference path or suitable GPU runner is available.
+
+Every WAV passed the current format, finite-signal, non-silence, clipping and
+AudioSeal checks. These checks do not establish pronunciation, naturalness,
+cross-language identity consistency or listener preference. In particular,
+the automated near-silence ratios ranged up to 36.6%, so listening review is
+still necessary. The blank human-review CSV is intentional; no scores have
+been collected yet.
+
+The long CPU benchmark is now opt-in: run this workflow manually on the
+desired branch and set `voxcpm2_benchmark=true`. This avoids rerunning a
+roughly 43-minute synthesis job on every ordinary pull-request edit. When the
+benchmark flag is true, the normal render/catalog dispatch jobs are skipped.
+
 ## Promotion rules
 
 A generated WAV is not automatically a production-ready voice identity.
