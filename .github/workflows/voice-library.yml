@@ -116,7 +116,7 @@ jobs:
   voxcpm2-local-cpu:
     name: VoxCPM2 voice design on GitHub-hosted CPU
     needs: contract
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/local-voxcpm2-cpu-design-benchmark') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.voxcpm2_benchmark == true) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.voxcpm2_benchmark == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
@@ -252,7 +252,7 @@ jobs:
   render-video-narration:
     name: Render video narration (48 kHz WAV + captions)
     needs: contract
-    if: ${{ inputs.downstream_call == true || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'render') }}
+    if: ${{ inputs.downstream_call == true || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'render' && inputs.voxcpm2_benchmark != true) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
@@ -311,7 +311,7 @@ jobs:
   build-and-publish:
     name: Full voice library and release assets
     needs: contract
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.downstream_call != true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'catalog') }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.downstream_call != true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.task == 'catalog' && inputs.voxcpm2_benchmark != true) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
