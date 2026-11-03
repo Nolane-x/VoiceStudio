@@ -14,6 +14,7 @@ import os
 import platform
 import random
 import shutil
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -154,7 +155,7 @@ def write_blind_review(folder: Path, rows: list[dict[str, Any]]) -> None:
 def run(output: Path) -> dict[str, Any]:
     import numpy as np
     import soundfile as sf
-    from huggingface_hub import HfApi
+    from huggingface_hub import HfApi, snapshot_download
     import zerotts
     from zerotts import ZeroTTS, normalize_vi_text
 
@@ -169,6 +170,39 @@ def run(output: Path) -> dict[str, Any]:
     revision = HfApi().model_info(MODEL_ID, files_metadata=False).sha
     if not isinstance(revision, str) or len(revision) != 40:
         raise RuntimeError("Hugging Face did not return an immutable 40-character model revision.")
+
+    snapshot_dir = Path(snapshot_download(
+        repo_id=MODEL_ID,
+        revision=revision,
+        allow_patterns=[
+            "config.json",
+            "tokenizer.json",
+            "null_voice_emb.npy",
+            "silence_frame.npy",
+            "onnx/*",
+            "onnx/codec/*",
+            "voices/index.json",
+            "voices/*/voice.npz",
+            "voices/*/meta.json",
+            "voices/*/preview.wav",
+        ],
+    ))
+    materialized_model = Path("/tmp/zerotts-model-materialized")
+    if materialized_model.exists():
+        shutil.rmtree(materialized_model)
+    # HF cache snapshots contain file symlinks to separate blob directories.
+    # Some ONNX graphs use external .data sidecars; resolving the graph symlink
+    # makes ONNX Runtime treat the sidecar as an unsafe path escape. Copy the
+    # snapshot as ordinary files so the graph and each sidecar remain siblings.
+    print(f"[ZeroTTS] Materializing model snapshot from {snapshot_dir}", flush=True)
+    shutil.copytree(snapshot_dir, materialized_model, symlinks=False)
+    if not (materialized_model / "onnx" / "codec").is_dir():
+        raise RuntimeError("Materialized model is missing the ONNX codec directory.")
+    print(
+        f"[ZeroTTS] Materialized model size: "
+        f"{sum(p.stat().st_size for p in materialized_model.rglob('*') if p.is_file()) / (1024**2):.1f} MiB",
+        flush=True,
+    )
 
     output.mkdir(parents=True, exist_ok=True)
     raw_dir = output / "raw"
@@ -185,8 +219,7 @@ def run(output: Path) -> dict[str, Any]:
     )
     load_started = time.perf_counter()
     tts = ZeroTTS.from_pretrained(
-        MODEL_ID,
-        revision=revision,
+        materialized_model,
         providers=["CPUExecutionProvider"],
         intra_op_num_threads=THREADS,
         codec_intra_op_num_threads=THREADS,
