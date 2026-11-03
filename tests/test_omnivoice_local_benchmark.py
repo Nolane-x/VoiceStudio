@@ -45,6 +45,8 @@ class OmniVoiceLocalBenchmarkTests(unittest.TestCase):
     def test_synthetic_references_are_not_counted_as_production_identities(self):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("Both reference clips are synthetic KorvaTTS preset outputs", source)
+        self.assertIn("random.Random(20261103)", source)
+        self.assertIn("source_path.rename(target_path)", source)
         self.assertIn("not human recordings", source)
         self.assertIn("not_declared_in_current_hugging_face_repo_metadata", source)
         self.assertIn('"human_review": "not_completed"', source)
