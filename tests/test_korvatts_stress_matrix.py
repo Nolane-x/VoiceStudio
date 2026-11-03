@@ -28,6 +28,10 @@ class KorvaTtsStressTests(unittest.TestCase):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("shared_seed = 20261103 + voice_index * 100 + case_index", source)
         self.assertIn("seed=shared_seed", source)
+        self.assertIn("random.Random(20261103)", source)
+        self.assertIn("blind-ab-review", source)
+        self.assertIn("ab-pair-mapping.json", source)
+        self.assertIn("preferred_clip_first_or_second_or_tie", source)
 
     def test_local_only_and_no_external_tts_calls(self):
         source = SCRIPT.read_text(encoding="utf-8")
