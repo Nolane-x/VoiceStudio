@@ -26,6 +26,7 @@ class ZeroTtsLocalBenchmarkTests(unittest.TestCase):
 
     def test_distribution_pin_and_immutable_model_revision(self):
         self.assertEqual(MODULE.PACKAGE_VERSION, "0.1.5")
+        self.assertIn('package_module_version = str(getattr(zerotts, "__version__", None) or "unset")', SCRIPT.read_text(encoding="utf-8"))
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('importlib.metadata.version("zerotts")', source)
         self.assertIn("HfApi().model_info(MODEL_ID, files_metadata=False).sha", source)
