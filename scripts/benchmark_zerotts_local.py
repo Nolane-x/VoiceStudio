@@ -14,7 +14,6 @@ import os
 import platform
 import random
 import shutil
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -165,7 +164,7 @@ def run(output: Path) -> dict[str, Any]:
         raise RuntimeError(
             f"Expected the provenance-pinned zerotts=={PACKAGE_VERSION}, got {installed_version}."
         )
-    package_module_version = str(getattr(zerotts, "__version__", "unknown"))
+    package_module_version = str(getattr(zerotts, "__version__", None) or "unset")
 
     revision = HfApi().model_info(MODEL_ID, files_metadata=False).sha
     if not isinstance(revision, str) or len(revision) != 40:
@@ -560,7 +559,7 @@ def run(output: Path) -> dict[str, Any]:
         )
     lines.extend([
         "",
-        "Human listening and source-rights review are incomplete. "
+        "Human listening and source-rights review are incomplete.",
         "This is not a production voice pack.",
     ])
     (output / "SUMMARY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
