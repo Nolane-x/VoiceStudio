@@ -36,7 +36,7 @@ Vietnamese screen uses same-language Vietnamese reference-audio cloning.
 - Generate two Vietnamese target passages per prompt, four outputs total,
   using 32 decoding steps.
 - Measure model load, prompt-encoding time, generation time, output duration,
-  peak resident memory, and per-clip real-time factor.
+  process peak RSS across the complete CPU pipeline, and per-clip real-time factor.
 - Normalize output to mono 48 kHz PCM-24, verify VoiceStudio AudioSeal
   provenance and run signal validation.
 - Upload only anonymous cloned outputs and a blank human-review CSV. The
