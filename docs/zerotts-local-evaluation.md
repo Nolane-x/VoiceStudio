@@ -97,3 +97,89 @@ dereferenced before creating ONNX sessions. This does not modify the model or
 weights; it preserves the graph and its external data files as siblings in a
 normal local directory. The copy lives under /tmp, outside the uploaded
 benchmark artifact, and is not added to the VoiceStudio library.
+
+## Measured GitHub-hosted CPU baseline — 3 November 2026
+
+The first complete VoiceStudio run is GitHub Actions run 41584156577
+(artifact zerotts-vietnamese-cpu-41584156577), on Ubuntu 24.04 with
+CPUExecutionProvider and a four-thread cap:
+
+| Measurement | Result |
+|---|---:|
+| Model snapshot size | 999.4 MiB |
+| Model load | 6.264 s |
+| Runtime warm-up | 0.205 s |
+| Peak RSS during TTS | 3,068.6 MiB |
+| One-shot samples | 32 |
+| Streaming samples | 8 |
+| Total output files | 40 / 40 technically validated |
+| One-shot speech | 280.64 s |
+| One-shot synthesis | 527.95 s |
+| Audio / compute (one-shot) | 0.532x |
+| Conventional compute / audio (one-shot) | 1.881x |
+| Streaming speech | 70.08 s |
+| Streaming synthesis | 132.58 s |
+| Audio / compute (streaming) | 0.529x |
+| Mean time to first streaming chunk | 0.272 s |
+| Maximum time to first streaming chunk | 0.284 s |
+| AudioSeal verification | 40 / 40 passed |
+| PCM validation | 40 / 40 mono, 48 kHz, PCM-24, zero clipped samples |
+
+The ratio terminology matters: this report uses audio / compute (greater
+than 1 means faster than real time). Conventional RTF is compute / audio
+(lower than 1 means faster than real time). On this four-thread hosted runner,
+ZeroTTS took about 1.88 seconds of compute for one second of one-shot audio.
+That is slower than real time, despite the upstream README's approximately
+0.5x CPU RTF result on its own eight-thread benchmark machine. The two
+measurements use different hardware/thread conditions and should not be
+treated as contradictory without reproducing the upstream machine.
+
+The first decoded streaming chunk arrived in 0.272 seconds on average. This is
+not the same as the maintainer's approximately 70 ms claim, and it is not
+instantaneous real-time playback; it is simply the measured first-chunk
+latency of this GitHub-hosted runner.
+
+### Vietnamese text-case results
+
+| Text case | Samples | Audio / compute | Compute / audio |
+|---|---:|---:|---:|
+| Natural Vietnamese | 8 | 0.545x | 1.835x |
+| Raw dates, numbers and names | 8 | 0.534x | 1.872x |
+| Same text after normalization | 8 | 0.531x | 1.883x |
+| Vietnamese with English technical terms | 8 | 0.524x | 1.908x |
+
+Every generated file passed signal and watermark checks, but those are not
+quality metrics. The near-silence ratio averaged approximately 0.157 across
+the 40 outputs (range 0.088–0.253); this may include natural inter-word pauses
+and cannot be interpreted as an intelligibility score. The blind score sheet
+is still empty. No ASR/WER or MOS score was computed.
+
+### Package metadata note
+
+PyPI distribution metadata reported zerotts==0.1.5, while the imported
+module's __version__ attribute was unset (None). The benchmark records this
+as unset and raises a metadata-mismatch flag. This did not stop synthesis,
+but the discrepancy should be resolved upstream before pinning the package
+for a production release.
+
+### Comparison with the latest KorvaTTS CPU tests
+
+Both models were screened on Ubuntu 24.04 GitHub-hosted CPU runners with a
+four-thread cap. On the ten-preset KorvaTTS step sweep, 32 steps achieved
+2.455x audio / compute with 1,451 MiB peak RSS; 8 steps achieved 7.933x.
+The separate 45-sample KorvaTTS Vietnamese stress matrix achieved 8.671x,
+4.920x and 2.643x at 8, 16 and 32 steps, respectively, with 1,643.9 MiB peak
+RSS.
+
+By comparison, this ZeroTTS run achieved 0.532x audio / compute and
+3,068.6 MiB peak RSS. In raw CPU throughput, KorvaTTS was roughly 4.6–5.0x
+faster than ZeroTTS at its 32-step baseline, while using about half the peak
+memory. This is a compute comparison only: KorvaTTS's lower-step quality and
+both models' perceptual quality still require blind native-Vietnamese review.
+
+Current decision: retain ZeroTTS as a Vietnamese-specialist research
+candidate, but do not select it as VoiceStudio's high-volume CPU renderer yet.
+It has only eight bundled presets and lacks the published local speaker
+encoder needed to create additional voice latents. It cannot satisfy the
+thousands-of-identities target by itself. KorvaTTS is currently the stronger
+CPU throughput candidate, pending quality and training-source rights review.
