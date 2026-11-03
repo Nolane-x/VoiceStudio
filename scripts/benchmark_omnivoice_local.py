@@ -438,7 +438,7 @@ def run(output: Path) -> dict[str, Any]:
         "synthesis_compute_seconds": round(total_generation_seconds, 3),
         "audio_over_compute": round(generated_audio_seconds / max(total_generation_seconds, 1e-6), 4),
         "compute_over_audio": round(total_generation_seconds / max(generated_audio_seconds, 1e-6), 4),
-        "peak_rss_during_model_and_tts_mib": peak_rss_tts,
+        "peak_rss_across_cpu_pipeline_mib": peak_rss_tts,
         "human_review": "not_completed",
         "production_promotion": "blocked_pending_contributor_consent_weight_license_review_and_blind_native_vietnamese_listening",
         "important_boundaries": [
@@ -480,7 +480,7 @@ def run(output: Path) -> dict[str, Any]:
         "- Device/dtype: CPU / float32 / SDPA",
         f"- Model load: {model_load_seconds:.2f}s",
         f"- Model snapshot including audio tokenizer: {model_bytes / (1024**3):.2f} GiB",
-        f"- Peak RSS during model/TTS: {peak_rss_tts if peak_rss_tts is not None else 'unavailable'} MiB",
+        f"- Peak RSS across CPU pipeline: {peak_rss_tts if peak_rss_tts is not None else 'unavailable'} MiB",
         f"- Prompt encoding total: {prompt_encode_total:.2f}s",
         f"- Samples: {len(rows)}",
         f"- Output audio: {generated_audio_seconds:.2f}s",
