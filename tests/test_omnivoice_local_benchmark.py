@@ -36,6 +36,8 @@ class OmniVoiceLocalBenchmarkTests(unittest.TestCase):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("from korvatts import TTS", source)
         self.assertIn("model.create_voice_clone_prompt(", source)
+        self.assertIn("for reference in refs:", source)
+        self.assertIn("prompts[reference[\"reference_id\"]] = model.create_voice_clone_prompt(", source)
         self.assertIn("voice_clone_prompt=prompts[reference[", source)
         self.assertIn('language="vi"', source)
         self.assertIn("load_asr=False", source)
