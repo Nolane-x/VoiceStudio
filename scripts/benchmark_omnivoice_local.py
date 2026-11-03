@@ -252,20 +252,6 @@ def run(output: Path) -> dict[str, Any]:
             f"{duration:.2f}s; local KorvaTTS compute {elapsed:.2f}s",
             flush=True,
         )
-        prompt_start = time.perf_counter()
-        prompts[spec["reference_id"]] = model.create_voice_clone_prompt(
-            ref_audio=str(reference_path),
-            ref_text=spec["text"],
-            preprocess_prompt=True,
-        )
-        prompt_seconds = time.perf_counter() - prompt_start
-        prompt_encode_total += prompt_seconds
-        refs[-1]["prompt_encode_seconds"] = round(prompt_seconds, 3)
-        print(
-            f"[OmniVoice] Encoded reusable prompt {spec['reference_id']} in {prompt_seconds:.2f}s",
-            flush=True,
-        )
-
     del korva
     gc.collect()
 
@@ -295,6 +281,24 @@ def run(output: Path) -> dict[str, Any]:
         f"sample_rate={native_sample_rate}; model_snapshot={model_bytes / (1024**3):.2f} GiB",
         flush=True,
     )
+
+    # The reference clips are prepared before model load to avoid retaining
+    # both large models at once. Encode the reusable prompts only after OmniVoice
+    # has been loaded on CPU.
+    for reference in refs:
+        prompt_start = time.perf_counter()
+        prompts[reference["reference_id"]] = model.create_voice_clone_prompt(
+            ref_audio=reference["file_path"],
+            ref_text=reference["reference_text"],
+            preprocess_prompt=True,
+        )
+        prompt_seconds = time.perf_counter() - prompt_start
+        prompt_encode_total += prompt_seconds
+        reference["prompt_encode_seconds"] = round(prompt_seconds, 3)
+        print(
+            f"[OmniVoice] Encoded reusable prompt {reference['reference_id']} in {prompt_seconds:.2f}s",
+            flush=True,
+        )
 
     output.mkdir(parents=True, exist_ok=True)
     blind_dir = output / "blind-review"
