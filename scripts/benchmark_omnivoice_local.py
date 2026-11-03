@@ -388,6 +388,18 @@ def run(output: Path) -> dict[str, Any]:
     reference_dir.rmdir()
     work_dir.rmdir()
 
+    # Shuffle IDs independently of generation order so repeated outputs from
+    # the same synthetic reference cannot be inferred from adjacent filenames.
+    review_rng = random.Random(20261103)
+    review_rng.shuffle(rows)
+    for index, row in enumerate(rows, start=1):
+        source_path = blind_dir / row["file_name"]
+        new_id = f"sample_{index:02d}"
+        target_path = blind_dir / f"{new_id}.wav"
+        source_path.rename(target_path)
+        row["blind_id"] = new_id
+        row["file_name"] = target_path.name
+        row["sha256"] = sha256_file(target_path)
     write_blind_review(blind_dir, rows)
     generated_audio_seconds = sum(row["duration_seconds"] for row in rows)
     summary = {
