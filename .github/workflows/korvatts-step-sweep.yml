@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/korvatts-step-sweep.yml"
       - "scripts/benchmark_korvatts_step_sweep.py"
+      - "scripts/benchmark_korvatts_stress_matrix.py"
 
 permissions:
   contents: read
@@ -65,6 +66,21 @@ jobs:
           python tests/test_korvatts_step_sweep.py
       - name: Generate ten-voice step comparison
         run: python scripts/benchmark_korvatts_step_sweep.py --output dist/korvatts-step-sweep
+      - name: Verify Vietnamese stress-matrix contracts
+        run: |
+          python scripts/benchmark_korvatts_stress_matrix.py --check
+          python tests/test_korvatts_stress_matrix.py
+      - name: Generate Vietnamese numbers, code-switch and tone stress matrix
+        run: python scripts/benchmark_korvatts_stress_matrix.py --output dist/korvatts-stress
+      - name: Upload blind Vietnamese stress samples
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: korvatts-vietnamese-stress-${{ github.run_id }}
+          path: dist/korvatts-stress/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload blind step comparison and technical analysis
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
