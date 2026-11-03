@@ -187,33 +187,6 @@ def run(output: Path) -> dict[str, Any]:
     materialize_snapshot(tokenizer_snapshot, local_model / "audio_tokenizer")
     model_bytes = sum(p.stat().st_size for p in local_model.rglob("*") if p.is_file())
 
-    print(
-        f"[OmniVoice] Loading {MODEL_ID}@{model_revision} on CPU; "
-        f"tokenizer={TOKENIZER_ID}@{tokenizer_revision}; threads={THREADS}",
-        flush=True,
-    )
-    load_started = time.perf_counter()
-    model = OmniVoice.from_pretrained(
-        str(local_model),
-        device_map="cpu",
-        dtype=torch.float32,
-        attn_implementation="sdpa",
-        low_cpu_mem_usage=True,
-        load_asr=False,
-    )
-    model_load_seconds = time.perf_counter() - load_started
-    if str(model.device) != "cpu":
-        raise RuntimeError(f"Expected OmniVoice on CPU, got {model.device}.")
-    supported_languages = {str(x).lower() for x in model.supported_language_ids()}
-    if "vi" not in supported_languages:
-        raise RuntimeError("OmniVoice checkpoint does not report Vietnamese (vi) support.")
-    native_sample_rate = int(model.sampling_rate)
-    print(
-        f"[OmniVoice] Model loaded in {model_load_seconds:.2f}s; "
-        f"sample_rate={native_sample_rate}; model_snapshot={model_bytes / (1024**3):.2f} GiB",
-        flush=True,
-    )
-
     # Reference clips are synthetic KorvaTTS outputs. They test the local
     # reference-audio clone path; they are not real people or production assets.
     reference_dir = Path("/tmp/omnivoice-synthetic-references")
@@ -288,6 +261,33 @@ def run(output: Path) -> dict[str, Any]:
     del korva
     gc.collect()
 
+    print(
+        f"[OmniVoice] Loading {MODEL_ID}@{model_revision} on CPU; "
+        f"tokenizer={TOKENIZER_ID}@{tokenizer_revision}; threads={THREADS}",
+        flush=True,
+    )
+    load_started = time.perf_counter()
+    model = OmniVoice.from_pretrained(
+        str(local_model),
+        device_map="cpu",
+        dtype=torch.float32,
+        attn_implementation="sdpa",
+        low_cpu_mem_usage=True,
+        load_asr=False,
+    )
+    model_load_seconds = time.perf_counter() - load_started
+    if str(model.device) != "cpu":
+        raise RuntimeError(f"Expected OmniVoice on CPU, got {model.device}.")
+    supported_languages = {str(x).lower() for x in model.supported_language_ids()}
+    if "vi" not in supported_languages:
+        raise RuntimeError("OmniVoice checkpoint does not report Vietnamese (vi) support.")
+    native_sample_rate = int(model.sampling_rate)
+    print(
+        f"[OmniVoice] Model loaded in {model_load_seconds:.2f}s; "
+        f"sample_rate={native_sample_rate}; model_snapshot={model_bytes / (1024**3):.2f} GiB",
+        flush=True,
+    )
+
     output.mkdir(parents=True, exist_ok=True)
     blind_dir = output / "blind-review"
     analysis_dir = output / "analysis"
@@ -346,6 +346,7 @@ def run(output: Path) -> dict[str, Any]:
 
     peak_rss_tts = peak_rss_mib()
     del model
+    del prompts
     gc.collect()
 
     # Import provenance helpers only after the TTS peak-RSS snapshot.
