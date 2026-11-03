@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 import platform
+import random
 import shutil
 import sys
 import time
@@ -221,6 +222,20 @@ def run(output: Path) -> dict[str, Any]:
     peak = peak_rss_mib()
     del tts
     gc.collect()
+
+    # Randomize identifiers independently of generation order, then keep a
+    # reproducible shuffled order in the blind review page and score sheet.
+    review_rng = random.Random(20261102)
+    review_rng.shuffle(mapping)
+    for index, row in enumerate(mapping, start=1):
+        source_path = blind_dir / row["file_name"]
+        new_id = f"sample_{index:02d}"
+        target_path = blind_dir / f"{new_id}.wav"
+        source_path.rename(target_path)
+        row["blind_id"] = new_id
+        row["file_name"] = target_path.name
+        row["sha256"] = sha256(target_path)
+    rows = mapping
     write_review(blind_dir, rows)
     for folder in (raw_dir, normalized_dir):
         for path in folder.glob("*"):
