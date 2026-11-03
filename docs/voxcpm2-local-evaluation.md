@@ -104,3 +104,11 @@ started manually. It installs CPU-only PyTorch and downloads the open model.
   timings, hashes, audio checks and watermark evidence.
 
 The job does not emit human-preference rankings or production approval.
+
+
+## CI baseline note — 3 November 2026
+
+The unrelated shared CI path-classifier and CJK-regex test failures were fixed
+on the base branch in PR #10 (merged as cc5633f5e7840bfb18f759226c1e76d7b6f0b645).
+This benchmark branch is being rechecked against that updated base. The
+successful VoxCPM2 CPU synthesis result above remains unchanged.
