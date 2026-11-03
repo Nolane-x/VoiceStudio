@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 import platform
+import random
 import shutil
 import sys
 import time
@@ -224,7 +225,114 @@ def run(output: Path) -> dict[str, Any]:
     peak = peak_rss_mib()
     del tts
     gc.collect()
+
+    # Randomize IDs independently of generation order before exposing samples.
+    review_rng = random.Random(20261103)
+    review_rng.shuffle(mapping)
+    for index, row in enumerate(mapping, start=1):
+        source_path = blind_dir / row["file_name"]
+        new_id = f"sample_{index:03d}"
+        target_path = blind_dir / f"{new_id}.wav"
+        source_path.rename(target_path)
+        row["blind_id"] = new_id
+        row["file_name"] = target_path.name
+        row["sha256"] = sha256(target_path)
+    rows = mapping
     write_review(blind_dir, rows)
+
+    # Blind paired comparisons: five voices x three text types, 8 steps vs 32.
+    # The order of the two clips is randomized and only disclosed in analysis.
+    pair_dir = output / "blind-ab-review"
+    pair_dir.mkdir(parents=True, exist_ok=True)
+    pair_groups = []
+    for voice in VOICE_IDS:
+        for case_name in TEXT_CASES:
+            low = next(
+                r for r in mapping
+                if r["voice_style"] == voice and r["text_case"] == case_name
+                and r["total_steps"] == 8
+            )
+            high = next(
+                r for r in mapping
+                if r["voice_style"] == voice and r["text_case"] == case_name
+                and r["total_steps"] == 32
+            )
+            pair_groups.append((low, high))
+    pair_rng = random.Random(20261104)
+    pair_rng.shuffle(pair_groups)
+    pair_mapping = []
+    for index, (low, high) in enumerate(pair_groups, start=1):
+        low_audio, low_rate = sf.read(blind_dir / low["file_name"], dtype="float32")
+        high_audio, high_rate = sf.read(blind_dir / high["file_name"], dtype="float32")
+        if low_rate != OUTPUT_RATE or high_rate != OUTPUT_RATE:
+            raise RuntimeError("A/B source sample has an unexpected sample rate.")
+        low_first = bool(pair_rng.getrandbits(1))
+        first, second = (low_audio, high_audio) if low_first else (high_audio, low_audio)
+        gap = np.zeros(int(0.7 * OUTPUT_RATE), dtype=np.float32)
+        paired_audio = np.concatenate([first, gap, second]).astype(np.float32)
+        pair_id = f"pair_{index:02d}"
+        temp_path = pair_dir / f"{pair_id}.raw.wav"
+        final_path = pair_dir / f"{pair_id}.wav"
+        sf.write(temp_path, paired_audio, OUTPUT_RATE, subtype="PCM_24")
+        pair_watermark = helper.watermark_and_verify(
+            temp_path, OUTPUT_BITS, context=f"korvatts.stress.ab.{pair_id}",
+        )
+        pair_checks = helper.validate_audio(temp_path, OUTPUT_RATE, OUTPUT_BITS)
+        shutil.copy2(temp_path, final_path)
+        temp_path.unlink(missing_ok=True)
+        pair_mapping.append({
+            "pair_id": pair_id,
+            "file_name": final_path.name,
+            "voice_style": low["voice_style"],
+            "text_case": low["text_case"],
+            "first_source_sample_id": low["blind_id"] if low_first else high["blind_id"],
+            "second_source_sample_id": high["blind_id"] if low_first else low["blind_id"],
+            "first_steps": 8 if low_first else 32,
+            "second_steps": 32 if low_first else 8,
+            "watermark": "verified",
+            "watermark_confidence": pair_watermark.get("watermark_confidence"),
+            "audio_validation": pair_checks,
+            "sha256": sha256(final_path),
+        })
+    pair_review_rows = [
+        {"pair_id": row["pair_id"], "file_name": row["file_name"]}
+        for row in pair_mapping
+    ]
+    pair_rng.shuffle(pair_review_rows)
+    pair_sections = []
+    for row in pair_review_rows:
+        pair_id = html.escape(row["pair_id"])
+        filename = html.escape(row["file_name"])
+        pair_sections.append(
+            f'<section><h2>{pair_id}</h2><audio controls preload="none" src="{filename}"></audio></section>'
+        )
+    pair_page = (
+        "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>KorvaTTS blind A/B review</title>"
+        "<style>body{font:16px system-ui;max-width:800px;margin:32px auto;padding:0 18px}"
+        "audio{width:100%}section{padding:12px 0;border-bottom:1px solid #ddd}</style>"
+        "<h1>Blind A/B comparison</h1>"
+        "<p>Each file contains two clips separated by a short silent gap. "
+        "Choose the better-sounding first or second clip; settings and voice labels are hidden.</p>"
+        + "".join(pair_sections) + "</html>"
+    )
+    (pair_dir / "index.html").write_text(pair_page, encoding="utf-8")
+    pair_columns = [
+        "pair_id", "preferred_clip_first_or_second_or_tie",
+        "naturalness_difference_1_5", "tone_preservation_1_5",
+        "pronunciation_1_5", "prosody_1_5", "notes",
+    ]
+    with (pair_dir / "human-ab-review.csv").open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=pair_columns)
+        writer.writeheader()
+        for row in pair_review_rows:
+            writer.writerow({"pair_id": row["pair_id"], **{key: "" for key in pair_columns[1:]}})
+    (analysis_dir / "ab-pair-mapping.json").write_text(
+        json.dumps(pair_mapping, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
     for folder in (raw_dir, normalized_dir):
         for path in folder.glob("*"):
             path.unlink(missing_ok=True)
@@ -279,6 +387,7 @@ def run(output: Path) -> dict[str, Any]:
         "step_counts": list(STEP_COUNTS),
         "planned_samples": len(VOICE_IDS) * len(TEXT_CASES) * len(STEP_COUNTS),
         "generated_samples": len(rows),
+        "blind_ab_pair_count": len(pair_mapping),
         "total_audio_seconds": round(sum(r["duration_seconds"] for r in rows), 3),
         "total_synthesis_seconds": round(total_compute, 3),
         "overall_audio_over_compute": round(
@@ -296,6 +405,7 @@ def run(output: Path) -> dict[str, Any]:
             "No new speaker identities or contributor recordings are introduced.",
         ],
         "samples": rows,
+        "blind_ab_pairs": pair_mapping,
     }
     (analysis_dir / "benchmark.json").write_text(
         json.dumps({"summary": summary, "sample_mapping": mapping},
