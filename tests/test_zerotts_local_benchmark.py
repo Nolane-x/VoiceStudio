@@ -30,6 +30,8 @@ class ZeroTtsLocalBenchmarkTests(unittest.TestCase):
         self.assertIn('importlib.metadata.version("zerotts")', source)
         self.assertIn("HfApi().model_info(MODEL_ID, files_metadata=False).sha", source)
         self.assertIn("revision=revision", source)
+        self.assertIn("shutil.copytree(snapshot_dir, materialized_model, symlinks=False)", source)
+        self.assertIn("materialized_model,", source)
         self.assertIn('providers=["CPUExecutionProvider"]', source)
 
     def test_checks_both_one_shot_and_streaming_interfaces(self):
