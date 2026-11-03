@@ -191,9 +191,17 @@ def run(output: Path) -> dict[str, Any]:
     # reference-audio clone path; they are not real people or production assets.
     reference_dir = Path("/tmp/omnivoice-synthetic-references")
     reference_dir.mkdir(parents=True, exist_ok=True)
-    print("[OmniVoice] Generate two local synthetic Vietnamese reference clips", flush=True)
+    korva_revision = HfApi().model_info("dogenthq/KorvaTTS", files_metadata=False).sha
+    if not isinstance(korva_revision, str) or len(korva_revision) != 40:
+        raise RuntimeError("Could not resolve an immutable KorvaTTS reference-model revision.")
+    print(
+        f"[OmniVoice] Generate two local synthetic Vietnamese references "
+        f"with KorvaTTS@{korva_revision}",
+        flush=True,
+    )
     korva_assets = Path(snapshot_download(
         repo_id="dogenthq/KorvaTTS",
+        revision=korva_revision,
         allow_patterns=["onnx/*", "voice_styles/*"],
         cache_dir=str(hf_cache),
     ))
@@ -396,6 +404,7 @@ def run(output: Path) -> dict[str, Any]:
         "audio_tokenizer_weight_license": "not_confirmed_in_current_hugging_face_repo_metadata",
         "omnivoice_package_version": omnivoice_version,
         "korvatts_package_version": korvatts_version,
+        "korvatts_reference_model_revision": korva_revision,
         "device": "cpu",
         "dtype": "float32",
         "attention_implementation": "sdpa",
