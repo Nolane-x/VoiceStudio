@@ -27,6 +27,8 @@ class StepSweepTests(unittest.TestCase):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("shared_seed = 20261102 + voice_index", source)
         self.assertIn("seed=shared_seed", source)
+        self.assertIn("random.Random(20261102)", source)
+        self.assertIn("source_path.rename(target_path)", source)
 
     def test_local_only_with_no_provider_calls(self):
         source = SCRIPT.read_text(encoding="utf-8")
