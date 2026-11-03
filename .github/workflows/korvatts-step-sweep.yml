@@ -8,6 +8,8 @@ on:
       - ".github/workflows/korvatts-step-sweep.yml"
       - "scripts/benchmark_korvatts_step_sweep.py"
       - "scripts/benchmark_korvatts_stress_matrix.py"
+      - "tests/test_korvatts_stress_matrix.py"
+      - "docs/korvatts-stress-matrix.md"
 
 permissions:
   contents: read
