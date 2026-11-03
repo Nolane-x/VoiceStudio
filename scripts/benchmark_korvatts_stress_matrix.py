@@ -147,8 +147,10 @@ def run(output: Path) -> dict[str, Any]:
         num_threads=max(1, min(4, os.cpu_count() or 1)),
     )
     model_load = time.perf_counter() - start_load
-    if set(tts.list_voices()) < set(VOICE_IDS):
-        raise RuntimeError("Some selected bundled voices are missing.")
+    available_voices = set(tts.list_voices())
+    missing_voices = set(VOICE_IDS) - available_voices
+    if missing_voices:
+        raise RuntimeError(f"Selected bundled voices are missing: {sorted(missing_voices)}")
     if int(tts.sample_rate) != SAMPLE_RATE:
         raise RuntimeError(f"Expected 44.1kHz native output, got {tts.sample_rate}Hz.")
 
