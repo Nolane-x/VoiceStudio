@@ -13,7 +13,7 @@ runner before comparing it against KorvaTTS.
 - Source: https://github.com/zeroweight-ai/ZeroTTS
 - PyPI package: zerotts==0.1.5
 - PyPI wheel SHA-256:
-  9b4ceade901c224db33f675794c2c2f7c6d9190fd8f97b74c85efe62cef1c04
+  9b4ceade901c224db33f675794c2c2f7c6d9190fd8f97b74c85efe62cef1c04b
 - Model: https://huggingface.co/zeroweight-ai/ZeroTTS
 - Inference: ONNX Runtime CPU, NumPy, tokenizer and codec decoder; no
   PyTorch is needed for TTS synthesis itself.
