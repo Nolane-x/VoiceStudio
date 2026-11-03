@@ -82,3 +82,18 @@ The benchmark is branch-scoped to experiment/zerotts-vietnamese-cpu-benchmark.
 It does not alter the production voice-library manifest, published assets or
 release workflow. It does not use any hosted TTS endpoint or paid synthesis
 service.
+
+
+## ONNX external-data cache handling
+
+The HF Hub cache stores snapshot files as symlinks to content-addressed blobs.
+The ZeroTTS MOSS decoder graph uses ONNX external tensor data. On a Linux
+runner, ONNX Runtime resolves the graph symlink to its blob directory and
+rejects its sibling external-data path as escaping the allowed model folder.
+
+The benchmark therefore downloads the exact immutable model revision and
+materializes the snapshot into a temporary physical directory with symlinks
+dereferenced before creating ONNX sessions. This does not modify the model or
+weights; it preserves the graph and its external data files as siblings in a
+normal local directory. The copy lives under /tmp, outside the uploaded
+benchmark artifact, and is not added to the VoiceStudio library.
