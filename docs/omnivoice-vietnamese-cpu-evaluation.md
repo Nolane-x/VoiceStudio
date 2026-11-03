@@ -30,7 +30,7 @@ Vietnamese screen uses same-language Vietnamese reference-audio cloning.
   Higgs Audio V2 tokenizer.
 - Materialize the pinned snapshots into a local CPU inference directory.
 - Use PyTorch CPU, float32 and SDPA attention; no CUDA device is used.
-- Generate two short Vietnamese reference clips locally with KorvaTTS 0.1.3:
+- Resolve an immutable KorvaTTS model commit, then generate two short Vietnamese reference clips locally with KorvaTTS 0.1.3:
   bao_kim and gia_bao. Their exact spoken text is known.
 - Encode each synthetic reference once as a reusable VoiceClonePrompt.
 - Generate two Vietnamese target passages per prompt, four outputs total,
