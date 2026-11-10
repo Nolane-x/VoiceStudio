@@ -28,12 +28,12 @@ def test_example_jobs_validate_against_the_published_schema():
         assert MODULE.validate_job_payload(payload) == payload
 
 
-def test_sentence_splitter_keeps_all_words_and_sentence_boundaries():
+def test_sentence_splitter_packs_short_sentences_without_losing_boundaries():
     text = "Xin chào! Đây là câu thứ hai. Và đây là câu cuối."
-    chunks = MODULE.split_text(text)
-    assert chunks == ["Xin chào!", "Đây là câu thứ hai.", "Và đây là câu cuối."]
-    assert " ".join(chunks).replace(" ", "") == text.replace(" ", "")
-
+    chunks = MODULE.split_text(text, max_chars=30)
+    assert chunks == ["Xin chào! Đây là câu thứ hai.", "Và đây là câu cuối."]
+    assert all(0 < len(chunk) <= 30 for chunk in chunks)
+    assert " ".join(chunks) == text
 
 def test_long_sentences_are_split_at_word_boundaries():
     text = " ".join(f"word{i}" for i in range(120))
@@ -42,6 +42,26 @@ def test_long_sentences_are_split_at_word_boundaries():
     assert all(0 < len(chunk) <= 72 for chunk in chunks)
     assert " ".join(chunks) == text
 
+
+
+def test_longform_with_192_short_sentences_stays_under_chunk_limit():
+    segments = [
+        {
+            "id": f"seg-{index:02d}",
+            "text": (
+                "First sentence. Second sentence. Third sentence. "
+                "Fourth sentence. Fifth sentence."
+            ),
+            "pause_ms_after": 240,
+        }
+        for index in range(38)
+    ]
+    plan = MODULE.plan_rendered_chunks(segments)
+    assert len(segments) == 38
+    assert len(plan) == 38
+    assert len(plan) <= MODULE.MAX_RENDERED_CHUNKS
+    assert all(len(item["text"]) <= MODULE.MAX_CHUNK_CHARS for item in plan)
+    assert all(item["chunk_count"] == 1 for item in plan)
 
 def test_caption_timestamps_use_srt_and_vtt_separators():
     assert MODULE.format_timestamp(65.25) == "00:01:05,250"
@@ -88,3 +108,12 @@ def test_watermarking_is_streamed_and_each_saved_block_is_rechecked():
     assert "detect_watermark(waveform, SAMPLE_RATE)" in source
     assert "mark_synthetic(" in source
     assert "PCM_24" in source
+
+
+if __name__ == "__main__":
+    executed = 0
+    for name, test in sorted(globals().copy().items()):
+        if name.startswith("test_") and callable(test):
+            test()
+            executed += 1
+    print(f"PASS: {executed} video voice contract tests")
