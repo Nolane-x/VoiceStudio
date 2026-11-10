@@ -147,6 +147,69 @@ jobs:
         run: |
           export VOICE_JOB_JSON="$(cat voice-library/video-job.example.vi.json)"
           python scripts/render_video_voice.py --output dist/video-voice-smoke
+
+      - name: End-to-end long-form Vietnamese narration smoke
+        run: |
+          export VOICE_JOB_JSON="$(cat voice-library/video-job.example.vi-long.json)"
+          python scripts/render_video_voice.py --output dist/video-voice-long-smoke
+
+      - name: Verify long-form chunk, caption, audio and watermark integrity
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import wave
+          from pathlib import Path
+
+          output = Path("dist/video-voice-long-smoke")
+          payload = json.loads(Path("voice-library/video-job.example.vi-long.json").read_text(encoding="utf-8"))
+          manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+          timeline = manifest["segments"]
+          audio = manifest["audio"]
+          watermark = audio["watermark"]
+
+          assert manifest["language"] == "vi" and manifest["engine"] == "vieneu"
+          assert len(timeline) >= 15, f"Expected a multi-chunk long-form render, got {len(timeline)} chunks"
+          expected = {segment["id"]: segment["text"] for segment in payload["segments"]}
+          grouped = {}
+          previous_end = 0.0
+          for row in timeline:
+              assert row["end_seconds"] > row["start_seconds"], row
+              assert row["start_seconds"] >= previous_end - 0.001, row
+              previous_end = row["end_seconds"]
+              grouped.setdefault(row["id"], []).append(row)
+          assert set(grouped) == set(expected)
+          for segment_id, original in expected.items():
+              rows = sorted(grouped[segment_id], key=lambda row: row["chunk_index"])
+              assert [row["chunk_index"] for row in rows] == list(range(1, len(rows) + 1))
+              assert all(row["chunk_count"] == len(rows) for row in rows)
+              rebuilt = " ".join(" ".join(row["text"] for row in rows).split())
+              assert rebuilt == " ".join(original.split()), f"Narration text lost or reordered in {segment_id}"
+          assert timeline[-1]["end_seconds"] <= audio["duration_seconds"] + 0.1
+
+          wav_path = output / "narration.wav"
+          with wave.open(str(wav_path), "rb") as wav:
+              assert wav.getnchannels() == 1
+              assert wav.getframerate() == 48000
+              assert wav.getsampwidth() == 3
+              duration = wav.getnframes() / wav.getframerate()
+          assert duration > 30.0, f"Expected multiple watermark blocks, got {duration:.2f}s"
+          assert abs(duration - audio["duration_seconds"]) < 0.05
+          assert audio["checks"] == "passed"
+          assert audio["clipped_ratio"] <= 0.001
+          assert watermark["status"] == "verified"
+          assert watermark["block_count"] >= 2
+          assert audio["sha256"] == hashlib.sha256(wav_path.read_bytes()).hexdigest()
+
+          expected_captions = [row["text"] for row in timeline]
+          srt_blocks = [block for block in (output / "captions.srt").read_text(encoding="utf-8").strip().split("\n\n") if block]
+          vtt_blocks = [block for block in (output / "captions.vtt").read_text(encoding="utf-8").strip().split("\n\n")[1:] if block]
+          srt_captions = ["\n".join(block.splitlines()[2:]) for block in srt_blocks]
+          vtt_captions = ["\n".join(block.splitlines()[1:]) for block in vtt_blocks]
+          assert srt_captions == expected_captions
+          assert vtt_captions == expected_captions
+          print(f"Long-form VI smoke passed: {duration:.1f}s, {len(timeline)} chunks, {watermark['block_count']} verified watermark blocks")
+          PY
       - name: End-to-end English Kokoro video narration smoke
         run: |
           export VOICE_JOB_JSON="$(cat voice-library/video-job.example.en-kokoro.json)"
@@ -159,6 +222,15 @@ jobs:
           path: dist/voice-library-smoke/
           if-no-files-found: warn
           retention-days: 7
+      - name: Upload long-form Vietnamese narration smoke assets
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: video-voice-long-smoke
+          path: dist/video-voice-long-smoke/
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Upload video narration smoke assets
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

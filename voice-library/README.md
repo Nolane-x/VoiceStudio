@@ -97,6 +97,10 @@ is a genuine statement by a real speaker.
 See [ATTRIBUTION.md](ATTRIBUTION.md) and [sources.json](sources.json) for
 the exact source records.
 
+## Voice expansion roadmap
+
+See [VOICE_EXPANSION.md](VOICE_EXPANSION.md) for the multi-thousand English/Vietnamese catalog plan, provider discovery registry, voice identity counting rules, license gates, and original voice-design blueprint workflow.
+
 ## Video narration jobs (the production interface)
 
 The library workflow is also a **reusable GitHub Actions TTS service**. A
@@ -109,11 +113,14 @@ segments. See the validated contract and examples:
 - [Job JSON Schema](video-job.schema.json)
 - [Vietnamese example](video-job.example.vi.json)
 - [English VieNeu example](video-job.example.en.json)
+- [Long-form Vietnamese narration smoke](video-job.example.vi-long.json)
 - [English Kokoro example](video-job.example.en-kokoro.json)
 
 The AI should choose a canonical `voice_id` from the generated
 `manifest.json`. The VieNeu examples are safe starting references; exact
-voice IDs are checked against the pinned preset list at runtime. Piper is
+voice IDs are checked against the pinned preset list at runtime. The long-form
+Vietnamese sample exercises multi-chunk rendering, text preservation, captions
+and streaming watermark verification over multiple 30-second audio blocks. Piper is
 English-only and its rights are not blanket commercially cleared, so a
 Piper job is rejected unless `acknowledge_piper_restrictions` is explicitly
 set after reviewing the recorded rights warning.
@@ -167,3 +174,24 @@ The final audio is checked in a streaming pass for finite samples, RMS,
 clipping, 48 kHz mono PCM-24 format and post-save watermark verification.
 These are machine checks, not a substitute for listening to the finished
 voiceover before publishing a video.
+
+
+
+### ElevenLabs marketplace and Eleven v4
+
+VoiceStudio includes an optional marketplace-discovery workflow for public ElevenLabs shared voices and a separate manually confirmed Eleven v4 benchmark. Discovery captures language-tagged, high-quality/professional shared-voice metadata and provider adoption signals; it does not download or rehost marketplace audio. The premium benchmark uses the current Eleven v4 Text-to-Dialogue API, with up to eight paid synthesis requests per manual run, and produces separate blind-listening and private analysis artifacts. It is disabled on public repositories and cannot run without explicit paid-usage confirmation. See VOICE_EXPANSION.md for the voice-rights, language-routing and evaluation rules.
+
+
+Human review of Eleven v4 blind auditions can be merged back into a ranked Vietnamese/English voice report with `scripts/merge_elevenlabs_v4_blind_scores.py`; see `VOICE_EXPANSION.md` for validation rules and the command.
+
+
+Google Gemini prebuilt Vietnamese and English voice metadata can be indexed with the read-only `Discover Gemini prebuilt Vietnamese and English voices` Actions workflow. It filters private prompted/replicated voices, does not synthesize audio, and does not grant redistribution rights. See `VOICE_EXPANSION.md` for scope and plan requirements.
+
+
+The official Gemini prebuilt studio voice names are indexed in `gemini-prebuilt-studio-voices.json`. The manually dispatched Gemini 3.8 Flash/Flash-Lite audition workflow produces matched, blind VI/EN samples under explicit paid-use gates. See `VOICE_EXPANSION.md` for limits and review commands.
+
+
+To build a larger original voice-actor library, use the adult contributor intake contract at `contributions/README.md`, the manifest schema `voice-contribution.schema.json`, and validator `../scripts/validate_voice_contribution.py`. The intake directory is policy/schema only; it does not yet contain contributed voices.
+
+
+VoiceStudio also indexes xAI's provider-managed Grok built-in voices for Vietnamese and English through a metadata-only workflow. It excludes custom/user-owned voices and does not infer popularity from listing order. The manual paid benchmark is separately gated; see `VOICE_EXPANSION.md`.

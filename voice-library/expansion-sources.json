@@ -1,0 +1,847 @@
+{
+  "schema_version": 1,
+  "catalog_name": "VoiceStudio voice expansion discovery catalog",
+  "last_researched": "2026-11-01",
+  "count_policy": {
+    "identity_counting": "Count unique consented speaker/voice identities once; language variants and prompt profiles are not new identities.",
+    "profile_policy": "Voice-design blueprints are not voices until rendered, human-reviewed, and saved under provider terms.",
+    "public_distribution": "Only sources with explicit redistribution/sharing rights may be bundled into a public voice catalog."
+  },
+  "current_inventory_estimate": {
+    "piper_en": {
+      "distinct_speaker_ids": 904,
+      "language_variants": 904,
+      "commercial_status": "restricted_rights_evidence_per_voice"
+    },
+    "kokoro_en": {
+      "distinct_speaker_ids": 4,
+      "language_variants": 4,
+      "commercial_status": "apache_2_0_model_and_voice_assets"
+    },
+    "vieneu_v3turbo": {
+      "distinct_speaker_ids": 25,
+      "language_variants": 50,
+      "commercial_status": "upstream_model_card_states_preset_consent_and_commercial_generated_audio"
+    },
+    "estimated_distinct_identities": 933,
+    "estimated_language_variants": 958,
+    "full_build_verified": false,
+    "evidence": "Pinned VieNeu SDK metadata in GitHub Actions Voice Library smoke run #55 lists 25 preset IDs; only two were actually rendered in that smoke."
+  },
+  "production_candidates": [
+    {
+      "id": "elevenlabs-eleven-v4",
+      "provider": "ElevenLabs",
+      "model_id": "eleven_v4",
+      "model_family": [
+        "eleven_v4",
+        "eleven_v4_turbo"
+      ],
+      "kind": "managed_cloud_speech_synthesis",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": ">90",
+      "recommended_api": "POST /v1/text-to-dialogue",
+      "access": "ElevenLabs API key; commercial audio use requires an eligible paid plan",
+      "public_redistribution": "voice identity and marketplace assets are not independently redistributable",
+      "status": "highest_priority_paid_quality_benchmark_candidate",
+      "source": "https://elevenlabs.io/docs/overview/models",
+      "changelog": "https://elevenlabs.io/docs/changelog/2026/9/28",
+      "endpoint_reference": "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert",
+      "note": "Eleven v4 is the current flagship quality/expressive generation target for creator narration, audiobooks and multi-speaker dialogue. The model family documents Vietnamese and English among 90+ languages. Use the Text-to-Dialogue API for eleven_v4; current endpoint guidance recommends keeping all input text at or below 2,000 characters per request for reliable generation. Benchmark actual voice IDs in both languages; voice-design blueprints are not model voice IDs."
+    },
+    {
+      "id": "xai-grok-builtin-tts-voice-library",
+      "provider": "xAI",
+      "kind": "provider_managed_builtin_voice_catalog",
+      "discovery_endpoint": "GET /v1/tts/voices",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "supported_language_count": 20,
+      "catalog_refresh": "weekly GitHub Actions metadata snapshot",
+      "access": "XAI_API_KEY; metadata-only endpoint",
+      "public_redistribution": "not-granted-by-this-registry",
+      "custom_voice_endpoint_excluded": "GET /v1/custom-voices",
+      "status": "high_priority_builtin_voice_discovery_and_paid_benchmark_candidate",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech",
+      "voice_overview": "https://docs.x.ai/developers/model-capabilities/audio/voice",
+      "api_reference": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+      "note": "The official built-in endpoint returns provider-managed voice IDs and names. xAI's TTS language reference includes Vietnamese and English among 20 BCP-47 codes and states that built-in voices can speak any supported language. The API has no popularity counters; VoiceStudio does not infer adoption from listing order. Custom voices are stored in a separate endpoint and are not queried. The official Voice Overview currently describes 25 built-in profiles. VoiceStudio keeps a static documentation snapshot so the menu remains browsable without an API key, while the authenticated API snapshot is refreshed when XAI_API_KEY is available.",
+      "static_voice_snapshot": "voice-library/grok-builtin-studio-voices.json",
+      "documented_builtin_voice_count": 26,
+      "paid_benchmark_workflow": ".github/workflows/grok-tts-builtin-benchmark.yml",
+      "paid_benchmark_max_requests": 8,
+      "paid_benchmark_max_characters_per_request": 3000,
+      "documented_price_usd_per_million_characters": 15
+    },
+    {
+      "id": "google-gemini-prebuilt-voice-library",
+      "provider": "Google Gemini API",
+      "kind": "provider_hosted_prebuilt_voice_catalog",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "discovery_endpoint": "GET /v1beta/voices",
+      "filter": "type=prebuilt",
+      "page_size_max": 1000,
+      "page_cap": 10,
+      "metadata_fields": [
+        "language_code",
+        "region_code",
+        "accent",
+        "persona",
+        "context",
+        "gender",
+        "pitch",
+        "description",
+        "model"
+      ],
+      "models": [
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts"
+      ],
+      "access": "Google Gemini API key; ListVoices is metadata-only and does not synthesize audio",
+      "preview": "ListVoices does not return sample_audio for prebuilt voices",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_voice_discovery_source",
+      "source": "https://ai.google.dev/api/voices",
+      "note": "The discovery crawler filters type=prebuilt and Vietnamese/English language-code prefixes. Caller-owned prompted and replicated voice IDs are deliberately excluded. The API returns provider-managed identifiers and metadata, not preview audio or independent redistribution rights. VoiceStudio also publishes the provider's 30 official prebuilt studio voice names in voice-library/gemini-prebuilt-studio-voices.json and has a manually confirmed benchmark for both Gemini 3.8 TTS models. The extended list is not ranked by usage; popularity must not be inferred from catalog order.",
+      "prebuilt_studio_voice_count": 30,
+      "extended_voice_library_scale": "hundreds of additional provider-managed voices",
+      "benchmark_workflow": ".github/workflows/gemini-tts-prebuilt-benchmark.yml",
+      "supported_models": [
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts"
+      ],
+      "quality_method": "matched four-scenario Vietnamese/English blind-listening benchmark, 48 kHz/24-bit normalized and VoiceStudio-watermarked",
+      "paid_run_cap": 8,
+      "manual_confirmation_required": true,
+      "repository_must_be_private_for_paid_workflow": true
+    },
+    {
+      "id": "google-gemini-3-8-tts",
+      "provider": "Google",
+      "model_ids": [
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts"
+      ],
+      "kind": "managed_cloud_tts_and_voice_design",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": {
+        "flash": 130,
+        "flash_lite": 101
+      },
+      "voice_catalog": {
+        "prebuilt_voices": 30,
+        "extended_voice_library": "more_than_2000"
+      },
+      "access": "Google Gemini API or Gemini Enterprise; pay_as_you_go",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_benchmark_candidate",
+      "source": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash-tts",
+      "note": "Google documents Vietnamese and English support, 30 prebuilt voices and a separate Extended Voice Library exceeding 2,000 curated voices in Gemini Enterprise. Managed provider voices are not assets to bundle or redistribute."
+    },
+    {
+      "id": "elevenlabs-shared-voice-marketplace",
+      "provider": "ElevenLabs",
+      "kind": "provider_hosted_public_voice_marketplace",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "catalog_scale": "10,000+ community-shared voices documented by provider",
+      "discovery_endpoint": "GET /v1/shared-voices",
+      "supported_filters": [
+        "language",
+        "locale",
+        "category",
+        "accent",
+        "use_case"
+      ],
+      "documented_sort_signals": [
+        "trending",
+        "usage_character_count_1y",
+        "cloned_by_count"
+      ],
+      "access": "Provider marketplace and account/plan permissions",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_voice_discovery_source",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "note": "VoiceStudio's discovery workflow retrieves only high_quality and professional marketplace categories for Vietnamese and English, sorted by provider-reported adoption signals. The famous category is intentionally excluded. Marketplace voice IDs and preview URLs remain provider-hosted; no audio is rehosted or bundled."
+    },
+    {
+      "id": "mistral-voxtral-mini-tts-3-0",
+      "provider": "Mistral AI",
+      "model_id": "voxtral-mini-tts-3-0",
+      "kind": "managed_cloud_tts_and_voice_cloning",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "documented_language_coverage": {
+        "languages": 35,
+        "regional_dialects": "50+"
+      },
+      "preset_voice_counts": {
+        "vi": 1,
+        "en_GB": 6,
+        "en_US": 4
+      },
+      "access": "Mistral API; paid provider usage",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "high_priority_provider_benchmark_candidate",
+      "source": "https://docs.mistral.ai/models/voxtral-mini-tts-3-0",
+      "language_source": "https://docs.mistral.ai/studio/audio/specs-and-limits/languages",
+      "note": "Published language documentation lists Vietnamese and English, with one Vietnamese preset and multiple UK/US English presets. Voice cloning is restricted to recordings with explicit authorization."
+    },
+    {
+      "id": "google-cloud-chirp3-hd",
+      "provider": "Google Cloud Text-to-Speech",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN",
+        "en-US",
+        "en-GB",
+        "en-AU",
+        "en-IN"
+      ],
+      "distinct_named_voice_styles": 30,
+      "access": "billing_required",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
+      "note": "Google documents 30 Chirp 3 HD styles, including Vietnamese vi-VN and multiple English locales. Pull exact locale/voice pairs with voices:list before large-scale synthesis."
+    },
+    {
+      "id": "elevenlabs-voice-design",
+      "provider": "ElevenLabs",
+      "kind": "synthetic_voice_design_api",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "previews_per_design_request": 3,
+      "shareability": "voice_design_previews_not_shareable_to_public_voice_library",
+      "access": "api_key_and_paid_account_usage_may_apply",
+      "status": "optional_private_account_expansion",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design",
+      "model_ids": [
+        "eleven_ttv_v3",
+        "eleven_multilingual_ttv_v2"
+      ],
+      "model_id_defaults_by_language": {
+        "vi": "eleven_ttv_v3",
+        "en": "eleven_multilingual_ttv_v2"
+      },
+      "language_source": "https://elevenlabs.io/docs/overview/models",
+      "note": "Text-to-Voice v3 supports Vietnamese and English. Multilingual v2 does not list Vietnamese, so VoiceStudio routes VI to eleven_ttv_v3 and EN to eleven_multilingual_ttv_v2 by default. Voice Design previews are account-scoped and are not public Voice Library assets."
+    },
+    {
+      "id": "fpt-ai-tts",
+      "provider": "FPT AI",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_voice_ids": 7,
+      "access": "provider_api_key",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://docs.fpt.ai/docs/vi/speech/api/text-to-speech/"
+    },
+    {
+      "id": "viettel-ai-tts",
+      "provider": "Viettel AI",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_voice_ids": 11,
+      "access": "provider_token_and_paid_package",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://viettelgroup.ai/en/document/tts"
+    },
+    {
+      "id": "vbee-tts",
+      "provider": "Vbee",
+      "kind": "managed_cloud_voice_catalog",
+      "language_codes": [
+        "vi-VN"
+      ],
+      "distinct_documented_realtime_voice_ids": 5,
+      "access": "provider_token_and_app_id",
+      "public_redistribution": "not_granted_by_this_registry",
+      "status": "provider_integration_candidate",
+      "source": "https://api-docs.vbee.vn/vbee-api/text-to-speech/realtime-api"
+    },
+    {
+      "id": "consented-original-human-voice-contributions",
+      "provider": "VoiceStudio community contribution pipeline",
+      "kind": "original_contributor_recordings",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "intake_schema": "voice-library/voice-contribution.schema.json",
+      "validator": "scripts/validate_voice_contribution.py",
+      "intake_directory": "voice-library/contributions/",
+      "status": "intake_contract_ready_no_contributions_claimed",
+      "eligibility": "adult contributor (18+) who is the recorded speaker",
+      "required_permissions": [
+        "tts_synthesis",
+        "voice_replication"
+      ],
+      "separate_opt_ins": [
+        "commercial_use",
+        "public_preview",
+        "public_distribution",
+        "model_training",
+        "derivative_voice_generation"
+      ],
+      "storage_policy": "only pseudonymous manifests and opaque vault references in public Git; signed consent, identity verification and raw audio remain in private access-controlled storage",
+      "production_gate": "approved rights review plus approved native-language pronunciation and long-form stability review",
+      "source": "https://github.com/Nolane-x/VoiceStudio/blob/main/voice-library/contributions/README.md",
+      "note": "This intake contract is an infrastructure prerequisite for building a large original voice actor library. It does not mean any contributors or usable voice assets have already been collected. Public figures and other named speakers must not be imitated without that exact speaker's explicit authorization."
+    }
+  ],
+  "research_only_or_blocked": [
+    {
+      "id": "kokoro-vietnamese-community",
+      "provider": "contextboxai",
+      "model": "contextboxai/Kokoro-Vietnamese",
+      "source_code": "iamdinhthuan/Kokoro-Vietnamese",
+      "language_codes": [
+        "vi"
+      ],
+      "listed_voicepack_count": 14,
+      "listed_voice_ids": [
+        "diem_trinh",
+        "hung_thinh",
+        "mai_linh",
+        "mai_loan",
+        "manh_dung",
+        "my_yen",
+        "ngoc_huyen",
+        "phat_tai",
+        "thanh_dat",
+        "thuc_trinh",
+        "tuan_ngoc",
+        "storyvert",
+        "duc_an",
+        "duc_duy"
+      ],
+      "repository_license": "Apache-2.0",
+      "model_hub_license_tag": "apache-2.0",
+      "voice_identity_consent": "not_documented_in_reviewed_public_readme",
+      "training_data_provenance": "not_sufficiently_documented_for_voice_identity_reuse",
+      "commercial_status": "not_cleared_for_public_voice_catalog",
+      "status": "research_only_blocked_pending_speaker_consent_and_dataset_provenance",
+      "production_eligible": false,
+      "source": "https://huggingface.co/contextboxai/Kokoro-Vietnamese",
+      "code_source": "https://github.com/iamdinhthuan/Kokoro-Vietnamese",
+      "note": "The public repository lists 14 named voicepacks and Apache-2.0 metadata. The reviewed README and training guide do not document a speaker-consent chain or enough dataset provenance to establish the right to redistribute each voice identity. Do not render into a public catalogue or ship voicepacks until rights are verified separately from the code/model license."
+    },
+    {
+      "id": "f5tts-vietnamese-vivoice",
+      "provider": "hynt",
+      "model": "hynt/F5-TTS-Vietnamese-ViVoice",
+      "language_codes": [
+        "vi"
+      ],
+      "model_card_license": "CC-BY-NC-SA-4.0",
+      "declared_datasets": [
+        "ViVoice",
+        "VLSP2021",
+        "VLSP2022",
+        "VLSP2023"
+      ],
+      "commercial_status": "noncommercial_sharealike_restriction",
+      "status": "blocked_for_monetized_production",
+      "production_eligible": false,
+      "source": "https://huggingface.co/hynt/F5-TTS-Vietnamese-ViVoice",
+      "note": "The model card declares CC-BY-NC-SA-4.0; exclude from monetized production unless a separate license expressly permits the intended use."
+    },
+    {
+      "id": "omnivoice-vietnamese-dolly",
+      "provider": "splendor1811",
+      "model": "splendor1811/omnivoice-vietnamese",
+      "language_codes": [
+        "vi"
+      ],
+      "source_speaker_count": 152,
+      "model_card_license": "apache-2.0",
+      "training_dataset": "dolly-vn/dolly-audio-1000h-vietnamese",
+      "dataset_license": "CC-BY-NC-SA-4.0",
+      "commercial_status": "research_only_noncommercial_dataset",
+      "status": "blocked_for_monetized_production",
+      "source": "https://huggingface.co/splendor1811/omnivoice-vietnamese"
+    },
+    {
+      "id": "g-omnivoice",
+      "provider": "g-group-ai-lab",
+      "model": "g-group-ai-lab/g-omnivoice",
+      "language_codes": [
+        "vi"
+      ],
+      "access": "gated",
+      "status": "blocked_pending_access_and_tokenizer_rights_review",
+      "source": "https://huggingface.co/g-group-ai-lab/g-omnivoice"
+    },
+    {
+      "id": "fish-audio-s2-pro",
+      "provider": "Fish Audio",
+      "model": "fishaudio/s2-pro",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "license": "fish-audio-research-license",
+      "commercial_status": "separate_commercial_license_required",
+      "status": "licensed_candidate_only",
+      "source": "https://huggingface.co/fishaudio/s2-pro"
+    },
+    {
+      "id": "cosyvoice3",
+      "provider": "FunAudioLLM",
+      "model": "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
+      "language_codes": [
+        "en",
+        "zh",
+        "ja",
+        "ko",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ru"
+      ],
+      "license": "apache-2.0",
+      "commercial_status": "review_model_and_upstream_terms",
+      "status": "english_comparison_candidate_no_vietnamese",
+      "source": "https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+    },
+    {
+      "id": "pocket-tts",
+      "provider": "Kyutai",
+      "model": "kyutai/pocket-tts",
+      "language_codes": [
+        "en",
+        "fr",
+        "de",
+        "pt",
+        "it",
+        "es"
+      ],
+      "license": "cc-by-4.0",
+      "commercial_status": "review_attribution_and_gated_access",
+      "status": "english_cpu_streaming_candidate_no_vietnamese",
+      "source": "https://huggingface.co/kyutai/pocket-tts"
+    },
+    {
+      "id": "khanhtts-omnivoice",
+      "provider": "kjanh",
+      "model": "kjanh/KhanhTTS-OmniVoice",
+      "language_codes": [
+        "vi",
+        "en"
+      ],
+      "model_card_license": "apache-2.0",
+      "commercial_status": "dataset_and_base_weight_rights_unresolved",
+      "status": "research_only_pending_provenance_review",
+      "source": "https://huggingface.co/kjanh/KhanhTTS-OmniVoice"
+    }
+  ],
+  "evidence_policy": [
+    "Model downloads, likes, repository stars and leaderboard standings are discovery signals, not voice quality scores.",
+    "No celebrity, public-figure, creator, or identifiable person's voice may be imitated without explicit authorization.",
+    "A model's code license does not automatically license its weights, datasets, tokenizers, speaker recordings, or generated voice identities.",
+    "Speaker counts in ASR datasets do not create voice catalog entries. Dataset training rights, speaker identity rights, cloning consent, and public redistribution are separate approvals.",
+    "A create-from-preview POST has no documented idempotency-key contract. VoiceStudio tags each created voice with the source generated_voice_id and reconciles through List Voices before retries; ambiguous outcomes require manual confirmation.",
+    "Market discovery must keep adoption signals (downloads, likes, trends), listener preference (blind votes/MOS), technical benchmarks (WER/RTFx/SIM), creator deployment evidence, and legal rights as separate signal families.",
+    "Popular commercial voices may inspire broad delivery archetypes only. Do not copy, clone, imitate or publish a named creator's or identifiable person's voice without explicit authorization; create original synthetic personas or use consented voice actors.",
+    "An Apache-2.0 code or model repository tag does not independently establish consent from the speakers represented by individual voicepacks. A named voice preset requires a separate documented speaker-consent and training-data provenance review before public catalogue publication."
+  ],
+  "research_data_sources": [
+    {
+      "id": "mozilla-common-voice-27-vietnamese",
+      "provider": "Mozilla Common Voice / Mozilla Data Collective",
+      "dataset_version": "27.0",
+      "language_codes": [
+        "vi"
+      ],
+      "clips": 20605,
+      "hours_recorded": 22.97,
+      "hours_validated": 7.81,
+      "speaker_count": 419,
+      "regional_variants": [
+        "Hue",
+        "Saigon",
+        "Hanoi"
+      ],
+      "license": "CC0-1.0",
+      "restrictions": [
+        "Do not determine speaker identities",
+        "Do not re-host or re-share the dataset"
+      ],
+      "intended_use": "ASR and language evaluation; any acoustic/model training must respect Mozilla dataset terms and must not extract or publish speaker identities",
+      "voice_catalog_eligibility": "not_a_speaker_identity_source",
+      "status": "language_evaluation_only_no_identity_cloning",
+      "source": "https://mozilladatacollective.com/datasets/cmu5vci3w00agnq07hy4nbauv"
+    },
+    {
+      "id": "yodalingua-vietnamese",
+      "provider": "YodaLingua",
+      "language_codes": [
+        "vi"
+      ],
+      "clips": 47223,
+      "hours": 125,
+      "speaker_count": 1426,
+      "license_claim": "Permissive commercial use allowed (dataset card)",
+      "explicit_spdx_license": null,
+      "signed_consent_chain_verified": false,
+      "status": "quarantined_pending_written_license_and_consent_verification",
+      "voice_catalog_eligibility": "do_not_import_until_evidence_review",
+      "source": "https://huggingface.co/datasets/Thomcles/YodaLingua-Vietnamese",
+      "note": "Promising speaker-count lead, but a card statement is not a substitute for written license text and proof that all speakers consented to voice synthesis and downstream distribution."
+    },
+    {
+      "id": "speechdataai-vietnamese-conversational",
+      "provider": "SpeechData.ai",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 2000,
+      "speaker_count": 200,
+      "license_claim": "Commercial training and evaluation license",
+      "signed_consent_chain_claimed": true,
+      "published_price_usd_per_hour": 65,
+      "indicative_full_dataset_price_usd": 130000,
+      "status": "paid_vendor_due_diligence_candidate",
+      "voice_catalog_eligibility": "only_under_contract_and_per-speaker-rights",
+      "source": "https://www.speechdata.ai/datasets/vietnamese",
+      "note": "Vendor states signed commercial-use consent and a full chain of consent; verify contract, voice cloning, model redistribution and derivative voice rights before purchase."
+    },
+    {
+      "id": "vivos-vietnamese",
+      "provider": "AILAB VNU-HCM",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 15,
+      "speaker_count": 65,
+      "license": "CC-BY-NC-SA-4.0",
+      "status": "research_only_noncommercial",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/AILAB-VNUHCM/vivos"
+    },
+    {
+      "id": "phoaudiobook-vietnamese",
+      "provider": "PhoAudiobook authors",
+      "language_codes": [
+        "vi"
+      ],
+      "training_hours": 940,
+      "training_speakers": 710,
+      "license": "research_or_educational_use_only",
+      "redistribution": "prohibited",
+      "status": "research_only_noncommercial",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/thivux/phoaudiobook"
+    },
+    {
+      "id": "vivoice-vietnamese",
+      "provider": "viVoice dataset authors",
+      "language_codes": [
+        "vi"
+      ],
+      "hours": 1016.97,
+      "estimated_source_channels": 186,
+      "license": "CC-BY-NC-SA-4.0",
+      "data_source_risk": "includes audio sourced from YouTube channels",
+      "status": "research_only_noncommercial_and_creator-rights_review_required",
+      "voice_catalog_eligibility": "exclude_from_monetized_production",
+      "source": "https://huggingface.co/datasets/capleaf/viVoice"
+    },
+    {
+      "id": "vieneu-1000h-training-dataset",
+      "provider": "VieNeu dataset authors",
+      "language_codes": [
+        "vi"
+      ],
+      "license": "CC-BY-NC-4.0",
+      "access": "gated",
+      "status": "research_only_noncommercial_dataset",
+      "voice_catalog_eligibility": "do_not_assume_model_license_grants_dataset_or_speaker_rights",
+      "source": "https://huggingface.co/datasets/pnnbao-ump/VieNeu-TTS-1000h"
+    }
+  ],
+  "provider_documentation": [
+    {
+      "id": "elevenlabs-voice-design",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/design",
+      "fact": "Design endpoint returns preview audio plus generated_voice_id."
+    },
+    {
+      "id": "elevenlabs-save-voice",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-voice/create",
+      "fact": "POST /v1/text-to-voice saves an existing generated_voice_id as a private account voice."
+    },
+    {
+      "id": "elevenlabs-list-voices",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/search",
+      "fact": "GET /v2/voices searches names/descriptions/labels, used to reconcile promotion by a unique generated_voice_id label."
+    },
+    {
+      "id": "elevenlabs-public-library",
+      "source": "https://elevenlabs.io/docs/help-center/product/voices/voice-library/what-is-the-voice-library",
+      "fact": "Only Professional Voice Clones are shareable publicly; Voice Design voices are not shareable."
+    },
+    {
+      "id": "google-cloud-chirp3-hd",
+      "source": "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types",
+      "fact": "Google lists 30 Chirp 3 HD styles and Vietnamese/English locale voice IDs."
+    },
+    {
+      "id": "elevenlabs-eleven-v4",
+      "source": "https://elevenlabs.io/docs/overview/models",
+      "fact": "Eleven v4 is the high-fidelity, expressive flagship model; 90+ languages including Vietnamese and English; accessible via Text to Dialogue API."
+    },
+    {
+      "id": "elevenlabs-text-to-dialogue",
+      "source": "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert",
+      "fact": "POST /v1/text-to-dialogue accepts text/voice_id inputs; language_code and pronunciation dictionary locators are supported; endpoint guidance recommends <=2,000 total input characters per request for reliable generation."
+    },
+    {
+      "id": "elevenlabs-shared-voice-library",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "fact": "GET /v1/shared-voices supports high_quality/professional/famous categories, language/accent/locale filters, and trending, usage_character_count_1y, or cloned_by_count sorting. VoiceStudio intentionally excludes the famous category."
+    },
+    {
+      "id": "google-gemini-list-prebuilt-voices",
+      "source": "https://ai.google.dev/api/voices",
+      "fact": "GET /v1beta/voices lists prebuilt, prompted and replicated voices; supports language, region, accent, persona, context, gender, pitch and type filters; page_size max 1,000 and next_page_token pagination. VoiceStudio only stores type=prebuilt and VI/EN metadata."
+    },
+    {
+      "id": "google-gemini-tts-38",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "fact": "Gemini 3.8 Flash TTS provides high-fidelity expressive speech generation and Gemini 3.8 Flash-Lite TTS targets higher throughput/cost efficiency; Vietnamese and English are in supported language coverage."
+    },
+    {
+      "id": "google-gemini-prebuilt-studio-voices",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "fact": "Gemini 3.8 Flash TTS and Flash-Lite expose 30 official prebuilt studio voice options (including Zephyr, Puck, Charon, Kore, Leda, Aoede, etc.); the Extended Voice Library adds hundreds of provider-managed options."
+    },
+    {
+      "id": "google-gemini-tss-interactions",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "fact": "Gemini 3.8 TTS uses POST /v1beta/interactions with model, user_input text blocks, speech_metadata annotations, response_format audio, and generation_config.speech_config; unary audio returns WAV (24 kHz mono 16-bit default)."
+    },
+    {
+      "id": "xai-list-built-in-tts-voices",
+      "source": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+      "fact": "GET /v1/tts/voices returns provider-managed built-in voice IDs and names. User-created custom voices are returned separately by GET /v1/custom-voices."
+    },
+    {
+      "id": "xai-grok-tts-language-and-price",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech",
+      "fact": "POST /v1/tts accepts text, voice_id and BCP-47 language; officially supports 20 languages including vi and en; text max 15,000 characters; text normalization and speech tags are supported. Official voice docs list $15 per one million input characters; rate and plan conditions may change."
+    }
+  ],
+  "market_signal_sources": [
+    {
+      "id": "huggingface-hub-trending-tts",
+      "source": "https://huggingface.co/models?pipeline_tag=text-to-speech&sort=trending",
+      "signal_types": [
+        "trending_position",
+        "downloads",
+        "likes",
+        "last_modified",
+        "language_tags",
+        "model_license_tags"
+      ],
+      "scope": "open-model discovery and repository adoption",
+      "refresh": "weekly GitHub Actions snapshot",
+      "interpretation": "Discovery/adoption signals only; downloads and likes do not measure listening preference, proof of use by creators/channels, generated voice quality, or commercial rights."
+    },
+    {
+      "id": "huggingface-open-tts-leaderboard",
+      "source": "https://huggingface.co/blog/open-tts-leaderboard",
+      "published": "2026-09-30",
+      "signal_types": [
+        "intelligibility",
+        "speaker_similarity",
+        "RTFx",
+        "time_to_first_audio"
+      ],
+      "scope": "open-model benchmark comparisons",
+      "interpretation": "Useful technical screening; objective metrics do not replace MOS, MUSHRA or direct listener preference."
+    },
+    {
+      "id": "artificial-analysis-speech-arena",
+      "source": "https://artificialanalysis.ai/text-to-speech/leaderboard/provider-voice",
+      "signal_types": [
+        "blind_pairwise_listener_votes",
+        "elo",
+        "sample_count",
+        "provider_voice_comparisons"
+      ],
+      "scope": "managed-provider model and native-voice listening preferences",
+      "refresh": "review at each VoiceStudio market-pulse run",
+      "interpretation": "Crowdsourced preference is more direct than repository popularity, but it is not proof of adoption by YouTube channels or of per-voice rights."
+    },
+    {
+      "id": "elevenlabs-public-shared-voice-marketplace",
+      "source": "https://elevenlabs.io/docs/api-reference/voices/voice-library/get-shared",
+      "signal_types": [
+        "usage_character_count_1y",
+        "usage_character_count_7d",
+        "cloned_by_count",
+        "trending_position",
+        "featured"
+      ],
+      "scope": "provider-hosted public shared voice adoption/discovery",
+      "refresh": "weekly GitHub Actions snapshot and manual dispatch",
+      "interpretation": "Provider-reported usage and cloning counts are adoption signals within the marketplace; they are not blind listener preference, external creator/channel adoption proof, or voice-quality ratings."
+    },
+    {
+      "id": "google-gemini-prebuilt-voice-library",
+      "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+      "signal_types": [
+        "provider-curated-prebuilt-studio-voice-options",
+        "language",
+        "region",
+        "accent",
+        "persona",
+        "context",
+        "gender",
+        "pitch"
+      ],
+      "scope": "provider-managed Gemini TTS voice discovery and metadata",
+      "refresh": "weekly GitHub Actions snapshot of GET /v1beta/voices",
+      "interpretation": "The API provides descriptive metadata, not marketplace usage counts or public adoption rank. VoiceStudio does not claim popularity for Gemini options without independent evidence."
+    },
+    {
+      "id": "xai-grok-builtin-voice-list",
+      "source": "https://docs.x.ai/developers/model-capabilities/audio/voice",
+      "signal_types": [
+        "provider_builtin_voice_availability",
+        "provider_documented_voice_tone",
+        "provider_documented_use_case"
+      ],
+      "scope": "provider-managed built-in voice inventory",
+      "refresh": "weekly metadata snapshot",
+      "interpretation": "The list has no adoption counters or listener ratings. Provider voice descriptions are discovery hints only; all voices require native-language blind auditions."
+    }
+  ],
+  "market_snapshots": {
+    "as_of": "2026-11-01",
+    "source": "https://voicearena.com/tts-leaderboard/vietnamese",
+    "metric": "Vietnamese Voice Arena Elo from blind pairwise listener comparisons",
+    "interpretation": "Crowdsourced preference snapshot for model/voice output, not a guaranteed universal quality result or proof of market usage. Sample count and confidence interval must remain visible.",
+    "overall_vietnamese_top_models": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1141,
+        "confidence_interval": 17,
+        "samples": 681
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1122,
+        "confidence_interval": 14,
+        "samples": 790
+      },
+      {
+        "rank": 3,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1091,
+        "confidence_interval": 10,
+        "samples": 2369
+      },
+      {
+        "rank": 4,
+        "model": "Eleven v4",
+        "elo": 1083,
+        "confidence_interval": 15,
+        "samples": 619
+      },
+      {
+        "rank": 5,
+        "model": "Eleven v3",
+        "elo": 1033,
+        "confidence_interval": 10,
+        "samples": 2378
+      }
+    ],
+    "media_entertainment_vietnamese": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1129,
+        "confidence_interval": 36,
+        "samples": 154
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1104,
+        "confidence_interval": 30,
+        "samples": 180
+      },
+      {
+        "rank": 3,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1091,
+        "confidence_interval": 20,
+        "samples": 549
+      },
+      {
+        "rank": 4,
+        "model": "Eleven v4",
+        "elo": 1074,
+        "confidence_interval": 32,
+        "samples": 143
+      }
+    ],
+    "creator_education_vietnamese": [
+      {
+        "rank": 1,
+        "model": "Gemini 3.8 Flash-Lite TTS",
+        "elo": 1117,
+        "confidence_interval": 35
+      },
+      {
+        "rank": 2,
+        "model": "Gemini 3.8 Flash TTS",
+        "elo": 1104,
+        "confidence_interval": 34
+      },
+      {
+        "rank": 3,
+        "model": "Eleven v4",
+        "elo": 1096,
+        "confidence_interval": 36
+      },
+      {
+        "rank": 4,
+        "model": "Gemini 3.1 Flash TTS",
+        "elo": 1086,
+        "confidence_interval": 20
+      }
+    ],
+    "media_entertainment_source": "https://voicearena.com/tts-leaderboard/vietnamese/media-and-entertainment",
+    "creator_education_source": "https://voicearena.com/tts-leaderboard/vietnamese/content-creation-and-edu"
+  }
+}

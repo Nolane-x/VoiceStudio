@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nolane-x/VoiceStudio/blob/main/voice-library/voice-contribution.schema.json",
+  "title": "VoiceStudio pseudonymous voice contribution manifest",
+  "description": "Public metadata contract for a voice contributed by the recorded speaker. No personally identifying information or audio bytes/URLs are stored here. The signed consent record and original audio remain in private storage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contribution_id",
+    "contributor_ref",
+    "display_name",
+    "sample_asset_ref",
+    "speaker_is_contributor",
+    "adult_attested",
+    "privacy_notice_acknowledged",
+    "languages",
+    "consent",
+    "provenance",
+    "rights_review",
+    "quality_review",
+    "production_ready"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "contribution_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contributor_ref": {
+      "type": "string",
+      "pattern": "^vc_[a-f0-9]{16,32}$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 80
+    },
+    "sample_asset_ref": {
+      "type": "string",
+      "pattern": "^asset_[a-z0-9]{20,40}$"
+    },
+    "speaker_is_contributor": {
+      "const": true
+    },
+    "adult_attested": {
+      "const": true
+    },
+    "privacy_notice_acknowledged": {
+      "const": true
+    },
+    "voice_description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "language",
+          "locale",
+          "accent",
+          "native_language_review_required"
+        ],
+        "properties": {
+          "language": {
+            "enum": [
+              "vi",
+              "en"
+            ]
+          },
+          "locale": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 16
+          },
+          "accent": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "persona_tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "maxItems": 12,
+            "uniqueItems": true
+          },
+          "native_language_review_required": {
+            "const": true
+          }
+        }
+      }
+    },
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consent_version",
+        "signed_at",
+        "private_record_ref",
+        "record_sha256",
+        "disclosure_acknowledged",
+        "rights_granted",
+        "rights_not_granted",
+        "withdrawal_route_ref"
+      ],
+      "properties": {
+        "consent_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "private_record_ref": {
+          "type": "string",
+          "pattern": "^vault_[a-z0-9]{20,40}$"
+        },
+        "record_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "disclosure_acknowledged": {
+          "const": true
+        },
+        "rights_granted": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "tts_synthesis",
+              "voice_replication",
+              "commercial_use",
+              "public_preview",
+              "public_distribution",
+              "model_training",
+              "derivative_voice_generation"
+            ]
+          }
+        },
+        "rights_not_granted": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "tts_synthesis",
+              "voice_replication",
+              "commercial_use",
+              "public_preview",
+              "public_distribution",
+              "model_training",
+              "derivative_voice_generation"
+            ]
+          }
+        },
+        "withdrawal_route_ref": {
+          "type": "string",
+          "pattern": "^vault_[a-z0-9]{20,40}$"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recording_origin",
+        "speaker_identity_confirmed",
+        "recording_rights_ref"
+      ],
+      "properties": {
+        "recording_origin": {
+          "enum": [
+            "self_recorded_by_contributor",
+            "licensed_recording_of_contributor"
+          ]
+        },
+        "speaker_identity_confirmed": {
+          "const": true
+        },
+        "recording_rights_ref": {
+          "type": "string",
+          "pattern": "^vault_[a-z0-9]{20,40}$"
+        },
+        "dataset_license": {
+          "type": "string",
+          "maxLength": 120
+        }
+      }
+    },
+    "rights_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer_ref": {
+          "type": "string",
+          "pattern": "^reviewer_[a-z0-9]{12,32}$"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes_code": {
+          "type": "string",
+          "maxLength": 80
+        }
+      }
+    },
+    "quality_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "native_language_review",
+        "pronunciation_review",
+        "longform_stability_review"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "native_language_review": {
+          "type": "boolean"
+        },
+        "pronunciation_review": {
+          "type": "boolean"
+        },
+        "longform_stability_review": {
+          "type": "boolean"
+        },
+        "blind_review_id": {
+          "type": "string",
+          "pattern": "^review_[a-z0-9]{12,32}$"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "production_ready": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

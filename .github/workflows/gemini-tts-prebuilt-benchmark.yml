@@ -1,0 +1,189 @@
+name: Gemini 3.8 prebuilt voice quality benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: Gemini TTS engine to benchmark (run once per model for a fair comparison)
+        required: true
+        type: choice
+        options:
+          - gemini-3.8-flash-tts
+          - gemini-3.8-flash-lite-tts
+        default: gemini-3.8-flash-tts
+      language:
+        description: Language track to benchmark
+        required: true
+        type: choice
+        options: [both, vi, en]
+        default: both
+      offset:
+        description: Zero-based offset in the alphabetical prebuilt voice pool per language
+        required: true
+        type: number
+        default: 0
+      limit:
+        description: Number of voices per language (max 4; both is capped at 8 total requests)
+        required: true
+        type: number
+        default: 2
+      max_catalog_pages:
+        description: Extended prebuilt Voice Library pages to scan (up to 1,000 voices per page)
+        required: true
+        type: number
+        default: 10
+      confirm_paid_api_usage:
+        description: Explicitly approve up to eight Gemini TTS generation requests
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gemini-tts-benchmark-${{ github.ref }}-${{ inputs.model_id }}-${{ inputs.language }}-${{ inputs.offset }}
+  cancel-in-progress: false
+
+jobs:
+  paid-benchmark:
+    name: Render matched Gemini TTS prebuilt voice auditions
+    if: ${{ github.event.repository.private == true && inputs.confirm_paid_api_usage == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HOME: /tmp/voice-studio-gemini-tts/hf
+      HF_HUB_CACHE: /tmp/voice-studio-gemini-tts/hf/hub
+      AUDIOSEAL_CACHE_DIR: /tmp/voice-studio-gemini-tts/audioseal
+      TORCH_HOME: /tmp/voice-studio-gemini-tts/torch
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      OMP_NUM_THREADS: "4"
+    steps:
+      - name: Check out VoiceStudio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Validate bounded request and credentials
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REQUEST_MODEL: ${{ inputs.model_id }}
+          REQUEST_LANGUAGE: ${{ inputs.language }}
+          REQUEST_LIMIT: ${{ inputs.limit }}
+          REQUEST_OFFSET: ${{ inputs.offset }}
+          REQUEST_PAGES: ${{ inputs.max_catalog_pages }}
+        run: |
+          test -n "$GEMINI_API_KEY" || {
+            echo "::error::Set GEMINI_API_KEY in repository Actions secrets."
+            exit 1
+          }
+          python - <<'PY'
+          import os
+          assert os.environ["REQUEST_MODEL"] in {"gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts"}
+          language = os.environ["REQUEST_LANGUAGE"] or "both"
+          limit = int(os.environ["REQUEST_LIMIT"] or "2")
+          offset = int(os.environ["REQUEST_OFFSET"] or "0")
+          pages = int(os.environ["REQUEST_PAGES"] or "10")
+          assert language in {"both", "vi", "en"}
+          assert 1 <= limit <= 4
+          assert 0 <= offset <= 100000
+          assert 1 <= pages <= 10
+          assert limit * (2 if language == "both" else 1) <= 8
+          PY
+
+      - name: Install FFmpeg and audio runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1
+
+      - name: Install pinned CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            "torch==2.8.0" "torchaudio==2.8.0"
+
+      - name: Install watermark and audio dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "audioseal>=0.1.3" \
+            "soundfile>=0.12.1" \
+            "pytest"
+
+      - name: Refresh provider-hosted prebuilt voice metadata
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REQUEST_PAGES: ${{ inputs.max_catalog_pages }}
+        run: |
+          python scripts/discover_gemini_prebuilt_voices.py \
+            --max-pages "${REQUEST_PAGES:-10}" \
+            --output dist/gemini-prebuilt-voices
+
+      - name: Run Gemini benchmark and discovery contract tests
+        run: |
+          python -m pytest \
+            tests/test_gemini_tts_prebuilt_benchmark.py \
+            tests/test_gemini_prebuilt_voice_discovery.py -q
+
+      - name: Render bounded paid Gemini TTS auditions
+        id: generate
+        continue-on-error: true
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REQUEST_MODEL: ${{ inputs.model_id }}
+          REQUEST_LANGUAGE: ${{ inputs.language }}
+          REQUEST_OFFSET: ${{ inputs.offset }}
+          REQUEST_LIMIT: ${{ inputs.limit }}
+        run: |
+          python scripts/benchmark_gemini_tts_prebuilt_voices.py \
+            --model-id "$REQUEST_MODEL" \
+            --language "$REQUEST_LANGUAGE" \
+            --offset "${REQUEST_OFFSET:-0}" \
+            --limit "${REQUEST_LIMIT:-2}" \
+            --voice-catalog dist/gemini-prebuilt-voices/catalog.json \
+            --output dist/gemini-tts-benchmark \
+            --confirm-paid-api-usage
+
+      - name: Upload anonymized blind listening archive
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gemini-tts-blind-review-${{ github.run_id }}
+          path: dist/gemini-tts-benchmark/blind-listening-review.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload private voice mapping and analysis manifest
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gemini-tts-analysis-${{ github.run_id }}
+          path: |
+            dist/gemini-tts-benchmark/analysis.json
+            dist/gemini-tts-benchmark/README.md
+            dist/gemini-prebuilt-voices/catalog.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if any voice request or audio validation failed
+        if: steps.generate.outcome == 'failure'
+        run: |
+          echo "::error::The Gemini TTS batch had failed requests or audio checks. Inspect the partial analysis artifact. Do not retry ambiguous outcomes until provider usage is reconciled."
+          exit 1
+
+  no-paid-calls:
+    name: No paid Gemini TTS requests made
+    if: ${{ github.event.repository.private != true || inputs.confirm_paid_api_usage != true }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Explain safety gates
+        run: |
+          echo "No Gemini TTS synthesis request was sent and no TTS credits were used."
+          echo "The repository must be private and confirm_paid_api_usage must be true."
+          echo "The maximum batch is eight requests: four voices per selected language."

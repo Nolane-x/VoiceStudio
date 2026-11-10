@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "provider": "Google Gemini API",
+  "kind": "provider_published_prebuilt_studio_voice_options",
+  "source": "https://ai.google.dev/gemini-api/docs/speech-generation",
+  "model_ids": [
+    "gemini-3.8-flash-tts",
+    "gemini-3.8-flash-lite-tts"
+  ],
+  "count": 30,
+  "usage_note": "These are 30 official prebuilt voice options, not 30 independent licensed speaker recordings or 30 language-specific identities. Each option must be auditioned separately in Vietnamese and English. Provider-hosted IDs/names are used only via authorized Gemini API access.",
+  "voices": [
+    {
+      "voice_id": "Zephyr",
+      "archetype": "bright",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Puck",
+      "archetype": "upbeat",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Charon",
+      "archetype": "informative",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Kore",
+      "archetype": "firm",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Fenrir",
+      "archetype": "excitable",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Leda",
+      "archetype": "youthful",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Orus",
+      "archetype": "firm",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Aoede",
+      "archetype": "breezy",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Callirrhoe",
+      "archetype": "easy-going",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Autonoe",
+      "archetype": "bright",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Enceladus",
+      "archetype": "breathy",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Iapetus",
+      "archetype": "clear",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Umbriel",
+      "archetype": "easy-going",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Algieba",
+      "archetype": "smooth",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Despina",
+      "archetype": "smooth",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Erinome",
+      "archetype": "clear",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Algenib",
+      "archetype": "gravelly",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Rasalgethi",
+      "archetype": "informative",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Laomedeia",
+      "archetype": "upbeat",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Achernar",
+      "archetype": "soft",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Alnilam",
+      "archetype": "firm",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Schedar",
+      "archetype": "even",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Gacrux",
+      "archetype": "mature",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Pulcherrima",
+      "archetype": "forward",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Achird",
+      "archetype": "friendly",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Zubenelgenubi",
+      "archetype": "casual",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Vindemiatrix",
+      "archetype": "gentle",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Sadachbia",
+      "archetype": "lively",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Sadaltager",
+      "archetype": "knowledgeable",
+      "source": "Google-published prebuilt TTS voice list"
+    },
+    {
+      "voice_id": "Sulafat",
+      "archetype": "warm",
+      "source": "Google-published prebuilt TTS voice list"
+    }
+  ]
+}

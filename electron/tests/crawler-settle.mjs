@@ -1,3 +1,20 @@
+/** Read-only status endpoints polled in the background, not initiated by an individual click. */
+export const BACKGROUND_POLL_PATHS = new Set([
+  '/api/engines',
+  '/api/api/settings/performance-profile',
+  '/api/model/loaded',
+  '/api/model/status',
+  '/api/engines/diarisation',
+  '/api/batch/jobs',
+]);
+
+/** Track user-triggered API work, excluding only known periodic GET status polls. */
+export function shouldTrackApiRequest({ method, resourceType, url }) {
+  const pathname = new URL(url).pathname;
+  if (!pathname.startsWith('/api/') || resourceType === 'eventsource') return false;
+  return !(method === 'GET' && BACKGROUND_POLL_PATHS.has(pathname));
+}
+
 /** Wait for a continuous API-quiet window, including traffic between samples. */
 export async function waitForQuietRequests(
   traffic,

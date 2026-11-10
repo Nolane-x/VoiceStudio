@@ -1,0 +1,91 @@
+name: Discover ElevenLabs shared voices
+
+on:
+  push:
+    branches:
+      - feat/tts-quality-benchmark
+    paths:
+      - .github/workflows/discover-elevenlabs-shared-voices.yml
+      - scripts/discover_elevenlabs_shared_voices.py
+      - tests/test_elevenlabs_shared_voice_discovery.py
+  schedule:
+    - cron: "15 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Which marketplace language pools to scan
+        required: true
+        type: choice
+        options: [both, vi, en]
+        default: both
+      pages_per_query:
+        description: Pages per sort/category/language query (100 voices per page; max 5)
+        required: true
+        type: number
+        default: 2
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elevenlabs-shared-voice-discovery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Index high-quality and professional shared voices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out VoiceStudio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Validate bounded discovery request
+        env:
+          REQUEST_LANGUAGE: ${{ inputs.language || 'both' }}
+          REQUEST_PAGES: ${{ inputs.pages_per_query || '2' }}
+        run: |
+          python - <<'PY'
+          import os
+          assert os.environ["REQUEST_LANGUAGE"] in {"both", "vi", "en"}
+          assert 1 <= int(os.environ["REQUEST_PAGES"]) <= 5
+          PY
+
+      - name: Discover public shared voice metadata (no audio generation)
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          DISCOVERY_LANGUAGE: ${{ inputs.language || 'both' }}
+          DISCOVERY_PAGES: ${{ inputs.pages_per_query || '2' }}
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then
+            mkdir -p dist/elevenlabs-shared-voices
+            cat > dist/elevenlabs-shared-voices/README.md <<'EOF'
+          # ElevenLabs voice discovery not executed
+
+          Filtered marketplace discovery requires the repository Actions secret
+          ELEVENLABS_API_KEY. No voice generation or paid API request was sent.
+          Add the key and rerun this workflow to collect high-quality and
+          professional Vietnamese and English shared-voice metadata.
+          EOF
+            echo "::notice::ELEVENLABS_API_KEY is not configured; metadata discovery was skipped."
+          else
+            python scripts/discover_elevenlabs_shared_voices.py \
+              --language "$DISCOVERY_LANGUAGE" \
+              --pages-per-query "$DISCOVERY_PAGES" \
+              --output dist/elevenlabs-shared-voices
+          fi
+
+      - name: Upload marketplace discovery snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: elevenlabs-shared-voices-${{ github.run_id }}
+          path: dist/elevenlabs-shared-voices/
+          if-no-files-found: error
+          retention-days: 30

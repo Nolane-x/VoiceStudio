@@ -49,6 +49,7 @@ _ALLOWED_FILES = {
     "docs/superpowers/specs/2026-05-31-voice-gallery-design.md",  # Preserves design examples.
     "examples/README.md",  # Contains multilingual examples.
     "backend/services/segmentation.py",  # CJK-aware segmentation rules.
+    "scripts/render_video_voice.py",  # CJK sentence punctuation is functional narration segmentation logic.
     "backend/services/sentence_chunker.py",  # CJK sentence-boundary logic.
     "backend/services/subtitle_segmenter.py",  # CJK subtitle segmentation.
     "backend/services/text_normalization.py",  # CJK normalization patterns.
@@ -148,6 +149,7 @@ def test_no_hardcoded_cjk_outside_locales():
         "widget.test.ts",
         "test_widget.py",
         "widget_test.py",
+        "scripts/render_video_voice.py",
         "pkg/tests/widget.py",
         "pkg/test/widget.py",
     ],

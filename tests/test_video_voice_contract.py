@@ -7,10 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "render_video_voice.py"
 SCHEMA = ROOT / "voice-library" / "video-job.schema.json"
+LONG_VI_SAMPLE = ROOT / "voice-library" / "video-job.example.vi-long.json"
 SAMPLES = [
     ROOT / "voice-library" / "video-job.example.vi.json",
     ROOT / "voice-library" / "video-job.example.en.json",
     ROOT / "voice-library" / "video-job.example.en-kokoro.json",
+    LONG_VI_SAMPLE,
 ]
 SPEC = importlib.util.spec_from_file_location("render_video_voice", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
@@ -26,6 +28,17 @@ def test_example_jobs_validate_against_the_published_schema():
         payload = json.loads(path.read_text(encoding="utf-8"))
         jsonschema.validate(payload, schema)
         assert MODULE.validate_job_payload(payload) == payload
+
+
+def test_long_form_vietnamese_sample_exercises_chunking_without_text_loss():
+    payload = json.loads(LONG_VI_SAMPLE.read_text(encoding="utf-8"))
+    main = next(segment for segment in payload["segments"] if segment["id"] == "main")
+    chunks = MODULE.split_text(main["text"])
+
+    assert len(main["text"]) > MODULE.MAX_CHUNK_CHARS * 4
+    assert len(chunks) >= 15
+    assert all(0 < len(chunk) <= MODULE.MAX_CHUNK_CHARS for chunk in chunks)
+    assert " ".join(" ".join(chunks).split()) == " ".join(main["text"].split())
 
 
 def test_sentence_splitter_keeps_all_words_and_sentence_boundaries():

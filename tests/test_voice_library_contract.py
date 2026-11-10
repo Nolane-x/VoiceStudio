@@ -38,6 +38,26 @@ class VoiceLibraryContractTests(unittest.TestCase):
         self.assertIn("list_preset_voices", BUILDER.read_text(encoding="utf-8"))
 
 
+    def test_kokoro_vietnamese_candidate_is_quarantined_until_voice_rights_are_verified(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(
+            row for row in registry["research_only_or_blocked"]
+            if row["id"] == "kokoro-vietnamese-community"
+        )
+        self.assertEqual(candidate["listed_voicepack_count"], 14)
+        self.assertEqual(candidate["repository_license"], "Apache-2.0")
+        self.assertFalse(candidate["production_eligible"])
+        self.assertEqual(candidate["status"], "research_only_blocked_pending_speaker_consent_and_dataset_provenance")
+
+    def test_noncommercial_vietnamese_f5_model_is_not_a_monetized_production_candidate(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(
+            row for row in registry["research_only_or_blocked"]
+            if row["id"] == "f5tts-vietnamese-vivoice"
+        )
+        self.assertEqual(candidate["model_card_license"], "CC-BY-NC-SA-4.0")
+        self.assertFalse(candidate["production_eligible"])
+
     def test_kokoro_english_preset_set_is_pinned_and_curated(self):
         sources = json.loads(SOURCES.read_text(encoding="utf-8"))
         kokoro = sources["kokoro_english"]
@@ -105,6 +125,61 @@ class VoiceLibraryContractTests(unittest.TestCase):
             timeout=30,
         )
         self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
+
+
+class ExpandedProviderContractTests(unittest.TestCase):
+    def test_eleven_v4_is_a_separate_high_priority_synthesis_candidate(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "elevenlabs-eleven-v4")
+        self.assertEqual(candidate["model_id"], "eleven_v4")
+        self.assertIn("vi", candidate["language_codes"])
+        self.assertIn("en", candidate["language_codes"])
+        self.assertEqual(candidate["recommended_api"], "POST /v1/text-to-dialogue")
+        self.assertNotEqual(candidate["model_id"], "eleven_ttv_v3")
+
+    def test_elevenlabs_marketplace_registry_records_separate_adoption_and_quality_signals(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "elevenlabs-shared-voice-marketplace")
+        self.assertEqual(candidate["discovery_endpoint"], "GET /v1/shared-voices")
+        self.assertIn("high_quality", candidate["note"])
+        self.assertIn("famous", candidate["note"])
+        self.assertFalse(any("celebrity" in row["id"] for row in registry["production_candidates"]))
+
+    def test_vietnamese_voice_arena_snapshot_is_source_attributed(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        snapshot = registry["market_snapshots"]
+        self.assertEqual(snapshot["source"], "https://voicearena.com/tts-leaderboard/vietnamese")
+        self.assertEqual(snapshot["overall_vietnamese_top_models"][0]["model"], "Gemini 3.8 Flash-Lite TTS")
+        self.assertEqual(snapshot["overall_vietnamese_top_models"][3]["model"], "Eleven v4")
+
+
+    def test_google_gemini_voice_catalog_only_indexes_prebuilt_vi_en_voice_ids(self):
+        registry = json.loads((ROOT / "voice-library" / "expansion-sources.json").read_text(encoding="utf-8"))
+        candidate = next(row for row in registry["production_candidates"] if row["id"] == "google-gemini-prebuilt-voice-library")
+        self.assertEqual(candidate["discovery_endpoint"], "GET /v1beta/voices")
+        self.assertEqual(candidate["filter"], "type=prebuilt")
+        self.assertEqual(candidate["language_codes"], ["vi", "en"])
+        self.assertEqual(candidate["page_size_max"], 1000)
+        self.assertIn("prompted and replicated", candidate["note"])
+
+
+    def test_paid_eleven_v4_benchmark_is_private_confirmed_and_bounded(self):
+        workflow = (ROOT / ".github" / "workflows" / "elevenlabs-v4-marketplace-benchmark.yml").read_text(encoding="utf-8")
+        script = (ROOT / "scripts" / "benchmark_elevenlabs_v4_marketplace.py").read_text(encoding="utf-8")
+        self.assertIn("github.event.repository.private == true", workflow)
+        self.assertIn("inputs.confirm_paid_api_usage == true", workflow)
+        self.assertIn("default: false", workflow)
+        self.assertIn("MAX_TOTAL_REQUESTS = 8", script)
+        self.assertIn("if not args.confirm_paid_api_usage", script)
+        self.assertIn("do not retry until usage/history is checked", script)
+
+    def test_gemini_voice_discovery_is_metadata_only(self):
+        workflow = (ROOT / ".github" / "workflows" / "discover-gemini-prebuilt-voices.yml").read_text(encoding="utf-8")
+        script = (ROOT / "scripts" / "discover_gemini_prebuilt_voices.py").read_text(encoding="utf-8")
+        self.assertIn("GEMINI_API_KEY", workflow)
+        self.assertIn("type=prebuilt", script)
+        self.assertNotIn("/interactions", script)
+        self.assertNotIn("generateContent", script)
 
 
 if __name__ == "__main__":

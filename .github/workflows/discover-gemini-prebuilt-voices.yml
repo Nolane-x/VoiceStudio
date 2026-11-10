@@ -1,0 +1,81 @@
+name: Discover Gemini prebuilt Vietnamese and English voices
+
+on:
+  push:
+    branches:
+      - feat/tts-quality-benchmark
+    paths:
+      - .github/workflows/discover-gemini-prebuilt-voices.yml
+      - scripts/discover_gemini_prebuilt_voices.py
+      - tests/test_gemini_prebuilt_voice_discovery.py
+  schedule:
+    - cron: "35 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: Maximum pages to read (1,000 voices per page; max 10)
+        required: true
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gemini-prebuilt-voice-discovery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Snapshot Google-managed prebuilt voice metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out VoiceStudio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+
+      - name: Validate bounded pagination
+        env:
+          REQUEST_PAGES: ${{ inputs.max_pages || '10' }}
+        run: |
+          python - <<'PY'
+          import os
+          assert 1 <= int(os.environ["REQUEST_PAGES"]) <= 10
+          PY
+
+      - name: Discover Google prebuilt voices (metadata only)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REQUEST_PAGES: ${{ inputs.max_pages || '10' }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            mkdir -p dist/gemini-prebuilt-voices
+            cat > dist/gemini-prebuilt-voices/README.md <<'EOF'
+          # Gemini voice discovery not executed
+
+          The read-only Google ListVoices API workflow requires the repository
+          secret GEMINI_API_KEY. No model generation or paid audio request was
+          sent. Add the secret and rerun this workflow to snapshot the prebuilt
+          Vietnamese and English voice metadata.
+          EOF
+            echo "::notice::GEMINI_API_KEY is not configured; metadata discovery was skipped."
+          else
+            python scripts/discover_gemini_prebuilt_voices.py \
+              --max-pages "${REQUEST_PAGES:-10}" \
+              --output dist/gemini-prebuilt-voices
+          fi
+
+      - name: Upload provider voice metadata snapshot or setup report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gemini-prebuilt-voices-${{ github.run_id }}
+          path: dist/gemini-prebuilt-voices/
+          if-no-files-found: error
+          retention-days: 30
