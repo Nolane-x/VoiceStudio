@@ -49,6 +49,7 @@ jobs:
         working-directory: voice-source
         run: |
           python - <<'PY'
+          import importlib.util
           import json
           import os
           from pathlib import Path
@@ -57,12 +58,18 @@ jobs:
           schema = json.loads(Path("voice-library/video-job.schema.json").read_text(encoding="utf-8"))
           payload = json.loads(os.environ["VOICE_JOB_JSON"])
           jsonschema.validate(payload, schema)
-          total = sum(len(item["text"].strip()) for item in payload["segments"])
-          if total > 30000:
-              raise SystemExit(f"Job too long: {total} characters (limit 30000)")
-          if payload["engine"] == "piper" and payload["language"] != "en":
-              raise SystemExit("Piper is only enabled for English")
-          print(f"Validated {payload.get('job_id', 'unnamed')}: {payload['language']} / {payload['engine']} / {len(payload['segments'])} segments")
+          spec = importlib.util.spec_from_file_location("render_video_voice", Path("scripts/render_video_voice.py"))
+          if spec is None or spec.loader is None:
+              raise SystemExit("Unable to load the video narration renderer for preflight")
+          renderer = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(renderer)
+          renderer.validate_job_payload(payload)
+          plan = renderer.plan_rendered_chunks(payload["segments"])
+          print(
+              f"Validated {payload.get('job_id', 'unnamed')}: {payload['language']} / "
+              f"{payload['engine']} / {len(payload['segments'])} segments / "
+              f"{len(plan)} packed TTS chunks"
+          )
           PY
 
   render:
