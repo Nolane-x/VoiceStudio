@@ -80,12 +80,12 @@ def split_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
     """Pack complete short sentences together; split only when a chunk would exceed the cap."""
     if max_chars < 1:
         raise ValueError("max_chars must be positive")
-    text = text.replace("\\r\\n", "\\n").replace("\\r", "\\n").strip()
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
     if not text:
         return []
     sentences = [
         part.strip()
-        for part in re.split(r"(?<=[.!?\\u3002\\uff01\\uff1f])\\s+|\\n+", text)
+        for part in re.split(r"(?<=[.!?\u3002\uff01\uff1f])\s+|\n+", text)
         if part.strip()
     ]
     chunks: list[str] = []
