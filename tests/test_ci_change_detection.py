@@ -311,9 +311,12 @@ def test_docker_main_pushes_skip_docs_and_tests_but_keep_runtime_changes():
     # separately; test_docker_workflow.py validates that lightweight trigger.
     for path in ("README.md", "deploy/dockerhub-overview.md", "tests/test_api.py", "electron/tests/installer.test.mjs"):
         assert any(_matches(path, pattern) for pattern in ignored), path
-    for path in ("deploy/Dockerfile", "backend/main.py",
-                 ".github/workflows/docker.yml", "pyproject.toml"):
+    for path in ("deploy/Dockerfile", "backend/main.py", "pyproject.toml"):
         assert not any(_matches(path, pattern) for pattern in ignored), path
+    # Editing trigger policy changes orchestration, not the container payload;
+    # the new workflow version must not rebuild its own multi-arch image.
+    assert ".github/workflows/docker.yml" in ignored
+    assert ".github/scripts/ci_scope.py" in ignored
     assert "paths-ignore" not in (DOCKER[True].get("release") or {})
 
 
