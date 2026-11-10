@@ -72,17 +72,40 @@ def validate_job_payload(payload: Any) -> dict:
         raise ValueError("Every narration segment must contain non-whitespace text")
     if len({segment["id"] for segment in payload["segments"]}) != len(payload["segments"]):
         raise ValueError("Narration segment IDs must be unique")
+    plan_rendered_chunks(payload["segments"])
     return payload
 
 
 def split_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
-    """Split at sentence/word boundaries; never drop or rewrite narration text."""
-    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    """Pack complete short sentences together; split only when a chunk would exceed the cap."""
+    if max_chars < 1:
+        raise ValueError("max_chars must be positive")
+    text = text.replace("\\r\\n", "\\n").replace("\\r", "\\n").strip()
     if not text:
         return []
-    sentences = [part.strip() for part in re.split(r"(?<=[.!?\u3002\uff01\uff1f])\s+|\n+", text) if part.strip()]
+    sentences = [
+        part.strip()
+        for part in re.split(r"(?<=[.!?\\u3002\\uff01\\uff1f])\\s+|\\n+", text)
+        if part.strip()
+    ]
     chunks: list[str] = []
+    pending = ""
+
     for sentence in sentences:
+        if len(sentence) <= max_chars:
+            candidate = f"{pending} {sentence}".strip() if pending else sentence
+            if len(candidate) <= max_chars:
+                pending = candidate
+            else:
+                if pending:
+                    chunks.append(pending)
+                pending = sentence
+            continue
+
+        if pending:
+            chunks.append(pending)
+            pending = ""
+
         remaining = sentence
         while len(remaining) > max_chars:
             cut = remaining.rfind(" ", 0, max_chars + 1)
@@ -90,12 +113,38 @@ def split_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
                 cut = max_chars
             chunks.append(remaining[:cut].strip())
             remaining = remaining[cut:].strip()
-        if remaining:
-            chunks.append(remaining)
-    if "".join(chunks).replace(" ", "") == "":
-        raise ValueError("Text splitter produced no speech content")
+        pending = remaining
+
+    if pending:
+        chunks.append(pending)
+    if not chunks or any(not chunk for chunk in chunks):
+        raise ValueError("Text splitter produced no usable speech content")
     return chunks
 
+
+def plan_rendered_chunks(segment_sources: list[dict]) -> list[dict]:
+    """Build the bounded TTS plan once so validation and synthesis use identical chunking."""
+    planned: list[dict] = []
+    for segment in segment_sources:
+        chunks = split_text(segment["text"])
+        for chunk_index, chunk in enumerate(chunks):
+            planned.append({
+                "source_id": segment["id"],
+                "chunk_index": chunk_index + 1,
+                "chunk_count": len(chunks),
+                "text": chunk,
+                "pause_ms_after": (
+                    int(segment.get("pause_ms_after", DEFAULT_PAUSE_MS))
+                    if chunk_index == len(chunks) - 1
+                    else INTERNAL_PAUSE_MS
+                ),
+            })
+            if len(planned) > MAX_RENDERED_CHUNKS:
+                raise ValueError(
+                    f"Narration exceeds the {MAX_RENDERED_CHUNKS}-chunk safety limit "
+                    "after sentence packing"
+                )
+    return planned
 
 def format_timestamp(seconds: float, *, vtt: bool = False) -> str:
     total_ms = max(0, int(round(float(seconds) * 1000)))
@@ -418,26 +467,7 @@ def build_rendered_chunks(payload: dict, builder: Any, temporary: Path) -> tuple
         raise ValueError(f"Unsupported TTS engine: {engine}")
 
     rows: list[dict] = []
-    total_chunks = 0
-    segment_sources = payload["segments"]
-    planned: list[dict] = []
-    for segment in segment_sources:
-        chunks = split_text(segment["text"])
-        for chunk_index, chunk in enumerate(chunks):
-            total_chunks += 1
-            if total_chunks > MAX_RENDERED_CHUNKS:
-                raise ValueError(f"Narration exceeds the {MAX_RENDERED_CHUNKS}-chunk safety limit")
-            planned.append({
-                "source_id": segment["id"],
-                "chunk_index": chunk_index + 1,
-                "chunk_count": len(chunks),
-                "text": chunk,
-                "pause_ms_after": (
-                    int(segment.get("pause_ms_after", DEFAULT_PAUSE_MS))
-                    if chunk_index == len(chunks) - 1
-                    else INTERNAL_PAUSE_MS
-                ),
-            })
+    planned = plan_rendered_chunks(payload["segments"])
 
     parts: list[Path] = []
     timeline: list[dict] = []
@@ -598,7 +628,11 @@ def main() -> int:
         sample = json.loads((ROOT / "voice-library" / "video-job.example.vi.json").read_text(encoding="utf-8"))
         validate_job_payload(sample)
         jsonschema.validate(sample, json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
-        assert split_text("Một câu. Câu thứ hai!") == ["Một câu.", "Câu thứ hai!"]
+        assert split_text("Một câu. Câu thứ hai!") == ["Một câu. Câu thứ hai!"]
+        assert len(plan_rendered_chunks([
+            {"id": f"segment-{index}", "text": "First sentence. Second sentence. Third sentence. Fourth sentence. Fifth sentence."}
+            for index in range(38)
+        ])) == 38
         assert format_timestamp(65.25) == "00:01:05,250"
         log("video narration payload/schema/chunking contract passed")
         return 0
